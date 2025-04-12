@@ -24,18 +24,20 @@ class CuotaAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('deuda__alumno')
+        queryset = super().get_queryset(request).select_related('deuda__alumno')
+        # Si NO es superuser, filtrar por municipio
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            queryset = queryset.filter(deuda__alumno__grupo_actual__salon__sede__municipio=request.user.municipio)
+        return queryset
 
     def get_form(self, request, obj=None, **kwargs):
-        """Filtra las deudas según la ciudad del usuario logueado (excepto superusuarios)."""
+        """Filtra las deudas según el municipio del usuario logueado (excepto superusuarios)."""
         form = super().get_form(request, obj, **kwargs)
-        if not request.user.is_superuser:
-            if hasattr(request.user, 'municipio') and request.user.municipio:
-                form.base_fields['deuda'].queryset = Deuda.objects.filter(
-                    alumno__municipio=request.user.municipio
-                )
-            else:
-                form.base_fields['deuda'].queryset = Deuda.objects.all()  # Si el usuario no tiene ciudad, mostrar todas
+        # Si NO es superuser, filtrar por municipio
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            form.base_fields['deuda'].queryset = Deuda.objects.filter(
+                alumno__grupo_actual__salon__sede__municipio=request.user.municipio
+            )
         return form
 
     class Meta:
@@ -52,12 +54,27 @@ class DeudaAdmin(admin.ModelAdmin):
     search_fields = ('alumno__nombres', 'alumno__primer_apellido')
     date_hierarchy = 'fecha_creacion'
 
-@admin.register(Recibo)
-class ReciboAdmin(admin.ModelAdmin):
-    list_display = ('cuota', 'numero_recibo', 'fecha_emision', 'monto_abonado', 'metodo_pago')
-    list_filter = ('metodo_pago', 'fecha_emision')
-    search_fields = ('cuota__deuda__alumno__nombres', 'cuota__deuda__alumno__primer_apellido')
-    date_hierarchy = 'fecha_emision'
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request).select_related('alumno', 'alumno__grupo_actual__salon__sede__municipio')
+        # Si no es superuser, filtrar por municipio del usuario
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            queryset = queryset.filter(alumno__grupo_actual__salon__sede__municipio=request.user.municipio)
+        return queryset
+        
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Filtrar los alumnos disponibles en el formulario según el municipio del usuario
+        if db_field.name == 'alumno' and not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            from academico.models import Alumno
+            kwargs["queryset"] = Alumno.objects.filter(grupo_actual__salon__sede__municipio=request.user.municipio)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+# @admin.register(Recibo)
+# class ReciboAdmin(admin.ModelAdmin):
+#     list_display = ('cuota', 'numero_recibo', 'fecha_emision', 'monto_abonado', 'metodo_pago')
+#     list_filter = ('metodo_pago', 'fecha_emision')
+#     search_fields = ('cuota__deuda__alumno__nombres', 'cuota__deuda__alumno__primer_apellido')
+#     date_hierarchy = 'fecha_emision'
 
 @admin.register(HistorialModificacion)
 class HistorialModificacionAdmin(admin.ModelAdmin):
@@ -68,20 +85,33 @@ class HistorialModificacionAdmin(admin.ModelAdmin):
 
 @admin.register(Egreso)
 class EgresosAdmin(admin.ModelAdmin):
-    list_display = ('sede', 'concepto', 'valor', 'estado', 'fecha')
-    list_filter = ('estado', 'fecha')
+    list_display = ('sede', 'municipio', 'concepto', 'valor', 'estado', 'fecha')
+    list_filter = ('estado', 'fecha', 'municipio')
     search_fields = ('concepto', 'contratista')
     date_hierarchy = 'fecha'  # Navegación por fechas
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request).select_related('sede', 'municipio')
+        # Si no es superuser, filtrar por municipio del usuario
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            queryset = queryset.filter(municipio=request.user.municipio)
+        return queryset
+
     # Personalizar el formulario de edición
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "sede":
-            # Filtrar sedes por municipio del usuario (si no es superusuario)
-            usuario = request.user
-            if not usuario.is_superuser and usuario.municipio:
-                kwargs["queryset"] = Sede.objects.filter(municipio=usuario.municipio)
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            if db_field.name == "sede":
+                # Filtrar sedes por municipio del usuario
+                kwargs["queryset"] = Sede.objects.filter(municipio=request.user.municipio)
+            elif db_field.name == "municipio":
+                # Restringir la selección de municipio al del usuario
+                from ubicaciones.models import Municipio
+                kwargs["queryset"] = Municipio.objects.filter(id=request.user.municipio.id)
+                kwargs["initial"] = request.user.municipio
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+
+@admin.register(MetaRecaudo)
 class MetaRecaudoAdmin(admin.ModelAdmin):
     list_display = ('mes', 'anio', 'valor_meta')
     list_filter = ('anio', 'mes')
@@ -95,5 +125,3 @@ class MetaRecaudoAdmin(admin.ModelAdmin):
             # Establecer el mes actual por defecto
             form.base_fields['mes'].initial = timezone.now().month
         return form
-
-admin.site.register(MetaRecaudo, MetaRecaudoAdmin)

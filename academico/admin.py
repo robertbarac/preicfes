@@ -7,6 +7,13 @@ class AlumnoAdmin(admin.ModelAdmin):
     list_display = ('nombres', 'primer_apellido', 'fecha_nacimiento', 'municipio', 'grupo_actual')  # Agregar fecha_nacimiento
     list_filter = ('municipio', 'grupo_actual', 'fecha_nacimiento')  # Agregar fecha_nacimiento (opcional)
     search_fields = ('nombres', 'primer_apellido', 'identificacion', 'fecha_nacimiento')  # Agregar fecha_nacimiento (opcional)
+    
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request).select_related('municipio', 'grupo_actual')
+        # Si no es superuser, filtrar por municipio del usuario
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            queryset = queryset.filter(municipio=request.user.municipio)
+        return queryset
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Filtrar municipios según el usuario logeado
@@ -42,6 +49,13 @@ class GrupoAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'salon')
     list_filter = ('salon', 'salon__sede__municipio')
     search_fields = ('codigo', 'salon__numero')
+    
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request).select_related('salon', 'salon__sede', 'salon__sede__municipio')
+        # Si no es superuser, filtrar por municipio del usuario
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            queryset = queryset.filter(salon__sede__municipio=request.user.municipio)
+        return queryset
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "salon":
@@ -65,6 +79,21 @@ class ClaseAdmin(admin.ModelAdmin):
     list_display = ('materia', 'fecha', 'horario', 'salon', 'profesor', 'grupo')
     list_filter = ('fecha', 'horario', 'salon', 'materia', 'grupo__salon__sede', 'profesor', 'grupo__salon__sede__municipio')
     search_fields = ('materia__nombre', 'profesor__username', 'grupo__codigo')
+    
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request).select_related('grupo', 'grupo__salon', 'grupo__salon__sede', 'grupo__salon__sede__municipio')
+        # Si no es superuser, filtrar por municipio del usuario
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            queryset = queryset.filter(grupo__salon__sede__municipio=request.user.municipio)
+        return queryset
+        
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            if db_field.name == "grupo":
+                kwargs["queryset"] = Grupo.objects.filter(salon__sede__municipio=request.user.municipio)
+            elif db_field.name == "salon":
+                kwargs["queryset"] = Salon.objects.filter(sede__municipio=request.user.municipio)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 
@@ -83,19 +112,50 @@ class NotaAdmin(admin.ModelAdmin):
     
     # Orden por defecto
     ordering = ('clase', 'alumno')
+    
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request).select_related('alumno', 'clase', 'alumno__municipio')
+        # Si no es superuser, filtrar por municipio del usuario
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            queryset = queryset.filter(alumno__municipio=request.user.municipio)
+        return queryset
+        
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            if db_field.name == "alumno":
+                kwargs["queryset"] = Alumno.objects.filter(municipio=request.user.municipio)
+            elif db_field.name == "clase":
+                kwargs["queryset"] = Clase.objects.filter(grupo__salon__sede__municipio=request.user.municipio)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 @admin.register(Asistencia)
 class AsistenciaAdmin(admin.ModelAdmin):
-    # ... (configuraciones anteriores)
     list_display = ('clase', 'alumno', 'asistio')
     list_editable = ('asistio',)
+    list_filter = ('asistio', 'clase__fecha')
+    search_fields = ('alumno__nombres', 'alumno__primer_apellido', 'clase__materia__nombre')
     # Acciones personalizadas
     actions = ['marcar_asistio', 'marcar_no_asistio']
-
+    
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request).select_related('alumno', 'clase', 'alumno__municipio')
+        # Si no es superuser, filtrar por municipio del usuario
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            queryset = queryset.filter(alumno__municipio=request.user.municipio)
+        return queryset
+        
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
+            if db_field.name == "alumno":
+                kwargs["queryset"] = Alumno.objects.filter(municipio=request.user.municipio)
+            elif db_field.name == "clase":
+                kwargs["queryset"] = Clase.objects.filter(grupo__salon__sede__municipio=request.user.municipio)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        
     def marcar_asistio(self, request, queryset):
         queryset.update(asistio=True)
     marcar_asistio.short_description = "Marcar como asistió"
-
+    
     def marcar_no_asistio(self, request, queryset):
         queryset.update(asistio=False)
     marcar_no_asistio.short_description = "Marcar como no asistió"
