@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Crear Deuda para {{ alumno.nombres }} {{ alumno.primer_apellido }} {{ alumno.segundo_apellido }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="alumno" value="{{ alumno.id }}">
+        <div class="mb-4">
+            <label for="valor_total" class="block text-sm font-medium text-gray-700">Valor Total</label>
+            <input type="number" name="valor_total" id="valor_total" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ingrese el valor total">
+        </div>
+        <div class="mb-4">
+            <label for="saldo_pendiente" class="block text-sm font-medium text-gray-700">Saldo Pendiente</label>
+            <input type="number" name="saldo_pendiente" id="saldo_pendiente" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ingrese el saldo pendiente">
+        </div>
+        <div class="mb-4">
+            <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
+            <select name="estado" id="estado" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="emitida">Emitida</option>
+                <option value="pagada">Pagada</option>
+            </select>
+        </div>
+        <button type="submit" class="mt-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Guardar Deuda
+        </button>
+    </form>
+</div>
+{% endblock %}

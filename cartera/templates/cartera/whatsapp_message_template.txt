@@ -1,0 +1,15 @@
+Hola *{{ nombres }} {{ primer_apellido }}* 👋, te escribe *Pre-ICFES Victor Valdez*.
+
+📅 Hemos notado que has tenido un retraso últimamente con las cuotas.
+📅 Vemos que tu cuota del *{{ fecha_vencimiento|date:"j \\d\\e F \\d\\e Y" }}* está pendiente. 
+⚠️ Llevas *{{ dias_atraso }} días* de atraso por un valor de *${{ monto|floatformat:0 }} pesos*.
+
+Hasta ahora has abonado *${{ monto_abonado|floatformat:0 }} pesos* y el saldo restante es de *${{ saldo_pendiente|floatformat:0 }} pesos*.
+
+💳 Para regularizar tu situación, puedes realizar el pago 💰 por:
+🔹 Nequi: 1234567890
+🔹 Bancolombia: 1234567890
+
+¿Tienes alguna dificultad? Escríbenos 📲 para buscar una solución juntos.
+
+¡Quedamos atentos! 😊

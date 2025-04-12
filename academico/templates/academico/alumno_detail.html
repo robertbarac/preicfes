@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">{{ titulo }}</h1>
+
+    <!-- Pestañas -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <!-- Navegación de pestañas -->
+        <nav class="flex space-x-4 border-b mb-6">
+            <button id="tab-info-alumno" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
+                Información del Alumno
+            </button>
+            {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:", " %}
+            <button id="tab-historial-asistencia" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
+                Historial de Asistencia
+            </button>
+            <button id="tab-historial-notas" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
+                Historial de Notas
+            </button>
+            {% endif %}
+            {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+            <button id="tab-estado-deuda" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
+                Estado de Deuda
+            </button>
+            <button id="tab-historial-pagos" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
+                Historial de Pagos
+            </button>
+            {% endif %}
+        </nav>
+
+        <!-- Contenido de las pestañas -->
+        <!-- Información del Alumno -->
+        <div id="content-info-alumno" class="tab-content">
+            <div class="space-y-4">
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Identificación</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.identificacion }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Nombres</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.nombres }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Primer Apellido</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.primer_apellido }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Segundo Apellido</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.segundo_apellido }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Email</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Teléfono</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.telefono }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Estado de Deuda -->
+        <div id="content-estado-deuda" class="tab-content hidden">
+            <div class="space-y-4">
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Deuda</dt>
+                        <dd class="text-sm text-gray-900">${{ deuda.valor_total|default:"0" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Saldo Pendiente</dt>
+                        <dd class="text-sm text-gray-900">${{ saldo_pendiente }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Estado</dt>
+                        <dd class="text-sm text-gray-900">{{ estado_deuda }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Historial de Pagos -->
+        <div id="content-historial-pagos" class="tab-content hidden">
+            <div class="space-y-4">
+                <!-- Tabla de cuotas -->
+                <h3 class="text-xl font-semibold mb-4">Historial de Pagos</h3>
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 border-b">Monto Total</th>
+                            <th class="py-2 px-4 border-b">Monto Abonado</th>
+                            <th class="py-2 px-4 border-b">Estado</th>
+                            <th class="py-2 px-4 border-b">Fecha de Vencimiento</th>
+                            <th class="py-2 px-4 border-b">Método de Pago</th>
+                            <th class="py-2 px-4 border-b">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cuota in cuotas %}
+                            <tr>
+                                <td class="py-2 px-4 border-b text-center">${{ cuota.monto }}</td>
+                                <td class="py-2 px-4 border-b text-center">${{ cuota.monto_abonado }}</td>
+                                <td class="py-2 px-4 border-b text-center">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if cuota.estado == 'pagada' %}
+                                            bg-green-100 text-green-800
+                                        {% elif cuota.estado == 'pagada_parcial' %}
+                                            bg-yellow-100 text-yellow-800
+                                        {% elif cuota.estado == 'vencida' %}
+                                            bg-red-100 text-red-800
+                                        {% else %}
+                                            bg-gray-100 text-gray-800
+                                        {% endif %}">
+                                        {{ cuota.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td class="py-2 px-4 border-b text-center">{{ cuota.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                <td class="py-2 px-4 border-b text-center">{{ cuota.metodo_pago|default:"No especificado" }}</td>
+                                <td class="py-2 px-4 border-b text-center">
+                                    {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+                                        <div class="flex space-x-2">
+                                            <a href="{% url 'cartera:cuota_editar' cuota.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                Editar
+                                            </a>
+                                            <a href="{% url 'cartera:cuota_eliminar' cuota.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                Eliminar
+                                            </a>
+                                            <a href="{% url 'cartera:cuota_recibo' cuota.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" target="_blank">
+                                                Generar Recibo
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="py-2 px-4 border-b text-center text-gray-600">No hay cuotas registradas.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Historial de Asistencia -->
+        <div id="content-historial-asistencia" class="tab-content hidden">
+            <div class="space-y-4">
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Total Clases</dt>
+                        <dd class="text-sm text-gray-900">{{ total_asistencias }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Asistencias</dt>
+                        <dd class="text-sm text-gray-900">{{ asistencias_presente }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Faltas</dt>
+                        <dd class="text-sm text-gray-900">{{ asistencias_faltas }}</dd>
+                    </div>
+                </dl>
+
+                <!-- Tabla de Asistencias -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold mb-4">Historial Detallado</h3>
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Clase
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Fecha
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Estado
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asistencia in asistencias %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ asistencia.clase.materia.nombre }} - {{ asistencia.clase.get_horario_display }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ asistencia.clase.fecha }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if asistencia.asistio %}
+                                            bg-green-100 text-green-800
+                                        {% else %}
+                                            bg-red-100 text-red-800
+                                        {% endif %}">
+                                        {% if asistencia.asistio %}
+                                            Presente
+                                        {% else %}
+                                            Ausente
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    No hay registros de asistencia.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de Notas -->
+        <div id="content-historial-notas" class="tab-content hidden">
+            <div class="space-y-4">
+                <!-- Tabla de Promedios por Materia -->
+                <h3 class="text-lg font-semibold mb-4">Promedios por Materia</h3>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Materia
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Promedio
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for materia in promedios_materias %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {{ materia.clase__materia__nombre }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {{ materia.promedio|floatformat:"1" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                No hay registros de notas.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Tabla de Notas Detalladas -->
+                <h3 class="text-lg font-semibold mt-6 mb-4">Historial Detallado</h3>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Materia
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Fecha
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Nota
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for nota in notas %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {{ nota.clase.materia.nombre }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {{ nota.clase.fecha }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {{ nota.nota|default:"-" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                No hay registros de notas.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+        {% if not alumno.deuda %}
+        <div class="mt-4">
+            <a href="{% url 'cartera:deuda_agregar' alumno.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                Crear Deuda
+            </a>
+        </div>
+        {% endif %}
+        {% if alumno.deuda %}
+        <div class="mt-4">
+            <a href="{% url 'cartera:cuota_agregar' alumno.deuda.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                Crear Cuota
+            </a>
+        </div>
+        {% endif %}
+    {% endif %}
+
+    <!-- Botón para regresar a la lista de alumnos -->
+    <div class="mt-6">
+        <a href="{% url 'alumnos_list' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg inline-block">
+            Volver a la lista de alumnos
+        </a>
+    </div>
+    {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:", " %}
+    <div class="mt-4">
+        <a href="{% url 'generar_constancia_preicfes' alumno.id %}" 
+        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+        target="_blank">
+            Generar Constancia PreICFES
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Script para manejar las pestañas -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('.tab-button');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Ocultar todos los contenidos
+            contents.forEach(content => content.classList.add('hidden'));
+
+            // Remover la clase activa de todas las pestañas
+            tabs.forEach(t => t.classList.remove('border-blue-500', 'text-blue-500'));
+
+            // Mostrar el contenido correspondiente
+            const target = tab.id.replace('tab-', 'content-');
+            document.getElementById(target).classList.remove('hidden');
+
+            // Marcar la pestaña como activa
+            tab.classList.add('border-blue-500', 'text-blue-500');
+        });
+    });
+
+    // Activar la primera pestaña por defecto
+    tabs[0].click();
+});
+</script>
+
+<style>
+.tab-button {
+    transition: all 0.3s ease;
+}
+.tab-button:hover {
+    color: #3B82F6; /* Color azul de Tailwind */
+}
+.tab-button:focus {
+    outline: none;
+}
+</style>
+{% endblock %}

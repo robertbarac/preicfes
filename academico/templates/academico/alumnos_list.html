@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Lista de Alumnos</h1>
+
+    <!-- Formulario de búsqueda -->
+    <form method="get" class="mb-6 bg-white p-6 rounded-lg shadow-md">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+                <input type="text" name="nombre" id="nombre" value="{{ request.GET.nombre }}"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            </div>
+
+            <div>
+                <label for="apellido" class="block text-sm font-medium text-gray-700">Apellido</label>
+                <input type="text" name="apellido" id="apellido" value="{{ request.GET.apellido }}"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            </div>
+
+            <div>
+                <label for="sede" class="block text-sm font-medium text-gray-700">Sede</label>
+                <select name="sede" id="sede" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Todas</option>
+                    {% for sede in sedes %}
+                        <option value="{{ sede.nombre }}" {% if request.GET.sede == sede.nombre %}selected{% endif %}>{{ sede.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if request.user.is_superuser %}
+            <div>
+                <label for="ciudad" class="block text-sm font-medium text-gray-700">Ciudad</label>
+                <select name="ciudad" id="ciudad" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Todas</option>
+                    {% for ciudad in ciudades %}
+                        <option value="{{ ciudad.nombre }}" {% if request.GET.ciudad == ciudad.nombre %}selected{% endif %}>{{ ciudad.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Buscar
+            </button>
+        </div>
+    </form>
+    {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:", " %}
+    <div class="mt-4">
+        <a href="/admin/academico/alumno/add/" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            Agregar Alumno
+        </a>
+    </div>
+    {% endif %}
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <div class="mt-6 flex justify-center">
+        <ol class="flex justify-center gap-1 text-xs font-medium">
+            <!-- Botón "Anterior" -->
+            {% if page_obj.has_previous %}
+            <li>
+                <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                class="inline-flex size-8 items-center justify-center rounded-sm border border-gray-100 bg-white text-gray-900">
+                    <span class="sr-only">Página anterior</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- Números de página -->
+            {% for num in page_obj.paginator.page_range %}
+            <li>
+                {% if page_obj.number == num %}
+                <span class="block size-8 rounded-sm border-blue-600 bg-blue-600 text-center leading-8 text-white">
+                    {{ num }}
+                </span>
+                {% else %}
+                <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}"
+                class="block size-8 rounded-sm border border-gray-100 bg-white text-center leading-8 text-gray-900">
+                    {{ num }}
+                </a>
+                {% endif %}
+            </li>
+            {% endfor %}
+
+            <!-- Botón "Siguiente" -->
+            {% if page_obj.has_next %}
+            <li>
+                <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}"
+                class="inline-flex size-8 items-center justify-center rounded-sm border border-gray-100 bg-white text-gray-900">
+                    <span class="sr-only">Página siguiente</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+            </li>
+            {% endif %}
+        </ol>
+    </div>
+    {% endif %}
+
+    <!-- Tabla de alumnos -->
+    <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+        <table class="min-w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre completo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identificación</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salón</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sede</th>
+                    {% if request.user.is_superuser %}
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ciudad</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for alumno in page_obj %}
+                <tr onclick="window.location='{% url 'alumno_detail' alumno.id %}';" class="cursor-pointer hover:bg-gray-50 transition duration-200">
+                    <td class="px-6 py-4 whitespace-nowrap">{{ alumno.nombres }} {{ alumno.primer_apellido }} {{ alumno.segundo_apellido }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ alumno.identificacion }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ alumno.grupo_actual.salon.numero }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ alumno.grupo_actual.salon.sede.nombre }}</td>
+                    {% if request.user.is_superuser %}
+                    <td class="px-6 py-4 whitespace-nowrap">{{ alumno.municipio.nombre }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

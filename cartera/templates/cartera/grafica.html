@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load cartera_tags %}
+{% load cartera_tags humanize %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Reporte Financiero</h1>
+
+    <!-- Filtro para GRÁFICA (año y municipio para superuser) -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <form method="get" class="flex items-center space-x-4">
+            <div>
+                <label for="año" class="block text-sm font-medium text-gray-700">Año Gráfica:</label>
+                <select name="año" id="año" class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm">
+                    {% for año in años_grafica %}
+                        <option value="{{ año }}" {% if año == año_seleccionado %}selected{% endif %}>{{ año }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if request.user.is_superuser %}
+            <div>
+                <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio:</label>
+                <select name="municipio" id="municipio" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm">
+                    <option value="">Todos los municipios</option>
+                    {% for municipio in municipios %}
+                        <option value="{{ municipio.id }}" {% if municipio.id == municipio_seleccionado %}selected{% endif %}>{{ municipio.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <button type="submit" class="mt-6 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Actualizar Gráfica
+            </button>
+        </form>
+    </div>
+
+    <!-- Gráfica anual (se mantiene igual) -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-xl font-semibold mb-4">Ingresos vs Egresos - {{ año_seleccionado }}</h2>
+        <img src="{% url 'cartera:grafica' %}?año={{ año_seleccionado }}&grafica=1{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
+             alt="Gráfica de Ingresos y Egresos" 
+             class="w-full h-auto border rounded">
+    </div>
+
+    <!-- Filtro para CUMPLIMIENTO (año + mes + municipio para superuser) -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <form method="get" class="flex items-center space-x-4">
+            <div>
+                <label for="año_cumplimiento" class="block text-sm font-medium text-gray-700">Año Cumplimiento:</label>
+                <select name="año_cumplimiento" id="año_cumplimiento" class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm">
+                    {% for año in años_cumplimiento %}
+                        <option value="{{ año }}" {% if año == año_cumplimiento %}selected{% endif %}>{{ año }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="mes_cumplimiento" class="block text-sm font-medium text-gray-700">Mes:</label>
+                <select name="mes_cumplimiento" id="mes_cumplimiento" class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm">
+                    {% for num, nombre in meses %}
+                        <option value="{{ num }}" {% if num == mes_cumplimiento %}selected{% endif %}>{{ nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if request.user.is_superuser %}
+            <div>
+                <label for="municipio_cumplimiento" class="block text-sm font-medium text-gray-700">Municipio:</label>
+                <select name="municipio" id="municipio_cumplimiento" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm">
+                    <option value="">Todos los municipios</option>
+                    {% for municipio in municipios %}
+                        <option value="{{ municipio.id }}" {% if municipio.id == municipio_seleccionado %}selected{% endif %}>{{ municipio.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <button type="submit" class="mt-6 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Actualizar Cumplimiento
+            </button>
+        </form>
+    </div>
+
+    <!-- Sección de Cumplimiento (actualiza las variables) -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Cumplimiento de Meta - {{ nombre_mes }} {{ año_seleccionado }}</h2>
+        
+        <!-- Cambia todas las variables de "meta_mensual" a "meta_mensual", "ingresos_mes", etc. -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-500">Meta Programada</h3>
+                <p class="text-2xl font-semibold">${{ meta_mensual|floatformat:0|intcomma }}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-500">Recaudado en el mes</h3>
+                <p class="text-2xl font-semibold">${{ ingresos_mes|floatformat:0|intcomma }}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-500">Cumplimiento</h3>
+                <p class="text-2xl font-semibold {% if porcentaje_cumplimiento >= 100 %}text-green-600{% elif porcentaje_cumplimiento >= 80 %}text-yellow-500{% else %}text-red-600{% endif %}">
+                    {{ porcentaje_cumplimiento|floatformat:1 }}%
+                </p>
+            </div>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="mb-4">
+            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                <span>0%</span>
+                <span>100%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="h-2.5 rounded-full {% if porcentaje_cumplimiento >= 100 %}bg-green-600{% elif porcentaje_cumplimiento >= 80 %}bg-yellow-500{% else %}bg-red-600{% endif %}" 
+                     style="width: {{ porcentaje_cumplimiento }}%"></div>
+            </div>
+        </div>
+
+        <!-- Balance -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-blue-800">Pendiente por recaudar</h3>
+                <p class="text-xl font-semibold text-blue-900">
+                    ${{ meta_mensual|subtract:ingresos_mes|floatformat:0|intcomma }}
+                </p>
+            </div>
+            <div class="{% if superavit_deficit >= 0 %}bg-green-50{% else %}bg-red-50{% endif %} p-4 rounded-lg">
+                <h3 class="text-sm font-medium {% if superavit_deficit >= 0 %}text-green-800{% else %}text-red-800{% endif %}">
+                    {% if superavit_deficit >= 0 %}Superávit{% else %}Déficit{% endif %}
+                </h3>
+                <p class="text-xl font-semibold {% if superavit_deficit >= 0 %}text-green-900{% else %}text-red-900{% endif %}">
+                    ${{ superavit_deficit|absolute|floatformat:0|intcomma }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

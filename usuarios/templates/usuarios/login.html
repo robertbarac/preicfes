@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tailwind_filters %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.4.1/css/glide.core.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.4.1/css/glide.theme.min.css">
+<style>
+    .glide__slide img {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+    }
+    .glide__bullets {
+        bottom: 20px;
+    }
+    .glide__bullet {
+        background: rgba(255, 255, 255, 0.5);
+    }
+    .glide__bullet--active {
+        background: white;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.4.1/glide.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new Glide('.glide', {
+        type: 'carousel',
+        perView: 1,
+        autoplay: 5000,
+        hoverpause: true,
+        animationDuration: 1500,
+        gap: 0
+    }).mount();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Slider de imágenes -->
+            <div class="glide">
+                <div class="glide__track" data-glide-el="track">
+                    <ul class="glide__slides">
+                        <li class="glide__slide">
+                            <img src="{% static 'img/fachada1.PNG' %}" alt="Fachada 1">
+                        </li>
+                        <li class="glide__slide">
+                            <img src="{% static 'img/fachada2.PNG' %}" alt="Fachada 2">
+                        </li>
+                        <li class="glide__slide">
+                            <img src="{% static 'img/fachada3.PNG' %}" alt="Fachada 3">
+                        </li>
+                    </ul>
+                </div>
+                <div class="glide__bullets" data-glide-el="controls[nav]">
+                    <button class="glide__bullet" data-glide-dir="=0"></button>
+                    <button class="glide__bullet" data-glide-dir="=1"></button>
+                    <button class="glide__bullet" data-glide-dir="=2"></button>
+                </div>
+            </div>
+
+            <!-- Formulario de login -->
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <h1 class="text-2xl font-bold text-gray-900 mb-6">Iniciar Sesión</h1>
+                <form action="" method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <button 
+                        class="w-full inline-block rounded border border-indigo-600 bg-indigo-600 px-12 py-3 text-sm font-medium text-white hover:bg-transparent hover:text-indigo-600 focus:outline-none focus:ring active:text-indigo-500 mt-4"
+                        type="submit">
+                        Iniciar Sesión
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

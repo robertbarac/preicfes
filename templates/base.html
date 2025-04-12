@@ -1,0 +1,247 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-gray-100">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preicfes Víctor Valdez</title>
+    <!-- Incluye Tailwind CSS (puedes usar un CDN para pruebas) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="h-full">
+    <div class="min-h-full">
+      <!-- Barra de navegación -->
+      <nav class="bg-gray-800">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div class="flex h-16 items-center justify-between">
+            <!-- Logo (extrema izquierda) -->
+            <div class="shrink-0 flex items-center mr-4">
+              <img
+                class="h-12 w-auto"
+                src="{% static 'img/logo.png' %}"
+                alt="Logo"
+              />
+            </div>
+
+            <!-- Enlaces de navegación (centrados) -->
+            {% if user.is_authenticated %}
+            <div class="hidden md:block mx-auto">
+              <!-- mx-auto para centrar -->
+              <div class="flex items-baseline space-x-2">
+                {% if user.is_staff %}
+                <div class="relative group">
+                  <button
+                    class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                  >
+                    Académico
+                    <svg
+                      class="inline-block w-4 h-4 ml-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div
+                    class="absolute hidden group-hover:block bg-gray-800 rounded-md shadow-lg py-2 mt-2 min-w-[200px]"
+                  >
+                    <a
+                      href="{% url 'alumnos_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Alumnos
+                    </a>
+                    <a
+                      href="{% url 'salon_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Salones
+                    </a>
+                    <a
+                      href="{% url 'grupo_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Grupos
+                    </a>
+                    <a
+                      href="{% url 'clase_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Clases
+                    </a>
+                    <a
+                      href="{% url 'profesor_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Profesores
+                    </a>
+                    <a
+                      href="{% url 'cronograma' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Cronograma
+                    </a>
+                  </div>
+                </div>
+                {% else %}
+                <a
+                  href="{% url 'profesor_clases' user.id %}"
+                  class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white"
+                  >Mis Clases</a
+                >
+                {% endif %} 
+                {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+                <div class="relative group">
+                  <button
+                    class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                  >
+                    Cartera
+                    <svg
+                      class="inline-block w-4 h-4 ml-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div
+                    class="absolute hidden group-hover:block bg-gray-800 rounded-md shadow-lg py-2 mt-2 min-w-[200px]"
+                  >
+                    <a
+                      href="{% url 'cartera:mantenimiento' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Actualizar Estados
+                    </a>
+                    <a
+                      href="{% url 'cartera:cuotas_vencidas' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Cuotas Vencidas
+                    </a>
+                    <a
+                      href="{% url 'cartera:proximos_pagos' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Próximos Pagos
+                    </a>
+                    <a
+                      href="{% url 'cartera:grafica' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Gráficas y Cumplimientos
+                    </a>
+                    <a
+                      href="{% url 'cartera:informe_diario' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Informe del día
+                    </a>
+                    <a
+                      href="{% url 'cartera:paz_salvo' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Certificado Paz y Salvo
+                    </a>
+                    <a
+                      href="{% url 'cartera:becados_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Becados
+                    </a>
+                  </div>
+                </div>
+                {% endif %}
+                
+                {% if request.user.is_staff %}
+                <a
+                  href="{% url 'admin:index' %}"
+                  class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  Admin
+                </a>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Menú de usuario (derecha) -->
+            <div class="flex items-center space-x-4">
+              {% if user.is_authenticated %}
+              <!-- Notificaciones -->
+              <button
+                type="button"
+                class="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none"
+              >
+                <span class="absolute -inset-1.5"></span>
+                <span class="sr-only">View notifications</span>
+                <svg
+                  class="size-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                  data-slot="icon"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+                  />
+                </svg>
+              </button>
+              <!-- Botón de cerrar sesión -->
+              <div class="flex space-x-4">
+                <a
+                  href="{% url 'cambiar_contraseña' %}"
+                  class="text-sm font-medium text-gray-300 hover:text-white"
+                  >Cambiar contraseña</a
+                >
+                <form action="{% url 'logout' %}" method="post" class="inline">
+                  {% csrf_token %}
+                  <button
+                    type="submit"
+                    class="text-sm font-medium text-gray-300 hover:text-white"
+                  >
+                    Cerrar sesión
+                  </button>
+                </form>
+              </div>
+              {% else %}
+              <!-- Botón de iniciar sesión -->
+              <a
+                href="{% url 'login' %}"
+                class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+              >
+                Iniciar sesión
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Contenido principal -->
+      <main>
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {% block content %}
+          <!-- El contenido de las páginas se insertará aquí -->
+          {% endblock %}
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
