@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
-from datetime import time
+from datetime import time, date
 from ubicaciones.models import Salon
 from usuarios.models import Usuario
 from ubicaciones.models import Municipio
@@ -47,6 +47,18 @@ class Alumno(models.Model):
         help_text="Marcar si el estudiante tiene beca"
     )
 
+    # Fechas de ingreso y culminación
+    fecha_ingreso = models.DateField(
+        default=date(2025, 1, 1),
+        verbose_name="Fecha de ingreso",
+        help_text="Fecha en que el alumno ingresó al preicfes"
+    )
+    fecha_culminacion = models.DateField(
+        default=date(2025, 8, 8),
+        verbose_name="Fecha de culminación",
+        help_text="Fecha en que el alumno culmina su estancia en el preicfes"
+    )
+    
     # Campos opcionales (pueden ser null o blank)
     celular = models.CharField(max_length=15, blank=True, null=True)
 

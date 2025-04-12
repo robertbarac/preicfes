@@ -677,9 +677,7 @@ class PazSalvoPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
         }
         
         # Obtener información adicional para el certificado
-        # Fecha de ingreso (primera clase del alumno)
-        primera_clase = None
-        ultima_clase_regular = None
+        # Usar fecha_ingreso y fecha_culminacion del alumno
         horario_clase = "8:00 a.m. a 11:00 a.m."  # Horario por defecto
         dias_semana = []
         
@@ -687,49 +685,64 @@ class PazSalvoPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
         if alumno.grupo_actual:
             # Filtrar clases excluyendo las de materia 'Simulacro'
             clases = alumno.grupo_actual.clases.all().select_related('materia').order_by('fecha')
-            clases_regulares = clases.exclude(materia__nombre__icontains='Simulacro')
+            clases_regulares = clases.exclude(materia__nombre__icontains='Simulacro').filter(estado='vista')
             
             if clases_regulares.exists():
-                primera_clase = clases_regulares.first()
-                ultima_clase_regular = clases_regulares.last()
-                
-                # Obtener el horario de la última clase regular (no simulacro)
-                if ultima_clase_regular and ultima_clase_regular.horario:
-                    hora_inicio = ultima_clase_regular.get_hora_inicio()
-                    hora_fin = ultima_clase_regular.get_hora_fin()
-                    horario_clase = f"{hora_inicio.strftime('%I:%M %p')} a {hora_fin.strftime('%I:%M %p')}"
-                
                 # Determinar los días de la semana en que asiste
-                dias_por_semana = {}
+                dias_semana = set()
                 for clase in clases_regulares:
-                    dia_semana = clase.fecha.strftime("%A").lower()
-                    dias_por_semana[dia_semana] = True
+                    dia_semana = clase.fecha.strftime('%A')
+                    dias_semana.add(dia_semana)
                 
                 # Traducir días de la semana al español
                 traduccion_dias = {
-                    'monday': 'lunes',
-                    'tuesday': 'martes',
-                    'wednesday': 'miércoles',
-                    'thursday': 'jueves',
-                    'friday': 'viernes',
-                    'saturday': 'sábado',
-                    'sunday': 'domingo'
+                    'Monday': 'lunes',
+                    'Tuesday': 'martes',
+                    'Wednesday': 'miércoles',
+                    'Thursday': 'jueves',
+                    'Friday': 'viernes',
+                    'Saturday': 'sábado',
+                    'Sunday': 'domingo'
                 }
                 
-                dias_semana = [traduccion_dias.get(dia, dia) for dia in dias_por_semana.keys()]
+                dias_semana = [traduccion_dias.get(dia, dia) for dia in dias_semana]
                 
                 # Ordenar los días de la semana en orden cronológico
                 orden_dias = {'lunes': 1, 'martes': 2, 'miércoles': 3, 'jueves': 4, 'viernes': 5, 'sábado': 6, 'domingo': 7}
                 dias_semana.sort(key=lambda x: orden_dias.get(x, 8))
+                
+                # Determinar los horarios de clase
+                horas_inicio = set()
+                horas_fin = set()
+                
+                for clase in clases_regulares:
+                    hora_inicio = clase.get_hora_inicio()
+                    hora_fin = clase.get_hora_fin()
+                    horas_inicio.add(hora_inicio)
+                    horas_fin.add(hora_fin)
+                
+                # Formatear las horas para el texto
+                if horas_inicio and horas_fin:
+                    hora_inicio_min = min(horas_inicio)
+                    hora_fin_max = max(horas_fin)
+                    
+                    # Formatear en AM/PM
+                    def formatear_hora(hora):
+                        hora_12 = hora.strftime('%I:%M')
+                        # Eliminar cero inicial si existe
+                        if hora_12.startswith('0'):
+                            hora_12 = hora_12[1:]
+                        ampm = 'am' if hora.hour < 12 else 'pm'
+                        return f"{hora_12} {ampm}"
+                    
+                    horario_clase = f"{formatear_hora(hora_inicio_min)} a {formatear_hora(hora_fin_max)}"
         
-        # Calcular duración del curso en meses
-        duracion_meses = 3  # Valor por defecto
-        if primera_clase and ultima_clase_regular:
-            # Calcular diferencia en meses
-            meses = (ultima_clase_regular.fecha.year - primera_clase.fecha.year) * 12
-            meses += ultima_clase_regular.fecha.month - primera_clase.fecha.month
-            if meses > 0:
-                duracion_meses = meses
+        # Calcular duración del curso en meses usando fecha_ingreso y fecha_culminacion
+        from dateutil.relativedelta import relativedelta
+        duracion = relativedelta(alumno.fecha_culminacion, alumno.fecha_ingreso)
+        duracion_meses = duracion.months + (duracion.years * 12)
+        if duracion_meses == 0:
+            duracion_meses = 1  # Mínimo 1 mes
         
         # Diccionario para convertir números a texto en español
         numeros_texto = {
@@ -820,22 +833,17 @@ class PazSalvoPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
                     texto_dias = f"los días {', '.join(dias_semana)}"
         
         
-        # Mes y año de finalización
-        mes_finalizacion = "diciembre"
-        anio_finalizacion = fecha_actual.year
-        if ultima_clase_regular:
-            mes_en_ingles = ultima_clase_regular.fecha.strftime("%B")
-            mes_finalizacion = meses_es.get(mes_en_ingles, mes_en_ingles)
-            anio_finalizacion = ultima_clase_regular.fecha.year
+        # Mes y año de finalización desde fecha_culminacion
+        mes_en_ingles = alumno.fecha_culminacion.strftime("%B")
+        mes_finalizacion = meses_es.get(mes_en_ingles, mes_en_ingles)
+        anio_finalizacion = alumno.fecha_culminacion.year
         
-        # Fecha de ingreso
-        fecha_ingreso = "la fecha de inscripción"
-        if primera_clase:
-            dia = primera_clase.fecha.day
-            mes_en_ingles = primera_clase.fecha.strftime("%B")
-            mes = meses_es.get(mes_en_ingles, mes_en_ingles)
-            anio = primera_clase.fecha.year
-            fecha_ingreso = f"{dia} de {mes} de {anio}"
+        # Fecha de ingreso desde fecha_ingreso
+        dia = alumno.fecha_ingreso.day
+        mes_en_ingles = alumno.fecha_ingreso.strftime("%B")
+        mes = meses_es.get(mes_en_ingles, mes_en_ingles)
+        anio = alumno.fecha_ingreso.year
+        fecha_ingreso = f"{dia} de {mes} de {anio}"
         
         # Vamos a crear los párrafos por separado para evitar problemas con ReportLab
         # Párrafo 1
@@ -899,6 +907,9 @@ class PazSalvoPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
         elements.append(linea2)
         elements.append(Spacer(1, 30))
         
+        elements.append(Spacer(1, 30))
+        elements.append(Spacer(1, 30))
+
         # Firma del usuario que genera el documento
         nombre_completo = f"{request.user.first_name} {request.user.last_name}"
         if not nombre_completo.strip():
@@ -915,8 +926,8 @@ class PazSalvoPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
                 # Agregar la imagen de la firma
                 firma_img = Image(firma.imagen.path)
                 # Ajustar el tamaño de la imagen para que se vea bien en el PDF
-                firma_img.drawHeight = 1.2*inch
-                firma_img.drawWidth = 2.5*inch
+                firma_img.drawHeight = 0.5*inch
+                firma_img.drawWidth = 2*inch
                 elements.append(firma_img)
                 elements.append(Spacer(1, 5))
             else:
@@ -926,6 +937,7 @@ class PazSalvoPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
             # Si no tiene firma registrada, mostrar la línea
             elements.append(Paragraph("___________________________________________", styles['Center']))
         
+
         # Agregar el nombre y cargo
         elements.append(Paragraph(f"<b>{nombre_completo}</b>", styles['Center']))
         elements.append(Paragraph("Jefe de Cartera del Pre ICFES", styles['Center']))
@@ -938,7 +950,7 @@ class PazSalvoPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
         elements.append(Spacer(1, 30))
         
         # Pie de página
-        elements.append(Paragraph("VALDEZ Y ANDRADE SOLUCIONES S.A.S NIT 901.272.598 - 7", styles['Center']))
+        elements.append(Spacer(1,30))
         elements.append(Spacer(1, 10))
         elements.append(Paragraph("CRA. 60A # 29 - 47 BARRIO LOS ANGELES", styles['Center']))
         
@@ -1089,7 +1101,7 @@ class ReciboPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
             ['Tipo de Identificación:', f'{dict(Alumno.TIPO_IDENTIFICACION)[cuota.deuda.alumno.tipo_identificacion]}'],
             ['Identificación:', f'{cuota.deuda.alumno.identificacion}'],
             ['Fecha de Vencimiento:', f'{cuota.fecha_vencimiento.strftime("%d/%m/%Y")}'],
-            ['Fecha Actual:', f'{timezone.now().strftime("%d/%m/%Y")}'],
+            ['Fecha de Pago:', f'{timezone.now().strftime("%d/%m/%Y")}'],
             ['Monto Abonado:', f'${cuota.monto_abonado:.1f}'],
             ['Método de Pago:', f'{cuota.metodo_pago}'],
             ['Saldo Pendiente:', f'${cuota.deuda.saldo_pendiente:.1f}'],

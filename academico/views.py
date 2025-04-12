@@ -9,11 +9,11 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.shortcuts import redirect
 from django.db.models import Count 
-from .models import Alumno, Clase, Grupo, Materia
+from .models import Alumno, Clase, Grupo, Materia, Asistencia, Nota
 from ubicaciones.models import Municipio, Sede
 from cartera.models import Deuda, Cuota  # Importar los modelos de la app cartera
 from django.contrib.auth.models import User
-from usuarios.models import Usuario
+from usuarios.models import Usuario, Firma
 from datetime import datetime
 from calendar import month_name
 from django.db.models import F
@@ -21,7 +21,6 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
 from django.db import transaction
-from .models import Asistencia, Nota
 from django.db.models import Avg
 from django.views.generic.edit import CreateView, UpdateView
 from django.urls import reverse_lazy
@@ -41,7 +40,6 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Page
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from io import BytesIO
-from academico.models import Alumno  # Asegúrate de importar el modelo Alumno
 
 class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
     model = Alumno
@@ -549,9 +547,7 @@ class GenerarCertificadosSimulacroView(View):
             
             elements = []
             logo_path = os.path.join(settings.BASE_DIR, 'static', 'img/logo.png')
-            
-            # Buscar si el usuario tiene una firma digital registrada
-            from usuarios.models import Firma
+
             try:
                 # Buscar la firma del usuario actual
                 coordinador = request.user
@@ -571,6 +567,9 @@ class GenerarCertificadosSimulacroView(View):
                 elements.append(Spacer(1, 20))
                 elements.append(Paragraph('<b>HACE CONSTAR QUE</b>', styles['Center']))
                 elements.append(Spacer(1, 20))
+                elements.append(Spacer(1, 20))
+                elements.append(Spacer(1, 20))
+                elements.append(Spacer(1, 20))
                 
                 # Cuerpo del certificado
                 nombre_completo = f"{alumno.nombres} {alumno.primer_apellido}{' ' + alumno.segundo_apellido if alumno.segundo_apellido else ''}"
@@ -586,20 +585,23 @@ class GenerarCertificadosSimulacroView(View):
                 elements.append(Paragraph(texto_certificado, styles['Justify']))
                 elements.append(Spacer(1, 40))
                 
+                
                 # Texto de constancia
                 elements.append(Paragraph(
                     f"<para align='justify'>Para mayor constancia se firma y se sella a los ({fecha_actual.day}) días del mes de {mes_actual_es} de {fecha_actual.year}.</para>",
                     styles['Justify']
                 ))
                 elements.append(Spacer(1, 50))
+                elements.append(Spacer(1, 40))
+                elements.append(Spacer(1, 40))
                 
                 # Firma
                 if firma and firma.imagen and os.path.exists(firma.imagen.path):
                     # Agregar la imagen de la firma
                     firma_img = Image(firma.imagen.path)
                     # Ajustar el tamaño de la imagen para que se vea bien en el PDF
-                    firma_img.drawHeight = 1.2*inch
-                    firma_img.drawWidth = 2.5*inch
+                    firma_img.drawHeight = 0.5*inch
+                    firma_img.drawWidth = 2*inch
                     elements.append(firma_img)
                     elements.append(Spacer(1, 5))
                 else:
@@ -638,7 +640,13 @@ class GenerarCertificadosSimulacroView(View):
             raise Http404(f"Error al generar certificados: {str(e)}")
 
 
-class GenerarConstanciaPreICFESView(View):
+class GenerarConstanciaPreICFESView(UserPassesTestMixin, LoginRequiredMixin, View):
+    login_url = '/login/'
+    
+    def test_func(self):
+        # Permitir acceso solo a superusers y miembros del grupo 'SecretariaCartera'
+        user = self.request.user
+        return user.is_superuser or user.groups.filter(name='SecretariaAcademica').exists()
     def get(self, request, alumno_id):
         alumno = get_object_or_404(Alumno, pk=alumno_id)
         
@@ -703,9 +711,7 @@ class GenerarConstanciaPreICFESView(View):
         elements.append(Paragraph('<b>EL PRE ICFES VICTOR VALDEZ</b>', styles['Title']))
         elements.append(Spacer(1, 20))
         elements.append(Paragraph('<b>NIT - 9012725987</b>', styles['Title']))
-        elements.append(Spacer(1, 20))
-        elements.append(Paragraph('<b>HACE CONSTAR QUE</b>', styles['Center']))
-        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 30))
         
         # Cuerpo del certificado
         nombre_completo = f"{alumno.nombres} {alumno.primer_apellido}{' ' + alumno.segundo_apellido if alumno.segundo_apellido else ''}"
@@ -723,51 +729,112 @@ class GenerarConstanciaPreICFESView(View):
             # Si hay algún error, continuar sin la fecha de la primera clase
             pass
         
-        # Establecer las fechas de inicio y fin
-        if primera_clase:
-            dia_inicio = primera_clase.fecha.day
-            mes_inicio_en_ingles = primera_clase.fecha.strftime('%B')
-            mes_inicio = meses_es.get(mes_inicio_en_ingles, mes_inicio_en_ingles)
-            anio_inicio = primera_clase.fecha.year
+        # Usar las fechas de ingreso y culminación del alumno
+        dia_inicio = alumno.fecha_ingreso.day
+        mes_inicio_en_ingles = alumno.fecha_ingreso.strftime('%B')
+        mes_inicio = meses_es.get(mes_inicio_en_ingles, mes_inicio_en_ingles)
+        anio_inicio = alumno.fecha_ingreso.year
+        
+        # Fecha de finalización desde el campo fecha_culminacion
+        mes_fin_en_ingles = alumno.fecha_culminacion.strftime('%B')
+        mes_fin = meses_es.get(mes_fin_en_ingles, mes_fin_en_ingles)
+        anio_fin = alumno.fecha_culminacion.year
+        
+        # Calcular la duración en meses
+        from dateutil.relativedelta import relativedelta
+        duracion = relativedelta(alumno.fecha_culminacion, alumno.fecha_ingreso)
+        duracion_meses = duracion.months + (duracion.years * 12)
+        
+        # Obtener las clases del alumno (no simulacros)
+        clases_alumno = Clase.objects.filter(
+            grupo=alumno.grupo_actual,
+            estado='vista'
+        ).exclude(
+            horario__in=['08:00-12:00', '08:00-17:00']  # Excluir simulacros
+        ).order_by('fecha')
+        
+        # Determinar los días de la semana en que el alumno tiene clases
+        dias_semana = set()
+        for clase in clases_alumno:
+            dia_semana = clase.fecha.strftime('%A')
+            dias_semana.add(dia_semana)
+        
+        # Convertir los días de la semana a español
+        dias_semana_es = {
+            'Monday': 'lunes',
+            'Tuesday': 'martes',
+            'Wednesday': 'miércoles',
+            'Thursday': 'jueves',
+            'Friday': 'viernes',
+            'Saturday': 'sábado',
+            'Sunday': 'domingo'
+        }
+        
+        dias_clases = [dias_semana_es.get(dia, dia) for dia in dias_semana]
+        dias_clases.sort()  # Ordenar los días
+        
+        # Formatear los días para el texto
+        if len(dias_clases) == 1:
+            texto_dias = f"los días {dias_clases[0]}"
+        elif len(dias_clases) == 2:
+            texto_dias = f"los días {dias_clases[0]} y {dias_clases[1]}"
         else:
-            # Si no se encuentra la primera clase, usar una fecha genérica
-            dia_inicio = fecha_actual.day
-            mes_inicio = mes_actual_es
-            anio_inicio = fecha_actual.year
+            texto_dias = f"los días {', '.join(dias_clases[:-1])} y {dias_clases[-1]}"
         
-        # Fecha de finalización (agosto del año actual)
-        mes_fin = "agosto"
-        anio_actual = fecha_actual.year
+        # Determinar los horarios de clase
+        horas_inicio = set()
+        horas_fin = set()
         
-        texto_constancia = f"""
-        <para align=justify>
-        <b>{nombre_completo}</b>, identificado(a) con {alumno.get_tipo_identificacion_display()}, N° <b>{alumno.identificacion}</b>, 
-        se encuentra matriculado(a) y asistiendo regularmente al curso de PRE ICFES en nuestra Institución, 
-        al cual ingresó desde el {dia_inicio} de {mes_inicio} de {anio_inicio}. El programa tiene una duración de cinco (5) meses 
-        y se espera que finalice en el mes de {mes_fin} de {anio_actual}.
-        </para>
-        """
+        for clase in clases_alumno:
+            hora_inicio = clase.get_hora_inicio()
+            hora_fin = clase.get_hora_fin()
+            horas_inicio.add(hora_inicio)
+            horas_fin.add(hora_fin)
+        
+        # Formatear las horas para el texto
+        if horas_inicio and horas_fin:
+            hora_inicio_min = min(horas_inicio)
+            hora_fin_max = max(horas_fin)
+            
+            # Formatear en AM/PM
+            def formatear_hora(hora):
+                hora_12 = hora.strftime('%I:%M')
+                # Eliminar cero inicial si existe
+                if hora_12.startswith('0'):
+                    hora_12 = hora_12[1:]
+                ampm = 'am' if hora.hour < 12 else 'pm'
+                return f"{hora_12} {ampm}"
+            
+            texto_horario = f"de {formatear_hora(hora_inicio_min)} hasta las {formatear_hora(hora_fin_max)}"
+        else:
+            # Si no hay clases, usar un texto genérico
+            texto_horario = "en horario regular"
+        
+        # Añadir cada párrafo por separado
+        elements.append(Paragraph("<b>CERTIFICA QUE</b>", styles['Center']))
+        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 20))
+        
+        
+        texto_constancia = f"""Que <b>{nombre_completo}</b>, identificada(o) con {alumno.get_tipo_identificacion_display()} N° <b>{alumno.identificacion}</b>, 
+        se encuentra realizando con nosotros el curso de PRE ICFES, al cual ingresó en modalidad presencial {texto_dias} 
+        {texto_horario} desde {mes_inicio} del {anio_inicio}. Fecha de finalización del mes de {mes_fin} de {anio_fin}."""
         
         elements.append(Paragraph(texto_constancia, styles['Justify']))
         elements.append(Spacer(1, 40))
+        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 20))
         
-        # Texto de constancia
-        elements.append(Paragraph(
-            f"<para align='justify'>Para mayor constancia se firma y se sella a los ({fecha_actual.day}) días del mes de {mes_actual_es} de {fecha_actual.year}.</para>",
-            styles['Justify']
-        ))
-        elements.append(Spacer(1, 50))
-        
-        # Buscar si el usuario tiene una firma digital registrada
-        from usuarios.models import Firma
+        elements.append(Spacer(1, 30))
+        elements.append(Spacer(1, 30))
+        elements.append(Spacer(1, 30))
+
         try:
-            # Buscar la firma de Kelly Johana Padilla (o cualquier coordinador académico)
-            # Esto asume que hay un usuario con ese nombre o que se ha configurado previamente
-            # Si no existe, puedes buscar por otro criterio o usar request.user
-            coordinador = Usuario.objects.filter(first_name__icontains='Kelly', last_name__icontains='Padilla').first()
-            if not coordinador:
-                # Si no encuentra el usuario específico, usar el usuario actual
-                coordinador = request.user
+            # Usar la firma del usuario actual que está generando el certificado
+            coordinador = request.user
                 
             firma = Firma.objects.get(usuario=coordinador)
             # Si tiene firma digital, agregarla al documento
@@ -775,8 +842,8 @@ class GenerarConstanciaPreICFESView(View):
                 # Agregar la imagen de la firma
                 firma_img = Image(firma.imagen.path)
                 # Ajustar el tamaño de la imagen para que se vea bien en el PDF
-                firma_img.drawHeight = 1.2*inch
-                firma_img.drawWidth = 2.5*inch
+                firma_img.drawHeight = 0.5*inch
+                firma_img.drawWidth = 2*inch
                 elements.append(firma_img)
                 elements.append(Spacer(1, 5))
             else:
@@ -798,7 +865,7 @@ class GenerarConstanciaPreICFESView(View):
         telefono = coordinador.telefono if hasattr(coordinador, 'telefono') and coordinador.telefono else ""
         if telefono:
             elements.append(Paragraph(f"Cel: {telefono}", styles['Center']))
-        elements.append(Spacer(1, 30))
+        
         
         # Pie de página en letras pequeñas
         elements.append(Paragraph("<b>VALDEZ Y ANDRADE SOLUCIONES S.A.S</b>", styles['SmallCenter']))
