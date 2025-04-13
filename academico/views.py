@@ -460,6 +460,14 @@ class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         tipo_horario = self.request.GET.get('tipo')  # AM o PM
         municipio_id = self.request.GET.get('municipio')
         
+        # Convertir 'None' en None para evitar errores de tipo
+        if sede_id == 'None':
+            sede_id = None
+        if municipio_id == 'None':
+            municipio_id = None
+        if tipo_horario == 'None':
+            tipo_horario = None
+        
         # Establecer fecha inicial si no se proporciona
         if fecha_str:
             fecha_inicial = datetime.strptime(fecha_str, '%Y-%m-%d').date()
@@ -488,13 +496,13 @@ class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Aplicar filtros a las clases
         clases = Clase.objects.filter(fecha__range=[fecha_inicial, fechas[-1]])
         
-        if sede_id:
+        if sede_id and sede_id != 'None':
             clases = clases.filter(salon__sede_id=sede_id)
         elif not self.request.user.is_superuser:
             # Si no se selecciona sede, filtrar por municipio del usuario
             clases = clases.filter(salon__sede__municipio=self.request.user.municipio)
         
-        if municipio_id and self.request.user.is_superuser:
+        if municipio_id and municipio_id != 'None' and self.request.user.is_superuser:
             clases = clases.filter(salon__sede__municipio_id=municipio_id)
         
         if tipo_horario:

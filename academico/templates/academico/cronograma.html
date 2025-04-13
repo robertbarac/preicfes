@@ -7,6 +7,8 @@
     <!-- Filtros -->
     <div class="bg-white rounded-lg shadow p-4 mb-4">
         <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Campo oculto para mantener la fecha actual -->
+            <input type="hidden" name="fecha" value="{{ fecha_actual|date:'Y-m-d' }}">
             {% if user.is_superuser %}
             <div>
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
@@ -52,12 +54,12 @@
 
     <!-- Navegación de semanas -->
     <div class="flex justify-between items-center mb-4">
-        <a href="?fecha={{ fecha_anterior|date:'Y-m-d' }}&sede={{ sede_seleccionada }}&tipo={{ tipo_horario }}&municipio={{ municipio_seleccionado }}" 
+        <a href="?fecha={{ fecha_anterior|date:'Y-m-d' }}&sede={% if sede_seleccionada and sede_seleccionada != 'None' %}{{ sede_seleccionada }}{% endif %}&tipo={% if tipo_horario and tipo_horario != 'None' %}{{ tipo_horario }}{% endif %}&municipio={% if municipio_seleccionado and municipio_seleccionado != 'None' %}{{ municipio_seleccionado }}{% endif %}" 
            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
             <i class="fas fa-chevron-left"></i> Semana Anterior
         </a>
         <h2 class="text-xl font-bold">{{ fecha_actual|date:'d/m/Y' }} - {{ fechas.5|date:'d/m/Y' }}</h2>
-        <a href="?fecha={{ fecha_siguiente|date:'Y-m-d' }}&sede={{ sede_seleccionada }}&tipo={{ tipo_horario }}&municipio={{ municipio_seleccionado }}" 
+        <a href="?fecha={{ fecha_siguiente|date:'Y-m-d' }}&sede={% if sede_seleccionada and sede_seleccionada != 'None' %}{{ sede_seleccionada }}{% endif %}&tipo={% if tipo_horario and tipo_horario != 'None' %}{{ tipo_horario }}{% endif %}&municipio={% if municipio_seleccionado and municipio_seleccionado != 'None' %}{{ municipio_seleccionado }}{% endif %}" 
            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
             Semana Siguiente <i class="fas fa-chevron-right"></i>
         </a>
