@@ -1,5 +1,6 @@
 from django import forms
-from .models import Alumno
+from .models import Alumno, Clase, Materia, Grupo
+from django.utils import timezone
 
 class AlumnoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -49,4 +50,54 @@ class AlumnoForm(forms.ModelForm):
             'identificacion': 'Número de documento de identidad',
             'municipio': 'Ciudad de residencia',
             'grupo_actual': 'Grupo al que pertenece el estudiante'
+        }
+
+
+class ClaseForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        salon_id = kwargs.pop('salon_id', None)
+        fecha = kwargs.pop('fecha', None)
+        super().__init__(*args, **kwargs)
+        
+        # Aplicar clases base a todos los campos
+        for field_name, field in self.fields.items():
+            # Clases base para todos los inputs
+            base_classes = 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+            
+            if isinstance(field.widget, (forms.TextInput, forms.EmailInput, forms.NumberInput)):
+                field.widget.attrs.update({'class': f'{base_classes}'})
+            elif isinstance(field.widget, forms.Select):
+                field.widget.attrs.update({'class': f'{base_classes} py-2'})
+            elif isinstance(field.widget, forms.DateInput):
+                field.widget.attrs.update({
+                    'class': f'{base_classes}',
+                    'type': 'date'
+                })
+        
+        # Si se proporciona un salon_id, preseleccionarlo y hacerlo de solo lectura
+        if salon_id:
+            self.fields['salon'].initial = salon_id
+            self.fields['salon'].widget.attrs['readonly'] = True
+            self.fields['salon'].widget.attrs['disabled'] = True
+            # Filtrar grupos que pertenecen al salón seleccionado
+            self.fields['grupo'].queryset = Grupo.objects.filter(salon_id=salon_id)
+        
+        # Si se proporciona una fecha, preseleccionarla
+        if fecha:
+            self.fields['fecha'].initial = fecha
+            
+    class Meta:
+        model = Clase
+        fields = ['fecha', 'salon', 'materia', 'profesor', 'grupo', 'horario', 'estado']
+        widgets = {
+            'fecha': forms.DateInput(attrs={'type': 'date'}),
+        }
+        help_texts = {
+            'fecha': 'Fecha de la clase',
+            'salon': 'Salón donde se impartirá la clase',
+            'materia': 'Materia a impartir',
+            'profesor': 'Profesor que impartirá la clase',
+            'grupo': 'Grupo que recibirá la clase',
+            'horario': 'Horario de la clase',
+            'estado': 'Estado actual de la clase'
         }

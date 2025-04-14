@@ -21,6 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Configuración de archivos estáticos
 STATIC_URL = '/static/'  # URL para acceder a los archivos estáticos
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # Ruta a la carpeta static
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # <- AÑADE ESTA LÍNEA (nueva)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -132,7 +133,6 @@ USE_L10N = True  # Activar la localización
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
