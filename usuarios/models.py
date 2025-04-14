@@ -31,13 +31,10 @@ class Usuario(AbstractUser):
 
 
 def firma_upload_path(instance, filename):
-    """Define la ruta donde se guardarán las firmas"""
-    # Obtener la extensión del archivo
+    """Define la ruta donde se guardarán las firmas (ahora en media/firmas/)"""
     ext = filename.split('.')[-1]
-    # Crear un nombre de archivo basado en el username del usuario
     filename = f"{instance.usuario.username}.{ext}"
-    # Devolver la ruta completa (dentro de static/firmas/)
-    return os.path.join('static', 'firmas', filename)
+    return os.path.join('firmas', filename)  # Elimina 'static/' de la ruta
 
 
 class Firma(models.Model):
