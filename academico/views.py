@@ -750,7 +750,7 @@ class GenerarConstanciaPreICFESView(UserPassesTestMixin, LoginRequiredMixin, Vie
             elements.append(Spacer(1, 20))
         
         # Fecha actual
-        fecha_actual = timezone.now().date()
+        fecha_actual = timezone.localtime(timezone.now()).date()
         
         # Diccionario para convertir nombres de meses en inglés a español
         meses_es = {
@@ -888,9 +888,13 @@ class GenerarConstanciaPreICFESView(UserPassesTestMixin, LoginRequiredMixin, Vie
         {texto_horario} desde {mes_inicio} del {anio_inicio}. Fecha de finalización del mes de {mes_fin} de {anio_fin}."""
         
         elements.append(Paragraph(texto_constancia, styles['Justify']))
+        elements.append(Spacer(1, 20))
+        
+        # Añadir párrafo de constancia
+        texto_para_constancia = f"<para align='justify'>Para mayor constancia, se firma y se sella el presente documento a los {fecha_actual.day} días del mes de {mes_actual_es} de {fecha_actual.year}.</para>"
+        elements.append(Paragraph(texto_para_constancia, styles['Justify']))
+        
         elements.append(Spacer(1, 40))
-        elements.append(Spacer(1, 20))
-        elements.append(Spacer(1, 20))
         
         elements.append(Spacer(1, 30))
         elements.append(Spacer(1, 30))
