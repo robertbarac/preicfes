@@ -16,12 +16,16 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 # Ruta base del proyecto
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Configuración de archivos estáticos
-STATIC_URL = '/static/'  # URL para acceder a los archivos estáticos
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # Ruta a la carpeta static
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # <- AÑADE ESTA LÍNEA (nueva)
+# STATIC_URL = '/static/'  # URL para acceder a los archivos estáticos
+STATICFILES_DIRS = [BASE_DIR / 'static']  # Ruta a la carpeta static
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # <- AÑADE ESTA LÍNEA (nueva)
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
