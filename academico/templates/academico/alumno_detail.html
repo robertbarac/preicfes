@@ -50,15 +50,19 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Segundo Apellido</dt>
-                        <dd class="text-sm text-gray-900">{{ alumno.segundo_apellido }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Email</dt>
-                        <dd class="text-sm text-gray-900">{{ alumno.email }}</dd>
+                        <dd class="text-sm text-gray-900">{{ alumno.segundo_apellido|default:"" }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Teléfono</dt>
-                        <dd class="text-sm text-gray-900">{{ alumno.telefono }}</dd>
+                        <dd class="text-sm text-gray-900">{{ alumno.celular }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Grupo Actual</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.grupo_actual.codigo }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Sede</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.grupo_actual.salon.sede.nombre }}</dd>
                     </div>
                 </dl>
             </div>
