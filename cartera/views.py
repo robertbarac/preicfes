@@ -97,52 +97,6 @@ class BecadosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return context
 
 
-# class CarteraListView(LoginRequiredMixin, ListView):
-#     model = Cuota
-#     template_name = 'cartera/cartera.html'
-#     context_object_name = 'cuotas'
-#     paginate_by = 10  
-
-#     def get_queryset(self):
-#         queryset = Cuota.objects.annotate(
-#             # Calcular la diferencia en días de manera manual
-#             dias_sin_pago=Cast(
-#                 (TruncDate(Now()) - F('fecha_vencimiento')) / timedelta(days=1),
-#                 IntegerField()
-#             )
-#         )
-
-#         # Filtrar por estado solo si el usuario lo elige en el template
-#         estado = self.request.GET.get('estado')
-#         if estado in ["emitida", "pagada", "vencida", "pagada_parcial"]:
-#             queryset = queryset.filter(estado=estado)
-
-#         # Filtrar por días de atraso (opcional según el template)
-#         filtro_dias = self.request.GET.get('dias')
-#         if filtro_dias:
-#             dias = int(filtro_dias)
-#             fecha_limite = TruncDate(Now()) - timedelta(days=dias)
-#             queryset = queryset.filter(fecha_vencimiento__gte=fecha_limite)
-
-#         # Filtrar por nombre del alumno (si el usuario escribe algo)
-#         nombre_alumno = self.request.GET.get('nombre')
-#         if nombre_alumno:
-#             queryset = queryset.filter(deuda__alumno__nombres__icontains=nombre_alumno)
-
-#         # Filtrar por sede (si el usuario lo elige)
-#         sede = self.request.GET.get('sede')
-#         if sede:
-#             queryset = queryset.filter(deuda__alumno__sede__nombre__icontains=sede)
-
-#         # Ordenar por días de atraso
-#         orden = self.request.GET.get('orden')
-#         if orden == 'mayor':
-#             queryset = queryset.order_by('-dias_sin_pago')
-#         else:
-#             queryset = queryset.order_by('dias_sin_pago')
-
-#         return queryset
-
 
 class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Cuota
@@ -966,7 +920,7 @@ class ProximosPagosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Cuota
     template_name = 'cartera/proximos_pagos_list.html'
     context_object_name = 'cuotas'
-    paginate_by = 2
+    paginate_by = 25
 
     def get_queryset(self):
         queryset = super().get_queryset().filter(
@@ -1304,7 +1258,7 @@ def generar_pdf_informe(request):
         
         for label, value in datos:
             p.drawString(100, y_position, f"{label} {value}")
-        y_position -= 20
+            y_position -= 20
         
         # Objetivos
         p.setFont("Helvetica-Bold", 14)
