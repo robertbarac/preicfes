@@ -9,6 +9,8 @@
     <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
     <!-- Incluye Tailwind CSS (puedes usar un CDN para pruebas) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js para interactividad -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </head>
   <body class="h-full">
     <div class="min-h-full">
@@ -31,8 +33,9 @@
               <!-- mx-auto para centrar -->
               <div class="flex items-baseline space-x-2">
                 {% if user.is_staff %}
-                <div class="relative group">
+                <div class="relative dropdown" x-data="{ open: false }">
                   <button
+                    @click="open = !open"
                     class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                   >
                     Académico
@@ -41,6 +44,7 @@
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      :class="{'transform rotate-180': open}"
                     >
                       <path
                         stroke-linecap="round"
@@ -51,7 +55,12 @@
                     </svg>
                   </button>
                   <div
-                    class="absolute hidden group-hover:block bg-gray-800 rounded-md shadow-lg py-2 mt-2 min-w-[200px]"
+                    x-show="open"
+                    @click.away="open = false"
+                    class="absolute bg-gray-800 rounded-md shadow-lg py-2 mt-2 min-w-[200px] z-10"
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
                   >
                     <a
                       href="{% url 'alumnos_list' %}"
@@ -99,8 +108,9 @@
                 >
                 {% endif %} 
                 {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
-                <div class="relative group">
+                <div class="relative dropdown" x-data="{ open: false }">
                   <button
+                    @click="open = !open"
                     class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                   >
                     Cartera
@@ -109,6 +119,7 @@
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      :class="{'transform rotate-180': open}"
                     >
                       <path
                         stroke-linecap="round"
@@ -119,7 +130,12 @@
                     </svg>
                   </button>
                   <div
-                    class="absolute hidden group-hover:block bg-gray-800 rounded-md shadow-lg py-2 mt-2 min-w-[200px]"
+                    x-show="open"
+                    @click.away="open = false"
+                    class="absolute bg-gray-800 rounded-md shadow-lg py-2 mt-2 min-w-[200px] z-10"
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
                   >
                     <a
                       href="{% url 'cartera:mantenimiento' %}"

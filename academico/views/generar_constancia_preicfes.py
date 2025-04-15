@@ -122,17 +122,23 @@ class GenerarConstanciaPreICFESView(UserPassesTestMixin, LoginRequiredMixin, Vie
         
         # Obtener las clases del alumno (no simulacros)
         clases_alumno = Clase.objects.filter(
-            grupo=alumno.grupo_actual,
-            estado='vista'
+            grupo=alumno.grupo_actual
+            # Ya no filtramos por estado para incluir tanto vistas como programadas
         ).exclude(
             horario__in=['08:00-12:00', '08:00-17:00']  # Excluir simulacros
         ).order_by('fecha')
         
         # Determinar los días de la semana en que el alumno tiene clases
         dias_semana = set()
-        for clase in clases_alumno:
-            dia_semana = clase.fecha.strftime('%A')
-            dias_semana.add(dia_semana)
+        
+        # Verificar si hay clases
+        if clases_alumno.exists():
+            for clase in clases_alumno:
+                dia_semana = clase.fecha.strftime('%A')
+                dias_semana.add(dia_semana)
+        else:
+            # Si no hay clases, usar días predeterminados (lunes a viernes)
+            dias_semana = {'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'}
         
         # Convertir los días de la semana a español
         dias_semana_es = {
@@ -160,11 +166,17 @@ class GenerarConstanciaPreICFESView(UserPassesTestMixin, LoginRequiredMixin, Vie
         horas_inicio = set()
         horas_fin = set()
         
-        for clase in clases_alumno:
-            hora_inicio = clase.get_hora_inicio()
-            hora_fin = clase.get_hora_fin()
-            horas_inicio.add(hora_inicio)
-            horas_fin.add(hora_fin)
+        if clases_alumno.exists():
+            for clase in clases_alumno:
+                hora_inicio = clase.get_hora_inicio()
+                hora_fin = clase.get_hora_fin()
+                horas_inicio.add(hora_inicio)
+                horas_fin.add(hora_fin)
+        else:
+            # Si no hay clases, usar horarios predeterminados
+            from datetime import time
+            horas_inicio.add(time(15, 0))  # 3:00 PM
+            horas_fin.add(time(17, 0))     # 5:00 PM
         
         # Formatear las horas para el texto
         if horas_inicio and horas_fin:
@@ -238,6 +250,9 @@ class GenerarConstanciaPreICFESView(UserPassesTestMixin, LoginRequiredMixin, Vie
             nombre_completo = coordinador.username
             
         elements.append(Paragraph(f"<b>{nombre_completo}</b>", styles['Center']))
+        
+        elements.append(Spacer(1, 40))
+        elements.append(Spacer(1, 10))
         elements.append(Paragraph("<b>COORDINADOR(A) ACADÉMICO(A) PRE ICFES VICTOR VALDEZ</b>", styles['Center']))
         
         # Agregar teléfono si está disponible

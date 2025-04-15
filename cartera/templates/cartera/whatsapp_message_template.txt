@@ -7,9 +7,14 @@ Hola *{{ nombres }} {{ primer_apellido }}* 👋, te escribe *Pre-ICFES Victor Va
 Hasta ahora has abonado *${{ monto_abonado|floatformat:0 }} pesos* y el saldo restante es de *${{ saldo_pendiente|floatformat:0 }} pesos*.
 
 💳 Para regularizar tu situación, puedes realizar el pago 💰 por:
-🔹 Nequi: 1234567890
-🔹 Bancolombia: 1234567890
+🔹 Nequi: 310-452-6623
+🔹 Bancolombia: 504-776-16576
+🔹 Daviplata: 310-452-6623
+🔹 Datáfono
+🔹 Efectivo
 
 ¿Tienes alguna dificultad? Escríbenos 📲 para buscar una solución juntos.
 
 ¡Quedamos atentos! 😊
+
+Gracias, Victor Valdez.

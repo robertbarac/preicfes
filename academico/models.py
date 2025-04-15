@@ -25,7 +25,7 @@ class Grupo(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Grupo {self.codigo} - {self.salon.sede.nombre}"
+        return f"{self.codigo} - {self.salon.sede.nombre}"
 
 class Alumno(models.Model):
     TIPO_IDENTIFICACION = [

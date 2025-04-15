@@ -3,6 +3,9 @@ Hola {{ nombres }} {{ primer_apellido }},
 📅 Te recordamos que tienes un pago pendiente de ${{ monto }} que vence el {{ fecha_vencimiento }} (en {{ dias_restantes }} días).
 
 💳 Puedes realizar el pago 💰 por:
-🔹 Nequi: 1234567890
-🔹 Bancolombia: 1234567890
+🔹 Nequi: 310-452-6623
+🔹 Bancolombia: 504-776-16576
+🔹 Daviplata: 310-452-6623
+🔹 Datáfono
+🔹 Efectivo
 Gracias, Victor Valdez.

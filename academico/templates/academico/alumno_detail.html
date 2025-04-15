@@ -64,6 +64,10 @@
                         <dt class="text-sm font-medium text-gray-500">Sede</dt>
                         <dd class="text-sm text-gray-900">{{ alumno.grupo_actual.salon.sede.nombre }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Es Becado</dt>
+                        <dd class="text-sm text-gray-900">{% if alumno.es_becado %}Sí{% else %}No{% endif %}</dd>
+                    </div>
                 </dl>
             </div>
         </div>
@@ -301,7 +305,7 @@
         </div>
     </div>
     {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
-        {% if not alumno.deuda %}
+        {% if not alumno.deuda and not alumno.es_becado %}
         <div class="mt-4">
             <a href="{% url 'cartera:deuda_agregar' alumno.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                 Crear Deuda

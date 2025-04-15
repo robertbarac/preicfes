@@ -6,7 +6,7 @@ from ubicaciones.models import Municipio, Salon
 class AlumnoAdmin(admin.ModelAdmin):
     list_display = ('nombres', 'primer_apellido', 'fecha_nacimiento', 'municipio', 'grupo_actual')  # Agregar fecha_nacimiento
     list_filter = ('municipio', 'grupo_actual', 'fecha_nacimiento')  # Agregar fecha_nacimiento (opcional)
-    search_fields = ('nombres', 'primer_apellido', 'identificacion', 'fecha_nacimiento')  # Agregar fecha_nacimiento (opcional)
+    search_fields = ('grupo_actual__codigo', 'nombres', 'primer_apellido', 'identificacion', 'fecha_nacimiento')  # Agregar fecha_nacimiento (opcional)
     
     def get_queryset(self, request):
         queryset = super().get_queryset(request).select_related('municipio', 'grupo_actual')
