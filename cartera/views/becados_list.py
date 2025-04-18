@@ -8,7 +8,7 @@ from academico.models import Alumno
 class BecadosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def test_func(self):
         # Solo permitir acceso a superusers y secretarias de cartera
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists()
+        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaAcademica').exists()
     model = Alumno
     template_name = 'cartera/becados_list.html'
     context_object_name = 'becados'
