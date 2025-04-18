@@ -11,4 +11,6 @@ from .generar_constancia_preicfes import GenerarConstanciaPreICFESView
 from .grupo_detail import GrupoDetailView
 from .grupo_list import GrupoListView
 from .registro_asistencia_nota import RegistroAsistenciaNotaView
+from .retirar_alumno import retirar_alumno
+from .alumnos_retirados_list import AlumnosRetiradosListView
 # ... (todas las views que necesites)

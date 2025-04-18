@@ -10,6 +10,8 @@ from . import views
 urlpatterns = [
     path('alumnos/', AlumnosListView.as_view(), name='alumnos_list'),
     path('alumnos/<int:pk>/', AlumnoDetailView.as_view(), name='alumno_detail'),
+    path('alumnos/<int:pk>/retirar/', views.retirar_alumno, name='retirar_alumno'),
+    path('retirados/', views.AlumnosRetiradosListView.as_view(), name='alumnos_retirados_list'),
     path('alumnos/agregar/', AlumnoCreateView.as_view(), name='alumno_agregar'),
     path('alumnos/<int:pk>/editar/', AlumnoUpdateView.as_view(), name='alumno_editar'),
     path('grupos/', GrupoListView.as_view(), name='grupo_list'),

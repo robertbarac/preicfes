@@ -69,6 +69,12 @@
                       Alumnos
                     </a>
                     <a
+                      href="{% url 'alumnos_retirados_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Alumnos Retirados
+                    </a>
+                    <a
                       href="{% url 'salon_list' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
@@ -97,6 +103,12 @@
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
                       Cronograma
+                    </a>
+                    <a
+                      href="{% url 'cartera:becados_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Becados
                     </a>
                   </div>
                 </div>
@@ -174,10 +186,10 @@
                       Certificado Paz y Salvo
                     </a>
                     <a
-                      href="{% url 'cartera:becados_list' %}"
+                      href="{% url 'cartera:alumnos_retirados_list' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
-                      Becados
+                      Alumnos Retirados
                     </a>
                   </div>
                 </div>

@@ -76,12 +76,12 @@ class DeudaAdmin(admin.ModelAdmin):
 #     search_fields = ('cuota__deuda__alumno__nombres', 'cuota__deuda__alumno__primer_apellido')
 #     date_hierarchy = 'fecha_emision'
 
-@admin.register(HistorialModificacion)
-class HistorialModificacionAdmin(admin.ModelAdmin):
-    list_display = ('deuda', 'usuario', 'fecha_modificacion')
-    list_filter = ('fecha_modificacion', 'usuario')
-    search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido')
-    date_hierarchy = 'fecha_modificacion'
+# @admin.register(HistorialModificacion)
+# class HistorialModificacionAdmin(admin.ModelAdmin):
+#     list_display = ('deuda', 'usuario', 'fecha_modificacion')
+#     list_filter = ('fecha_modificacion', 'usuario')
+#     search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido')
+#     date_hierarchy = 'fecha_modificacion'
 
 @admin.register(Egreso)
 class EgresosAdmin(admin.ModelAdmin):

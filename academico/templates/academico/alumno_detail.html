@@ -57,6 +57,10 @@
                         <dd class="text-sm text-gray-900">{{ alumno.celular }}</dd>
                     </div>
                     <div>
+                        <dt class="text-sm font-medium text-gray-500">Estado</dt>
+                        <dd class="text-sm text-gray-900">{% if alumno.estado == 'activo' %}Activo{% elif alumno.estado == 'retirado' %}Retirado{% else %}{{ alumno.estado }}{% endif %}</dd>
+                    </div>
+                    <div>
                         <dt class="text-sm font-medium text-gray-500">Grupo Actual</dt>
                         <dd class="text-sm text-gray-900">{{ alumno.grupo_actual.codigo }}</dd>
                     </div>
@@ -321,6 +325,18 @@
         {% endif %}
     {% endif %}
 
+    {% if alumno.estado == 'activo' %}
+        {% if request.user.is_superuser or request.user.is_staff %}
+        <div class="mt-4">
+            <form method="post" action="{% url 'retirar_alumno' alumno.id %}" onsubmit="return confirm('¿Estás seguro de que deseas retirar este alumno?');">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    Retirar Alumno
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    {% endif %}
     <!-- Botón para regresar a la lista de alumnos -->
     <div class="mt-6">
         <a href="{% url 'alumnos_list' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg inline-block">

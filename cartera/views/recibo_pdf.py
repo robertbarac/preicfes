@@ -122,6 +122,7 @@ class ReciboPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
             # Nombre del usuario
             elements.append(Paragraph(f'Firma: {request.user.get_full_name() or request.user.username}', styles['SmallCenter']))
             elements.append(Spacer(1, 0.2*cm))
+            elements.append(Paragraph("<b>Jefe de Cartera del Pre ICFES</b>", styles['SmallCenter']))
             
             # Línea de corte
             elements.append(Paragraph('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -', styles['Small']))

@@ -8,6 +8,8 @@ from .views import (
 
 app_name = 'cartera'
 
+from .views.alumnos_retirados_list import AlumnosRetiradosListView
+
 urlpatterns = [
     # path('abonos-hechos/', AbonosHechosListView.as_view(), name='abonos_hechos'),
     # path('cartera/', CarteraListView.as_view(), name='cartera'),
@@ -25,4 +27,5 @@ urlpatterns = [
     path('paz-salvo/pdf/<int:alumno_id>/', PazSalvoPDFView.as_view(), name='paz_salvo_pdf'),
     path('informe-diario/', InformeDiarioView.as_view(), name='informe_diario'),
     path('informe-diario/pdf/', generar_pdf_informe, name='generar_pdf_informe'),
+    path('retirados/', AlumnosRetiradosListView.as_view(), name='alumnos_retirados_list'),
 ]
