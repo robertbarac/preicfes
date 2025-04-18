@@ -26,6 +26,15 @@
                        placeholder="Apellido" 
                        class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 
+                {% if request.user.is_superuser %}
+                <select name="municipio" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="">Todos los municipios</option>
+                    {% for municipio in municipios %}
+                        <option value="{{ municipio.id }}" {% if municipio_seleccionado == municipio.id|stringformat:'s' %}selected{% endif %}>{{ municipio.nombre }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+                
                 <button type="submit" 
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Filtrar
@@ -39,33 +48,33 @@
             <table class="min-w-full">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombres</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primer Apellido</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Segundo Apellido</th>
-                        {% comment %} <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identificación</th> {% endcomment %}
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Días de Atraso</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Cuota</th>
-                        {% comment %} <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Abonado</th> {% endcomment %}
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Vencimiento</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombres</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primer Apellido</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Segundo Apellido</th>
+                        {% comment %} <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identificación</th> {% endcomment %}
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Días de Atraso</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Cuota</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Fin Curso</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Vencimiento</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for cuota in cuotas %}
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.nombres }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.primer_apellido }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.segundo_apellido }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.nombres }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.primer_apellido }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.segundo_apellido }}</td>
                         {% comment %} <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.identificacion }}</td> {% endcomment %}
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.celular }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.dias_atraso }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.monto }}</td>
-                        {% comment %} <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.monto_abonado }}</td> {% endcomment %}
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.fecha_vencimiento }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.get_estado_display }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.celular }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.dias_atraso }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.monto }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.fecha_culminacion }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.fecha_vencimiento }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.get_estado_display }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                             <!-- Botón para el estudiante -->
                             <a href="whatsapp://send?phone={{ cuota.deuda.alumno.celular|slice:':13' }}&text={{ cuota.whatsapp_message }}" 
                                 target="_blank" 
@@ -102,7 +111,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="11" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        <td colspan="11" class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                             No hay cuotas vencidas que coincidan con los criterios de búsqueda.
                         </td>
                     </tr>
@@ -116,11 +125,11 @@
     <div class="mt-4">
         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
             {% if page_obj.has_previous %}
-            <a href="?page=1{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}" 
+            <a href="?page=1{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Primero
             </a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}" 
+            <a href="?page={{ page_obj.previous_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Anterior
             </a>
@@ -132,7 +141,7 @@
                 {{ num }}
             </span>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-            <a href="?page={{ num }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}" 
+            <a href="?page={{ num }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 {{ num }}
             </a>
@@ -140,11 +149,11 @@
             {% endfor %}
 
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}" 
+            <a href="?page={{ page_obj.next_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Siguiente
             </a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}" 
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Último
             </a>
