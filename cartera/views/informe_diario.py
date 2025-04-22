@@ -71,10 +71,11 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         mes_actual = hoy.month
         anio_actual = hoy.year
         
-        # Calcular el objetivo del mes como la suma de todas las cuotas con vencimiento en el mes actual
+        # Calcular el objetivo del mes como la suma de todas las cuotas con vencimiento en el mes actual de alumnos activos
         context['objetivo_mes'] = cuotas_qs.filter(
             fecha_vencimiento__month=mes_actual,
-            fecha_vencimiento__year=anio_actual
+            fecha_vencimiento__year=anio_actual,
+            deuda__alumno__estado='activo'
         ).aggregate(Sum('monto'))['monto__sum'] or 0
         
         # % de cumplimiento
@@ -104,8 +105,10 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
             )
         
-        # Valor total de cartera (suma de todos los montos de cuotas)
-        context['valor_cartera'] = todas_cuotas_qs.aggregate(Sum('monto'))['monto__sum'] or 0
+        # Valor total de cartera (suma de todos los montos de cuotas de alumnos activos)
+        context['valor_cartera'] = todas_cuotas_qs.filter(
+            deuda__alumno__estado='activo'
+        ).aggregate(Sum('monto'))['monto__sum'] or 0
         
         # Total cobrado (suma de todos los montos_abonados)
         context['cobrado'] = todas_cuotas_qs.aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0

@@ -67,10 +67,11 @@ class GraficaIngresosEgresosView(LoginRequiredMixin, UserPassesTestMixin, Templa
         # Los años de cumplimiento son los mismos que los de la gráfica
         años_cumplimiento = años_grafica
 
-        # La meta mensual es la suma de todas las cuotas del mes
+        # La meta mensual es la suma de todas las cuotas del mes de alumnos activos
         meta_mensual = cuotas_qs.filter(
             fecha_vencimiento__year=año_cumplimiento,
-            fecha_vencimiento__month=mes_cumplimiento
+            fecha_vencimiento__month=mes_cumplimiento,
+            deuda__alumno__estado='activo'
         ).aggregate(total=Sum('monto'))['total'] or 0
 
         # Obtener los ingresos del mes (cuotas pagadas)
