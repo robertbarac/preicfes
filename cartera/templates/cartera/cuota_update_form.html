@@ -33,7 +33,7 @@
             <select name="metodo_pago" id="metodo_pago" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 <option value="efectivo" {% if object.metodo_pago == 'efectivo' %}selected{% endif %}>Efectivo</option>
                 <option value="transferencia" {% if object.metodo_pago == 'transferencia' %}selected{% endif %}>Transferencia</option>
-                <option value="tarjeta" {% if object.metodo_pago == 'tarjeta' %}selected{% endif %}>Tarjeta</option>
+                <option value="datáfono" {% if object.metodo_pago == 'datáfono' %}selected{% endif %}>Datáfono</option>
             </select>
         </div>
         <div class="flex justify-end space-x-4">
