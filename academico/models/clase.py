@@ -34,6 +34,8 @@ class Clase(models.Model):
         on_delete=models.CASCADE,
         related_name="clases",
         limit_choices_to={'groups__name': 'Profesor'},  # Solo usuarios del grupo "Profesor"
+        null=True,
+        blank=True
     )
     grupo = models.ForeignKey('Grupo', on_delete=models.CASCADE, related_name="clases")
     horario = models.CharField(max_length=20, choices=HORARIOS_DISPONIBLES, help_text="Seleccione el horario de la clase.", default=None)
