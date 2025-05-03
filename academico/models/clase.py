@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from datetime import datetime, time
+from datetime import datetime, timedelta
 from django.utils import timezone
 from ubicaciones.models import Salon
 from usuarios.models import Usuario
@@ -115,16 +115,8 @@ class Clase(models.Model):
         fin_clase = timezone.localtime(self.get_datetime_fin())  # Hora de fin en local
         margen = timedelta(minutes=5)
         
-        # Calcular duración de la clase en horas
-        duracion = (fin_clase - inicio_clase).total_seconds() / 3600
-        
-        
-        # Si la clase dura más de 2 horas (simulacros), permitir registro durante toda la clase
-        if duracion > 2:
-            puede = inicio_clase <= ahora <= fin_clase
-        else:
-            # Para clases normales, solo permitir ±5 minutos alrededor del inicio
-            puede = (inicio_clase - margen) <= ahora <= (inicio_clase + margen)
+        # Permitir registro durante toda la clase, incluyendo 5 minutos antes y 5 minutos después
+        puede = (inicio_clase - margen) <= ahora <= (fin_clase + margen)
             
         return puede
 
