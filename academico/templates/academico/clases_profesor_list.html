@@ -72,6 +72,9 @@
                         Estado
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Valor
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Acciones
                     </th>
                 </tr>
@@ -103,6 +106,9 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${{ clase.valor|floatformat:0|default:"0" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
                         {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:',' %}
                             <a href="{% url 'registro_asistencia_nota' clase.id %}" 
                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -124,12 +130,25 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                         No hay clases para mostrar en este período.
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
+            {% if estado_actual == 'vista' %}
+            <tfoot>
+                <tr class="bg-gray-50">
+                    <td colspan="6" class="px-6 py-4 text-right font-bold">
+                        Total a pagar:
+                    </td>
+                    <td class="px-6 py-4 font-bold">
+                        ${{ total_valor|floatformat:0 }}
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+            {% endif %}
         </table>
     </div>
 

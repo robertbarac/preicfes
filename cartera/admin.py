@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cuota, Deuda, Egreso, HistorialModificacion, Recibo, MetaRecaudo
+from .models import Cuota, Deuda, Egreso, HistorialModificacion, Recibo, MetaRecaudo, TarifaClase
 from ubicaciones.models import Sede
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -125,3 +125,21 @@ class MetaRecaudoAdmin(admin.ModelAdmin):
             # Establecer el mes actual por defecto
             form.base_fields['mes'].initial = timezone.now().month
         return form
+
+
+@admin.register(TarifaClase)
+class TarifaClaseAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'get_tipo_dia_display', 'get_horario_display', 'valor', 'activa', 'fecha_actualizacion')
+    list_filter = ('tipo_dia', 'activa')
+    search_fields = ('nombre',)
+    list_editable = ('valor', 'activa')
+    
+    def get_tipo_dia_display(self, obj):
+        return dict(obj.DIAS_SEMANA)[obj.tipo_dia]
+    get_tipo_dia_display.short_description = 'Día'
+    
+    def get_horario_display(self, obj):
+        if obj.horario:
+            return dict(obj.HORARIOS)[obj.horario]
+        return 'Cualquier horario'
+    get_horario_display.short_description = 'Horario'

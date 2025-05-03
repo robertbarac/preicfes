@@ -1,12 +1,13 @@
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
+from django.db.models import Count, Sum
 from datetime import datetime
 from calendar import month_name
 
 from academico.models import Clase
 from usuarios.models import Usuario
+from cartera.models import TarifaClase
 
 
 class ClasesProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
@@ -60,11 +61,34 @@ class ClasesProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             .order_by('-total')
         )
         
-        # Calcular puede_registrar_asistencia para cada clase
+        # Calcular puede_registrar_asistencia y valor para cada clase
         clases = context['clases']
+        total_valor = 0
         
         for clase in clases:
             clase.puede_registrar = clase.puede_registrar_asistencia(self.request.user)
+            
+            # Determinar si es fin de semana (5=sábado, 6=domingo)
+            dia_semana = clase.fecha.weekday()
+            tipo_dia = 1 if dia_semana == 5 else 2 if dia_semana == 6 else 0
+            
+            # Buscar tarifa aplicable
+            try:
+                tarifa = TarifaClase.objects.get(tipo_dia=tipo_dia, horario=clase.horario, activa=True)
+                clase.valor = tarifa.valor
+                # Sumar al total solo si la clase está vista
+                if clase.estado == 'vista':
+                    total_valor += tarifa.valor
+            except TarifaClase.DoesNotExist:
+                # Si no hay tarifa específica para ese horario, buscar una genérica para ese día
+                try:
+                    tarifa = TarifaClase.objects.get(tipo_dia=tipo_dia, horario__isnull=True, activa=True)
+                    clase.valor = tarifa.valor
+                    # Sumar al total solo si la clase está vista
+                    if clase.estado == 'vista':
+                        total_valor += tarifa.valor
+                except TarifaClase.DoesNotExist:
+                    clase.valor = 0
         
         # Añadir información de paginación al contexto
         if context.get('is_paginated', False):
@@ -93,6 +117,7 @@ class ClasesProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             'estado_actual': estado_actual,
             'año_actual': datetime.now().year,
             'materias_profesor': materias_profesor,
+            'total_valor': total_valor,
             'titulo': f'Clases {dict(Clase.ESTADO_CLASE).get(estado_actual, "").lower()} de {profesor.get_full_name()} - {month_name[mes_actual]}'
         })
         
