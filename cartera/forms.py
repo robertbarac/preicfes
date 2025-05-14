@@ -9,9 +9,9 @@ class DeudaForm(forms.ModelForm):
 class CuotaForm(forms.ModelForm):
     class Meta:
         model = Cuota
-        fields = ['deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago']  # Asegurarse de que se incluyan los campos necesarios
+        fields = ['deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'fecha_pago', 'estado', 'metodo_pago']  # Incluir fecha_pago
 
 class CuotaUpdateForm(forms.ModelForm):
     class Meta:
         model = Cuota
-        fields = ['monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago']
+        fields = ['monto', 'monto_abonado', 'fecha_vencimiento', 'fecha_pago', 'estado', 'metodo_pago']

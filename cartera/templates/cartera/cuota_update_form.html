@@ -20,6 +20,11 @@
             <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" value="{{ object.fecha_vencimiento|date:'Y-m-d' }}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
         </div>
         <div class="mb-4">
+            <label for="fecha_pago" class="block text-sm font-medium text-gray-700">Fecha de Pago</label>
+            <input type="date" name="fecha_pago" id="fecha_pago" value="{{ object.fecha_pago|date:'Y-m-d' }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <p class="text-sm text-gray-500 mt-1">Dejar en blanco si aún no se ha realizado el pago. Se establecerá automáticamente al registrar un abono.</p>
+        </div>
+        <div class="mb-4">
             <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
             <select name="estado" id="estado" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 <option value="emitida" {% if object.estado == 'emitida' %}selected{% endif %}>Emitida</option>

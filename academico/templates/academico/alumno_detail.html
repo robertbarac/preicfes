@@ -108,6 +108,7 @@
                             <th class="py-2 px-4 border-b">Monto Abonado</th>
                             <th class="py-2 px-4 border-b">Estado</th>
                             <th class="py-2 px-4 border-b">Fecha de Vencimiento</th>
+                            <th class="py-2 px-4 border-b">Fecha de Pago</th>
                             <th class="py-2 px-4 border-b">Método de Pago</th>
                             <th class="py-2 px-4 border-b">Acciones</th>
                         </tr>
@@ -132,6 +133,7 @@
                                     </span>
                                 </td>
                                 <td class="py-2 px-4 border-b text-center">{{ cuota.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                <td class="py-2 px-4 border-b text-center">{% if cuota.fecha_pago %}{{ cuota.fecha_pago|date:"d/m/Y" }}{% else %}<span class="text-gray-400">Pendiente</span>{% endif %}</td>
                                 <td class="py-2 px-4 border-b text-center">{{ cuota.metodo_pago|default:"No especificado" }}</td>
                                 <td class="py-2 px-4 border-b text-center">
                                     {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}

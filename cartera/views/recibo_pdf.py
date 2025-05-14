@@ -85,7 +85,7 @@ class ReciboPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
                 ['Apellidos:', f'{cuota.deuda.alumno.primer_apellido} {cuota.deuda.alumno.segundo_apellido or ""}'],
                 ['ID:', f'{dict(Alumno.TIPO_IDENTIFICACION)[cuota.deuda.alumno.tipo_identificacion]}: {cuota.deuda.alumno.identificacion}'],
                 ['Fecha Venc.:', f'{cuota.fecha_vencimiento.strftime("%d/%m/%Y")}'],
-                ['Fecha Pago:', f'{timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M")}'],
+                ['Fecha Pago:', f'{cuota.fecha_pago.strftime("%d/%m/%Y %H:%M")}'],
                 ['Monto Abonado:', f'${cuota.monto_abonado:.1f}'],
                 ['Método de Pago:', f'{cuota.metodo_pago}'],
                 ['Saldo Pendiente:', f'${cuota.deuda.saldo_pendiente:.1f}'],

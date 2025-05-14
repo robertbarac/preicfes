@@ -58,8 +58,12 @@ class GraficaIngresosEgresosView(LoginRequiredMixin, UserPassesTestMixin, Templa
                 deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
             )
 
-        # Obtener los años disponibles para la gráfica
-        años_grafica = list(cuotas_qs.dates('fecha_vencimiento', 'year').values_list('fecha_vencimiento__year', flat=True))
+        # Obtener los años disponibles para la gráfica (basado en cuándo se realizaron los pagos)
+        # Primero intentamos obtener años de fecha_pago (para pagos ya realizados)
+        años_pago = list(cuotas_qs.filter(fecha_pago__isnull=False).dates('fecha_pago', 'year').values_list('fecha_pago__year', flat=True))
+        # Luego añadimos años de fecha_vencimiento (para pagos futuros)
+        años_vencimiento = list(cuotas_qs.dates('fecha_vencimiento', 'year').values_list('fecha_vencimiento__year', flat=True))
+        años_grafica = list(set(años_pago + años_vencimiento))
         if not años_grafica or año_actual not in años_grafica:
             años_grafica.append(año_actual)
         años_grafica = sorted(set(años_grafica))
@@ -74,11 +78,12 @@ class GraficaIngresosEgresosView(LoginRequiredMixin, UserPassesTestMixin, Templa
             deuda__alumno__estado='activo'
         ).aggregate(total=Sum('monto'))['total'] or 0
 
-        # Obtener los ingresos del mes (cuotas pagadas)
+        # Obtener los ingresos del mes (basado en cuándo se realizaron los pagos realmente)
         ingresos_mes = cuotas_qs.filter(
-            fecha_vencimiento__year=año_cumplimiento,
-            fecha_vencimiento__month=mes_cumplimiento,
-            estado='pagada'
+            fecha_pago__year=año_cumplimiento,
+            fecha_pago__month=mes_cumplimiento,
+            estado='pagada',
+            monto_abonado__gt=0
         ).aggregate(total=Sum('monto_abonado'))['total'] or 0
 
         # Calcular el porcentaje de cumplimiento
@@ -122,10 +127,11 @@ class GraficaIngresosEgresosView(LoginRequiredMixin, UserPassesTestMixin, Templa
         ingresos = [0] * 12
         egresos = [0] * 12
 
-        # Base queryset para cuotas
+        # Base queryset para cuotas - usando fecha_pago para mostrar cuándo realmente se recibió el dinero
         cuotas_qs = Cuota.objects.filter(
-            fecha_vencimiento__year=año_seleccionado,
-            estado='pagada'
+            fecha_pago__year=año_seleccionado,
+            estado='pagada',
+            monto_abonado__gt=0  # Asegurarse de que se haya pagado algo
         )
         
         # Filtrar cuotas por municipio
@@ -138,13 +144,13 @@ class GraficaIngresosEgresosView(LoginRequiredMixin, UserPassesTestMixin, Templa
                 deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
             )
 
-        # Agrupar cuotas por mes
-        cuotas = cuotas_qs.values('fecha_vencimiento__month').annotate(
+        # Agrupar cuotas por mes - usando el mes de pago real
+        cuotas = cuotas_qs.values('fecha_pago__month').annotate(
             total_abonado=Sum('monto_abonado')
         )
 
         for cuota in cuotas:
-            ingresos[cuota['fecha_vencimiento__month'] - 1] = float(cuota['total_abonado'] or 0)
+            ingresos[cuota['fecha_pago__month'] - 1] = float(cuota['total_abonado'] or 0)
 
         # Consulta para egresos
         egresos_qs = Egreso.objects.filter(fecha__year=año_seleccionado)

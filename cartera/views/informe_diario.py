@@ -16,8 +16,8 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        fecha_servidor = timezone.localtime(timezone.now()).date()
-        hoy = timezone.now()
+        # Usar una sola variable de fecha para mayor claridad
+        fecha_actual = timezone.localtime(timezone.now()).date()
         
         # Obtener municipio seleccionado
         municipio_id = self.request.GET.get('municipio')
@@ -42,9 +42,9 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
             )
         
-        # Datos de recaudación del día
+        # Datos de recaudación del día (basado en la fecha de pago, no de vencimiento)
         cuotas_hoy = cuotas_qs.filter(
-            fecha_vencimiento=hoy,
+            fecha_pago=fecha_actual,
             monto_abonado__gt=0
         )
         
@@ -68,20 +68,21 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         )
         
         # Objetivo del mes
-        mes_actual = hoy.month
-        anio_actual = hoy.year
+        mes_actual = fecha_actual.month
+        anio_actual = fecha_actual.year
         
         # Calcular el objetivo del mes como la suma de todas las cuotas con vencimiento en el mes actual de alumnos activos
+        # Esto sigue usando fecha_vencimiento ya que es el objetivo contractual
         context['objetivo_mes'] = cuotas_qs.filter(
             fecha_vencimiento__month=mes_actual,
             fecha_vencimiento__year=anio_actual,
             deuda__alumno__estado='activo'
         ).aggregate(Sum('monto'))['monto__sum'] or 0
         
-        # % de cumplimiento
+        # % de cumplimiento - basado en pagos realizados en el mes actual
         recaudado_mes = cuotas_qs.filter(
-            fecha_vencimiento__month=mes_actual,
-            fecha_vencimiento__year=anio_actual,
+            fecha_pago__month=mes_actual,
+            fecha_pago__year=anio_actual,
             monto_abonado__gt=0
         ).aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
         
@@ -118,7 +119,7 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         # Fecha formateada
         context['fecha_actual'] = date_format(
-            fecha_servidor, 
+            fecha_actual, 
             "l, j \d\e F \d\e Y"
         ).capitalize()
         

@@ -20,6 +20,7 @@ class Cuota(models.Model):
     monto = models.DecimalField(max_digits=10, decimal_places=2, help_text="Monto total de la cuota.")
     monto_abonado = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Monto abonado hasta la fecha.")
     fecha_vencimiento = models.DateField(help_text="Fecha de vencimiento de la cuota.")
+    fecha_pago = models.DateField(blank=True, null=True, help_text="Fecha en que se realizó el pago efectivamente.")
     estado = models.CharField(max_length=20, choices=ESTADO_CUOTA, default='emitida', help_text="Estado actual de la cuota.")
     metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO, blank=True, null=True, help_text="Método de pago utilizado.")
 
@@ -39,6 +40,10 @@ class Cuota(models.Model):
 
     def save(self, *args, **kwargs):
         """Antes de guardar, actualiza el estado de la cuota y el saldo de la deuda."""
+        # Si se está realizando un pago y no hay fecha_pago registrada, establecerla ahora
+        if self.monto_abonado > 0 and not self.fecha_pago:
+            self.fecha_pago = now().date()
+            
         self.actualizar_estado()
         super().save(*args, **kwargs)
         self.deuda.actualizar_saldo_y_estado()
