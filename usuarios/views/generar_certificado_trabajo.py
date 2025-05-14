@@ -120,21 +120,42 @@ class GenerarCertificadoTrabajoView(LoginRequiredMixin, UserPassesTestMixin, Vie
         mes_fin_es = meses_es.get(fecha_fin.strftime('%B'), fecha_fin.strftime('%B'))
         fecha_fin_texto = f"{fecha_fin.day} de {mes_fin_es} de {fecha_fin.year}"
         
+        # Obtener las materias que el profesor ha enseñado
+        materias_profesor = Clase.objects.filter(
+            profesor=profesor,
+            estado='vista'
+        ).values_list('materia__nombre', flat=True).distinct()
+        
+        # Formatear lista de materias
+        materias_texto = "NO DISPONIBLE"
+        if materias_profesor:
+            # Convertir a lista para poder manipularla
+            materias_lista = list(materias_profesor)
+            
+            # Formatear las materias en formato adecuado
+            if len(materias_lista) == 1:
+                materias_texto = materias_lista[0].upper()
+            elif len(materias_lista) == 2:
+                materias_texto = f"{materias_lista[0].upper()} Y {materias_lista[1].upper()}"
+            else:
+                # Para tres o más materias, usar formato con comas y 'y' al final
+                materias_texto = ", ".join([m.upper() for m in materias_lista[:-1]]) + f" Y {materias_lista[-1].upper()}"
+        
         # Nombre completo del profesor
         nombre_completo = profesor.get_full_name()
         if not nombre_completo.strip():
             nombre_completo = profesor.username
         
-        # Cuerpo del certificado
-        texto_certificado = f"""
-        <para align=justify>
-        El(La) señor(a) <b>{nombre_completo}</b>, identificado(a) con {profesor.get_tipo_identificacion_display() if hasattr(profesor, 'get_tipo_identificacion_display') else 'documento de identidad'} N° <b>{profesor.cedula if hasattr(profesor, 'cedula') else 'No disponible'}</b>, 
-        ha trabajado como docente en el PRE ICFES VICTOR VALDEZ desde el <b>{fecha_inicio_texto}</b> hasta el <b>{fecha_fin_texto}</b>, 
-        desempeñándose en la enseñanza y preparación de estudiantes para las pruebas ICFES.
-        </para>
-        """
+        # Cuerpo del certificado - Primera parte
+        texto_certificado1 = f"Que el(la) señor(a) <b>{nombre_completo}</b>, identificado(a) con {profesor.get_tipo_identificacion_display() if hasattr(profesor, 'get_tipo_identificacion_display') else 'documento de identidad'} N° <b>{profesor.cedula if hasattr(profesor, 'cedula') else 'No disponible'}</b> se encuentra prestando su servicio como docente de horas cátedras en el área de <b>{materias_texto}</b>, desde el <b>{fecha_inicio_texto}</b> hasta el <b>{fecha_fin_texto}</b>."
+        # POR SI DE NECESITA EN UN FUTURO expedida en {profesor.municipio.nombre if hasattr(profesor, 'municipio') and profesor.municipio else 'Colombia'}, 
+        elements.append(Paragraph(texto_certificado1, styles['Justify']))
+        elements.append(Spacer(1, 20))
         
-        elements.append(Paragraph(texto_certificado, styles['Justify']))
+        # Cuerpo del certificado - Segunda parte
+        texto_certificado2 = "Durante este tiempo, ha demostrado ser un profesional excepcional y comprometido con la institución. Su capacidad para enseñar y motivar a los estudiantes es destacable."
+        
+        elements.append(Paragraph(texto_certificado2, styles['Justify']))
         elements.append(Spacer(1, 40))
         
         # Texto de constancia
