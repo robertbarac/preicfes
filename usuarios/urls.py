@@ -4,6 +4,7 @@ from .views import (
     CustomLoginView, ProfesorListView, ProfesorDetailView, 
     GenerarCertificadoTrabajoView, cambiar_contraseña
 )
+from .views.certificado_trabajo_form import CertificadoTrabajoFormView
 
 
 urlpatterns = [
@@ -32,6 +33,11 @@ urlpatterns = [
         'cambiar-contrasena/',
         cambiar_contraseña,
         name='cambiar_contraseña'
+    ),
+    path(
+        'profesores/<int:profesor_id>/certificado-trabajo/form/',
+        CertificadoTrabajoFormView.as_view(),
+        name='certificado_trabajo_form'
     ),
     path(
         'profesores/<int:profesor_id>/certificado-trabajo/',

@@ -33,6 +33,20 @@ class GenerarCertificadoTrabajoView(LoginRequiredMixin, UserPassesTestMixin, Vie
         # Verificar que el usuario sea profesor
         if not profesor.groups.filter(name='Profesor').exists():
             raise Http404("El usuario no es un profesor")
+            
+        # Obtener fechas del formulario
+        fecha_inicio_str = request.GET.get('fecha_inicio')
+        fecha_fin_str = request.GET.get('fecha_fin')
+        
+        # Si no se proporcionan fechas, redirigir al formulario
+        if not fecha_inicio_str or not fecha_fin_str:
+            return redirect('certificado_trabajo_form', profesor_id=profesor_id)
+            
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+        except ValueError:
+            return redirect('certificado_trabajo_form', profesor_id=profesor_id)
         
         # Configurar respuesta PDF
         response = HttpResponse(content_type='application/pdf')
@@ -99,28 +113,12 @@ class GenerarCertificadoTrabajoView(LoginRequiredMixin, UserPassesTestMixin, Vie
         elements.append(Paragraph('<b>CERTIFICA QUE</b>', styles['Center']))
         elements.append(Spacer(1, 20))
         
-        # Obtener la primera y última clase del profesor
-        primera_clase = Clase.objects.filter(
-            profesor=profesor,
-            estado='vista'
-        ).order_by('fecha').first()
+        # Formatear fechas en español usando las fechas proporcionadas por el formulario
+        mes_inicio_es = meses_es.get(fecha_inicio.strftime('%B'), fecha_inicio.strftime('%B'))
+        fecha_inicio_texto = f"{fecha_inicio.day} de {mes_inicio_es} de {fecha_inicio.year}"
         
-        ultima_clase = Clase.objects.filter(
-            profesor=profesor,
-            estado='vista'
-        ).order_by('-fecha').first()
-        
-        # Formatear fechas en español
-        fecha_inicio = "No disponible"
-        fecha_fin = "No disponible"
-        
-        if primera_clase:
-            mes_inicio_es = meses_es.get(primera_clase.fecha.strftime('%B'), primera_clase.fecha.strftime('%B'))
-            fecha_inicio = f"{primera_clase.fecha.day} de {mes_inicio_es} de {primera_clase.fecha.year}"
-        
-        if ultima_clase:
-            mes_fin_es = meses_es.get(ultima_clase.fecha.strftime('%B'), ultima_clase.fecha.strftime('%B'))
-            fecha_fin = f"{ultima_clase.fecha.day} de {mes_fin_es} de {ultima_clase.fecha.year}"
+        mes_fin_es = meses_es.get(fecha_fin.strftime('%B'), fecha_fin.strftime('%B'))
+        fecha_fin_texto = f"{fecha_fin.day} de {mes_fin_es} de {fecha_fin.year}"
         
         # Nombre completo del profesor
         nombre_completo = profesor.get_full_name()
@@ -131,7 +129,7 @@ class GenerarCertificadoTrabajoView(LoginRequiredMixin, UserPassesTestMixin, Vie
         texto_certificado = f"""
         <para align=justify>
         El(La) señor(a) <b>{nombre_completo}</b>, identificado(a) con {profesor.get_tipo_identificacion_display() if hasattr(profesor, 'get_tipo_identificacion_display') else 'documento de identidad'} N° <b>{profesor.cedula if hasattr(profesor, 'cedula') else 'No disponible'}</b>, 
-        ha trabajado como docente en el PRE ICFES VICTOR VALDEZ desde el <b>{fecha_inicio}</b> hasta el <b>{fecha_fin}</b>, 
+        ha trabajado como docente en el PRE ICFES VICTOR VALDEZ desde el <b>{fecha_inicio_texto}</b> hasta el <b>{fecha_fin_texto}</b>, 
         desempeñándose en la enseñanza y preparación de estudiantes para las pruebas ICFES.
         </para>
         """
