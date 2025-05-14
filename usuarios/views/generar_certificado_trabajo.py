@@ -112,7 +112,9 @@ class GenerarCertificadoTrabajoView(LoginRequiredMixin, UserPassesTestMixin, Vie
         elements.append(Spacer(1, 20))
         elements.append(Paragraph('<b>CERTIFICA QUE</b>', styles['Center']))
         elements.append(Spacer(1, 20))
-        
+        elements.append(Spacer(1, 30))
+        elements.append(Spacer(1, 30))
+        elements.append(Spacer(1, 20))
         # Formatear fechas en español usando las fechas proporcionadas por el formulario
         mes_inicio_es = meses_es.get(fecha_inicio.strftime('%B'), fecha_inicio.strftime('%B'))
         fecha_inicio_texto = f"{fecha_inicio.day} de {mes_inicio_es} de {fecha_inicio.year}"
@@ -164,6 +166,10 @@ class GenerarCertificadoTrabajoView(LoginRequiredMixin, UserPassesTestMixin, Vie
             styles['Justify']
         ))
         elements.append(Spacer(1, 50))
+        elements.append(Spacer(1, 30))
+        elements.append(Spacer(1, 30))
+        elements.append(Spacer(1, 30))
+        
         
         # Buscar si el usuario tiene una firma digital registrada
         try:
@@ -186,16 +192,15 @@ class GenerarCertificadoTrabajoView(LoginRequiredMixin, UserPassesTestMixin, Vie
             # Si no tiene firma registrada, mostrar la línea
             elements.append(Paragraph("___________________________________________", styles['Center']))
         
+        
+
         # Datos del usuario que genera el documento
         nombre_completo_usuario = f"{request.user.first_name} {request.user.last_name}"
         if not nombre_completo_usuario.strip():
             nombre_completo_usuario = request.user.username
             
         elements.append(Paragraph(f"<b>{nombre_completo_usuario}</b>", styles['Center']))
-        elements.append(Spacer(1, 30))
-        elements.append(Spacer(1, 30))
-        elements.append(Spacer(1, 30))
-        elements.append(Spacer(1, 30))
+        
         elements.append(Paragraph("<b>COORDINADOR(A) ACADÉMICO(A) PRE ICFES VICTOR VALDEZ</b>", styles['Center']))
         
         # Agregar teléfono si está disponible
@@ -208,7 +213,9 @@ class GenerarCertificadoTrabajoView(LoginRequiredMixin, UserPassesTestMixin, Vie
         elements.append(Paragraph("<b>VALDEZ Y ANDRADE SOLUCIONES S.A.S</b>", styles['SmallCenter']))
         elements.append(Paragraph("<b>NIT 901.272.598 - 7</b>", styles['SmallCenter']))
         elements.append(Spacer(1, 10))
-        elements.append(Paragraph("CRA. 60A # 29 - 47 BARRIO LOS ANGELES", styles['SmallCenter']))
+        
+        elements.append(Paragraph("_______________________________________________________________", styles['Center']))
+        elements.append(Paragraph("<b>CRA. 60A # 29 - 47 BARRIO LOS ANGELES</b>", styles['Center']))
         
         # Generar PDF
         doc.build(elements)
