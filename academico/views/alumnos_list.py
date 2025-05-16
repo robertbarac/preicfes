@@ -11,7 +11,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
     model = Alumno
     template_name = 'academico/alumnos_list.html'
     context_object_name = 'alumnos'
-    paginate_by = 10
+    paginate_by = 20
     login_url = 'login'
 
     def test_func(self):

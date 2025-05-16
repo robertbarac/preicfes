@@ -9,7 +9,7 @@ class GrupoListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Grupo
     template_name = 'academico/grupo_list.html'
     context_object_name = 'grupos'
-    paginate_by = 10
+    paginate_by = 20
 
     def test_func(self):
         return self.request.user.is_staff
