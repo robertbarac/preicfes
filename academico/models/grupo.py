@@ -3,7 +3,7 @@ from ubicaciones.models import Salon
 
 class Grupo(models.Model):
     salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name="grupos")
-    codigo = models.CharField(max_length=12, unique=True, blank=True, help_text="""Regla de código:
+    codigo = models.CharField(max_length=20, unique=True, blank=True, help_text="""Regla de código:
                             3 letras de la ciudad + 3 letras de la sede + codigo de 2 numeros + una letra 
                             (opcional por si) hay un salon gemelo""")
 
