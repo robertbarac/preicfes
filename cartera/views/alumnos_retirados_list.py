@@ -19,12 +19,17 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
         municipio_id = self.request.GET.get('municipio')
         mes = self.request.GET.get('mes')
         anio = self.request.GET.get('anio')
+        tipo_programa = self.request.GET.get('tipo_programa')
+        
         if municipio_id:
             queryset = queryset.filter(grupo_actual__salon__sede__municipio_id=municipio_id)
         if mes and anio:
             queryset = queryset.filter(fecha_retiro__month=mes, fecha_retiro__year=anio)
         elif anio:
             queryset = queryset.filter(fecha_retiro__year=anio)
+        if tipo_programa:
+            queryset = queryset.filter(tipo_programa=tipo_programa)
+            
         return queryset.select_related('grupo_actual', 'grupo_actual__salon', 'grupo_actual__salon__sede', 'grupo_actual__salon__sede__municipio')
 
     def get_context_data(self, **kwargs):
@@ -43,4 +48,9 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
         context['mes'] = str(self.request.GET.get('mes', '') or '')
         context['anio'] = str(self.request.GET.get('anio', '') or '')
         context['municipio_seleccionado'] = str(self.request.GET.get('municipio', '') or '')
+        context['tipo_programa_seleccionado'] = str(self.request.GET.get('tipo_programa', '') or '')
+        
+        # Opciones de tipo_programa para el filtro
+        context['tipos_programa'] = Alumno.TIPO_PROGRAMA
+        
         return context

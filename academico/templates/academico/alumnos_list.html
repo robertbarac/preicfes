@@ -71,12 +71,25 @@
                     <option value="no" {% if request.GET.es_becado == 'no' %}selected{% endif %}>No</option>
                 </select>
             </div>
+            
+            <div>
+                <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa</label>
+                <select name="tipo_programa" id="tipo_programa" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Todos</option>
+                    {% for key, value in tipos_programa.items %}
+                        <option value="{{ key }}" {% if tipo_programa_seleccionado == key %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
 
-        <div class="mt-4">
+        <div class="mt-4 flex space-x-2">
             <button type="submit" class="inline-flex justify-center py-1 px-3 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Buscar
             </button>
+            <a href="{% url 'alumnos_list' %}" class="inline-flex justify-center py-1 px-3 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
+                Limpiar filtros
+            </a>
         </div>
     </form>
     {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:", " %}
@@ -152,6 +165,7 @@
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Culminado</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado Deuda</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Becado</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Programa</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -187,6 +201,19 @@
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Sí</span>
                         {% else %}
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">No</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        {% if alumno.tipo_programa == 'pre_privado' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">PreICFES Privado</span>
+                        {% elif alumno.tipo_programa == 'pre_publico' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">PreICFES Público</span>
+                        {% elif alumno.tipo_programa == 'politecnico' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">Politécnico</span>
+                        {% elif alumno.tipo_programa == 'semillero' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-pink-100 text-pink-800">Semillero</span>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">No definido</span>
                         {% endif %}
                     </td>
                 </tr>

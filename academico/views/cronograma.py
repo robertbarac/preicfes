@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from datetime import datetime, timedelta
 
-from academico.models import Clase
+from academico.models import Clase, Alumno
 from ubicaciones.models import Sede, Municipio
 
 class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -24,6 +24,7 @@ class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         sede_id = self.request.GET.get('sede')
         tipo_horario = self.request.GET.get('tipo')  # AM o PM
         municipio_id = self.request.GET.get('municipio')
+        tipo_programa = self.request.GET.get('tipo_programa')
         
         # Convertir 'None' en None para evitar errores de tipo
         if sede_id == 'None':
@@ -32,6 +33,8 @@ class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             municipio_id = None
         if tipo_horario == 'None':
             tipo_horario = None
+        if tipo_programa == 'None':
+            tipo_programa = None
         
         # Establecer fecha inicial si no se proporciona
         if fecha_str:
@@ -79,6 +82,11 @@ class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 )
             elif tipo_horario == 'PM':
                 clases = clases.filter(horario__startswith='15:00')
+                
+        # Filtrar por tipo de programa
+        if tipo_programa:
+            # Filtrar clases que tienen al menos un alumno con el tipo de programa seleccionado
+            clases = clases.filter(grupo__alumnos_actuales__tipo_programa=tipo_programa).distinct()
         
         # Organizar clases por salón y fecha
         clases_organizadas = {}
@@ -102,6 +110,8 @@ class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             'sede_seleccionada': sede_id,
             'municipio_seleccionado': municipio_id,
             'tipo_horario': tipo_horario,
+            'tipo_programa_seleccionado': tipo_programa,
+            'tipos_programa': dict(Alumno.TIPO_PROGRAMA),
             'puede_editar': self.request.user.is_superuser or 
                           self.request.user.groups.filter(name='SecretariaAcademica').exists()
         })

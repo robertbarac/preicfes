@@ -2,7 +2,7 @@ from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.template.loader import render_to_string
 
-from academico.models import Clase, Materia
+from academico.models import Clase, Materia, Alumno
 from usuarios.models import Usuario
 from ubicaciones.models import Municipio, Sede
 
@@ -31,6 +31,7 @@ class ClaseListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         fecha_inicio = self.request.GET.get('fecha_inicio')
         fecha_fin = self.request.GET.get('fecha_fin')
         ciudad = self.request.GET.get('ciudad')
+        tipo_programa = self.request.GET.get('tipo_programa')
 
         if estado:
             queryset = queryset.filter(estado=estado)
@@ -47,6 +48,11 @@ class ClaseListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         # Solo aplicar filtro de ciudad si es superuser
         if ciudad and self.request.user.is_superuser:
             queryset = queryset.filter(salon__sede__municipio__nombre=ciudad)
+            
+        # Filtrar por tipo de programa
+        if tipo_programa:
+            # Filtrar clases que tienen al menos un alumno con el tipo de programa seleccionado
+            queryset = queryset.filter(grupo__alumnos_actuales__tipo_programa=tipo_programa).distinct()
 
         # Optimizar consultas y ordenar por fecha descendente
         return queryset.select_related(
@@ -94,6 +100,8 @@ class ClaseListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             'materias': Materia.objects.all(),
             'sedes': sedes,
             'estados_clase': Clase.ESTADO_CLASE,
+            'tipos_programa': dict(Alumno.TIPO_PROGRAMA),
+            'tipo_programa_seleccionado': self.request.GET.get('tipo_programa'),
             'titulo': 'Lista de Clases'
         })
         return context

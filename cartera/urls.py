@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    BecadosListView, GraficaIngresosEgresosView, 
+    BecadosListView, GraficaIngresosView, GraficaEgresosView,
     CuotasVencidasListView, DeudaCreateView, CuotaCreateView, CuotaUpdateView, CuotaDeleteView, ReciboPDFView,
     PazSalvoListView, PazSalvoPDFView, ProximosPagosListView, InformeDiarioView, generar_pdf_informe,
     MantenimientoCarteraView
@@ -13,7 +13,8 @@ from .views.alumnos_retirados_list import AlumnosRetiradosListView
 urlpatterns = [
     # path('abonos-hechos/', AbonosHechosListView.as_view(), name='abonos_hechos'),
     # path('cartera/', CarteraListView.as_view(), name='cartera'),
-    path('grafica/', GraficaIngresosEgresosView.as_view(), name='grafica'),
+    path('grafica/', GraficaIngresosView.as_view(), name='grafica'),
+    path('grafica-egresos/', GraficaEgresosView.as_view(), name='grafica_egresos'),
     path('mantenimiento/', MantenimientoCarteraView.as_view(), name='mantenimiento'),
     path('cuotas-vencidas/', CuotasVencidasListView.as_view(), name='cuotas_vencidas'),
     path('deuda/agregar/<int:alumno_id>/', DeudaCreateView.as_view(), name='deuda_agregar'),

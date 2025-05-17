@@ -38,6 +38,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         culminado = self.request.GET.get('culminado')
         estado_deuda = self.request.GET.get('estado_deuda')
         es_becado = self.request.GET.get('es_becado')
+        tipo_programa = self.request.GET.get('tipo_programa')
 
         if nombre:
             queryset = queryset.filter(nombres__icontains=nombre)
@@ -69,6 +70,10 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             queryset = queryset.filter(es_becado=True)
         elif es_becado == 'no':
             queryset = queryset.filter(es_becado=False)
+            
+        # Filtrar por tipo de programa
+        if tipo_programa:
+            queryset = queryset.filter(tipo_programa=tipo_programa)
 
         return queryset.order_by('primer_apellido')
 
@@ -95,6 +100,10 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         else:
             # Solo mostrar sedes del municipio del usuario
             context['sedes'] = Sede.objects.filter(municipio=self.request.user.municipio)
+            
+        # Añadir tipos de programa al contexto
+        context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
+        context['tipo_programa_seleccionado'] = self.request.GET.get('tipo_programa')
             
         # Añadir fecha actual para comparar con fecha_culminacion
         fecha_actual = timezone.localtime(timezone.now()).date()

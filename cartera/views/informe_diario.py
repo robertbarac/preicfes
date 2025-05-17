@@ -22,8 +22,11 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Obtener municipio seleccionado
         municipio_id = self.request.GET.get('municipio')
         if not self.request.user.is_superuser:
-        # Si no es superuser, usar su municipio asignado
-                municipio_id = self.request.user.municipio.id
+            # Si no es superuser, usar su municipio asignado
+            municipio_id = self.request.user.municipio.id
+            
+        # Obtener tipo de programa seleccionado
+        tipo_programa = self.request.GET.get('tipo_programa')
         
         # Obtener lista de municipios para superuser
         if self.request.user.is_superuser:
@@ -31,8 +34,15 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             context['municipios'] = Municipio.objects.all()
             context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
             
+        # Obtener lista de tipos de programa para el filtro
+        from academico.models import Alumno
+        context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
+        context['tipo_programa_seleccionado'] = tipo_programa
+            
         # Base queryset para cuotas
         cuotas_qs = Cuota.objects.all()
+        
+        # Filtrar por municipio
         if municipio_id:
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
@@ -40,6 +50,12 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         elif not self.request.user.is_superuser:
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
+            )
+            
+        # Filtrar por tipo de programa
+        if tipo_programa:
+            cuotas_qs = cuotas_qs.filter(
+                deuda__alumno__tipo_programa=tipo_programa
             )
         
         # Datos de recaudación del día (basado en la fecha de pago, no de vencimiento)
@@ -97,6 +113,8 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Reporte de cartera
         # Obtener todas las cuotas sin filtrar por estado
         todas_cuotas_qs = Cuota.objects.all()
+        
+        # Filtrar por municipio
         if municipio_id:
             todas_cuotas_qs = todas_cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
@@ -104,6 +122,12 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         elif not self.request.user.is_superuser:
             todas_cuotas_qs = todas_cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
+            )
+            
+        # Filtrar por tipo de programa
+        if tipo_programa:
+            todas_cuotas_qs = todas_cuotas_qs.filter(
+                deuda__alumno__tipo_programa=tipo_programa
             )
         
         # Valor total de cartera (suma de todos los montos de cuotas de alumnos activos)

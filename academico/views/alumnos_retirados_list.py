@@ -19,12 +19,15 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
         municipio_id = self.request.GET.get('municipio')
         mes = self.request.GET.get('mes')
         anio = self.request.GET.get('anio')
+        tipo_programa = self.request.GET.get('tipo_programa')
         if municipio_id:
             queryset = queryset.filter(grupo_actual__salon__sede__municipio_id=municipio_id)
         if mes and anio:
             queryset = queryset.filter(fecha_retiro__month=mes, fecha_retiro__year=anio)
         elif anio:
             queryset = queryset.filter(fecha_retiro__year=anio)
+        if tipo_programa:
+            queryset = queryset.filter(tipo_programa=tipo_programa)
         return queryset.select_related('grupo_actual', 'grupo_actual__salon', 'grupo_actual__salon__sede', 'grupo_actual__salon__sede__municipio')
 
     def get_context_data(self, **kwargs):
@@ -38,6 +41,9 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
         context['mes'] = self.request.GET.get('mes', '')
         context['anio'] = self.request.GET.get('anio', '')
         context['municipio_seleccionado'] = self.request.GET.get('municipio', '')
+        context['tipo_programa_seleccionado'] = self.request.GET.get('tipo_programa', '')
+        # Añadir tipos de programa al contexto
+        context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
         # Rango de años para el filtro (actual +/- 2)
         anio_actual = context['anio_actual']
         context['anios'] = list(range(anio_actual + 2, anio_actual - 3, -1))

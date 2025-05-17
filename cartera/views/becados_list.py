@@ -31,6 +31,11 @@ class BecadosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             municipio_id = self.request.GET.get('municipio')
             if municipio_id:
                 queryset = queryset.filter(grupo_actual__salon__sede__municipio_id=municipio_id)
+                
+        # Filtrar por tipo de programa
+        tipo_programa = self.request.GET.get('tipo_programa')
+        if tipo_programa:
+            queryset = queryset.filter(tipo_programa=tipo_programa)
             
         return queryset
     
@@ -43,6 +48,10 @@ class BecadosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             from ubicaciones.models import Municipio
             context['municipios'] = Municipio.objects.all().order_by('nombre')
             context['selected_municipio'] = self.request.GET.get('municipio')
+            
+        # Añadir tipos de programa al contexto
+        context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
+        context['tipo_programa_seleccionado'] = self.request.GET.get('tipo_programa', '')
         
         # Añadir información de paginación al contexto
         if context.get('is_paginated', False):

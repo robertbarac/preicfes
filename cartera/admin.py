@@ -85,8 +85,8 @@ class DeudaAdmin(admin.ModelAdmin):
 
 @admin.register(Egreso)
 class EgresosAdmin(admin.ModelAdmin):
-    list_display = ('sede', 'municipio', 'concepto', 'valor', 'estado', 'fecha')
-    list_filter = ('estado', 'fecha', 'municipio')
+    list_display = ('sede', 'municipio', 'get_concepto_display', 'valor', 'estado', 'fecha')
+    list_filter = ('estado', 'fecha', 'municipio', 'sede', 'concepto')
     search_fields = ('concepto', 'contratista')
     date_hierarchy = 'fecha'  # Navegación por fechas
 
@@ -97,6 +97,11 @@ class EgresosAdmin(admin.ModelAdmin):
             queryset = queryset.filter(municipio=request.user.municipio)
         return queryset
 
+    def get_concepto_display(self, obj):
+        """Mostrar el nombre legible del concepto"""
+        return dict(obj.CONCEPTO_CHOICES).get(obj.concepto, obj.concepto)
+    get_concepto_display.short_description = 'Concepto'
+    
     # Personalizar el formulario de edición
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:

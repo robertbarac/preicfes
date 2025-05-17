@@ -72,6 +72,18 @@
                     {% endfor %}
                 </select>
             </div>
+            
+            <div>
+                <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa</label>
+                <select name="tipo_programa" id="tipo_programa" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Todos</option>
+                    {% for key, value in tipos_programa.items %}
+                        <option value="{{ key }}" {% if tipo_programa_seleccionado == key %}selected{% endif %}>
+                            {{ value }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
 
             <div>
                 <label for="fecha_inicio" class="block text-sm font-medium text-gray-700">Fecha Inicio</label>

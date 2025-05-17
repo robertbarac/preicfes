@@ -7,11 +7,23 @@ class Egreso(models.Model):
         ('publicado', 'Publicado'),
         ('pagado', 'Pagado'),
     ]
+    
+    CONCEPTO_CHOICES = [
+        ('nomina_profesores', 'Nómina profesores'),
+        ('nomina_administrativos', 'Nómina administrativos'),
+        ('servicios_publicos', 'Servicios públicos'),
+        ('servicio_tecnico_pc', 'Servicio técnico PC'),
+        ('servicio_tecnico_fotocopias', 'Servicio técnico fotocopias'),
+        ('arreglo_planta_fisica', 'Arreglo planta física'),
+        ('adquisiciones', 'Adquisiciones'),
+        ('viaticos', 'Viáticos'),
+        ('otros', 'Otros'),
+    ]
 
     sede = models.ForeignKey(Sede, on_delete=models.CASCADE, related_name="egresos")
     municipio = models.ForeignKey('ubicaciones.Municipio', on_delete=models.CASCADE, related_name="egresos", null=True, blank=True)
     fecha = models.DateTimeField()  # Cambiado a DateTimeField
-    concepto = models.CharField(max_length=100)
+    concepto = models.CharField(max_length=100, choices=CONCEPTO_CHOICES, default='servicio_tecnico_pc')
     contratista = models.CharField(max_length=100)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=20, choices=ESTADO_EGRESO, default='publicado')

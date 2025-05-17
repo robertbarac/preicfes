@@ -6,7 +6,8 @@ from .cuota_update import CuotaUpdateView
 from .cuotas_vencidas_list import CuotasVencidasListView
 from .deuda_create import DeudaCreateView
 from .generar_informe_pdf import generar_pdf_informe
-from .grafica_ingresos_egresos import GraficaIngresosEgresosView
+from .grafica_ingresos_egresos import GraficaIngresosView
+from .grafica_egresos import GraficaEgresosView
 from .informe_diario import InformeDiarioView
 from .mantenimiento_cartera import MantenimientoCarteraView
 from .paz_salvo_list import PazSalvoListView
@@ -23,7 +24,8 @@ __all__ = [
     'CuotaUpdateView',
     'CuotaDeleteView',
     'DeudaCreateView',
-    'GraficaIngresosEgresosView',
+    'GraficaIngresosView',
+    'GraficaEgresosView',
     'MantenimientoCarteraView',
     'InformeDiarioView',
     'generar_pdf_informe',

@@ -11,11 +11,12 @@
         </span>
     </h1>
     
-    {% if user.is_superuser %}
     <div class="mb-4">
-        <form method="get" class="flex gap-4">
+        <form method="get" class="flex flex-wrap gap-4">
+            {% if user.is_superuser %}
             <div class="flex-1">
-                <select name="municipio" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
+                <select name="municipio" id="municipio" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
                     <option value="">Todos los municipios</option>
                     {% for municipio in municipios %}
                     <option value="{{ municipio.id }}" {% if municipio.id == selected_municipio %}selected{% endif %}>
@@ -24,12 +25,25 @@
                     {% endfor %}
                 </select>
             </div>
-            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Filtrar
-            </button>
+            {% endif %}
+            
+            <div class="flex-1">
+                <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa</label>
+                <select name="tipo_programa" id="tipo_programa" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                    <option value="">Todos</option>
+                    {% for key, value in tipos_programa.items %}
+                        <option value="{{ key }}" {% if tipo_programa_seleccionado == key %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Filtrar
+                </button>
+            </div>
         </form>
     </div>
-    {% endif %}
     
     <div class="bg-white shadow rounded-lg overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
@@ -43,6 +57,7 @@
                     {% if user.is_superuser %}
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Municipio</th>
                     {% endif %}
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Programa</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -76,6 +91,19 @@
                         {% endif %}
                     </td>
                     {% endif %}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if alumno.tipo_programa == 'pre_privado' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">PreICFES Privado</span>
+                        {% elif alumno.tipo_programa == 'pre_publico' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">PreICFES Público</span>
+                        {% elif alumno.tipo_programa == 'politecnico' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">Politécnico</span>
+                        {% elif alumno.tipo_programa == 'semillero' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-pink-100 text-pink-800">Semillero</span>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">No definido</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>

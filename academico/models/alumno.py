@@ -16,6 +16,13 @@ class Alumno(models.Model):
         ('activo', 'Activo'),
         ('retirado', 'Retirado'),
     ]
+    
+    TIPO_PROGRAMA = [
+        ('pre_privado', 'PreICFES Privado'),
+        ('pre_publico', 'PreICFES Público'),
+        ('politecnico', 'Politécnico'),
+        ('semillero', 'Semillero de Investigación'),
+    ]
 
     # Campos obligatorios
     nombres = models.CharField(max_length=100)
@@ -24,6 +31,13 @@ class Alumno(models.Model):
     fecha_nacimiento = models.DateField(null=True, blank=True, verbose_name="Fecha de Nacimiento")
     identificacion = models.CharField(max_length=20, unique=True, null=True, blank=True)
     tipo_identificacion = models.CharField(max_length=2, choices=TIPO_IDENTIFICACION)
+    tipo_programa = models.CharField(
+        max_length=20, 
+        choices=TIPO_PROGRAMA, 
+        default='pre_privado',
+        verbose_name="Tipo de Programa",
+        help_text="Programa al que pertenece el estudiante"
+    )
     es_becado = models.BooleanField(
         default=False,
         verbose_name="¿Es becado?",
