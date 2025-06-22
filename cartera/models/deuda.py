@@ -6,12 +6,13 @@ class Deuda(models.Model):
         ('emitida', 'Emitida'),
         ('pagada', 'Pagada'),
     ]
-
+    
     alumno = models.OneToOneField(Alumno, on_delete=models.CASCADE, related_name="deuda")
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, help_text="Valor total de la deuda.")
     saldo_pendiente = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Saldo pendiente de la deuda.")
     fecha_creacion = models.DateTimeField(auto_now_add=True, help_text="Fecha de creación de la deuda.")
     estado = models.CharField(max_length=20, choices=ESTADO_DEUDA, default='emitida', help_text="Estado actual de la deuda.")
+    edicion_habilitada = models.BooleanField(default=False, help_text="Indica si la deuda puede ser editada.")
 
     def __str__(self):
         return str(f"Deuda de {self.alumno} - {self.estado}")

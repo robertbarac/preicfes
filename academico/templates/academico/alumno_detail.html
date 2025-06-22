@@ -93,6 +93,24 @@
                         <dd class="text-sm text-gray-900">{{ estado_deuda }}</dd>
                     </div>
                 </dl>
+                
+                {% if alumno.deuda %}
+                <div class="mt-4 flex space-x-2">
+                    {% if request.user.username == 'vvgomez' %}
+                    <!-- Botón para habilitar/deshabilitar edición (solo visible para vvgomez) -->
+                    <a href="{% url 'cartera:toggle_edicion_deuda' alumno.deuda.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white {% if alumno.deuda.edicion_habilitada %}bg-yellow-600 hover:bg-yellow-700{% else %}bg-blue-600 hover:bg-blue-700{% endif %} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% if alumno.deuda.edicion_habilitada %}Deshabilitar Edición{% else %}Habilitar Edición{% endif %}
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Botón para editar deuda (visible según permisos) -->
+                    {% if request.user.username == 'vvgomez' or alumno.deuda.edicion_habilitada and request.user.is_superuser or alumno.deuda.edicion_habilitada and 'SecretariaCartera' in request.user.groups.all|join:", " %}
+                    <a href="{% url 'cartera:deuda_editar' alumno.deuda.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Editar Deuda
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
 

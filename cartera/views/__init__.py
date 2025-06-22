@@ -5,6 +5,8 @@ from .cuota_delete import CuotaDeleteView
 from .cuota_update import CuotaUpdateView
 from .cuotas_vencidas_list import CuotasVencidasListView
 from .deuda_create import DeudaCreateView
+from .deuda_update import DeudaUpdateView
+from .deuda_toggle_edit import toggle_edicion_deuda
 from .generar_informe_pdf import generar_pdf_informe
 from .grafica_ingresos_egresos import GraficaIngresosView
 from .grafica_egresos import GraficaEgresosView
@@ -24,6 +26,8 @@ __all__ = [
     'CuotaUpdateView',
     'CuotaDeleteView',
     'DeudaCreateView',
+    'DeudaUpdateView',
+    
     'GraficaIngresosView',
     'GraficaEgresosView',
     'MantenimientoCarteraView',

@@ -1,9 +1,9 @@
 from django.urls import path
 from .views import (
     BecadosListView, GraficaIngresosView, GraficaEgresosView,
-    CuotasVencidasListView, DeudaCreateView, CuotaCreateView, CuotaUpdateView, CuotaDeleteView, ReciboPDFView,
+    CuotasVencidasListView, DeudaCreateView, DeudaUpdateView, CuotaCreateView, CuotaUpdateView, CuotaDeleteView, ReciboPDFView,
     PazSalvoListView, PazSalvoPDFView, ProximosPagosListView, InformeDiarioView, generar_pdf_informe,
-    MantenimientoCarteraView
+    MantenimientoCarteraView, toggle_edicion_deuda
 )
 
 app_name = 'cartera'
@@ -29,4 +29,6 @@ urlpatterns = [
     path('informe-diario/', InformeDiarioView.as_view(), name='informe_diario'),
     path('informe-diario/pdf/', generar_pdf_informe, name='generar_pdf_informe'),
     path('retirados/', AlumnosRetiradosListView.as_view(), name='alumnos_retirados_list'),
+    path('deuda/editar/<int:pk>/', DeudaUpdateView.as_view(), name='deuda_editar'),
+    path('deuda/toggle-edicion/<int:pk>/', toggle_edicion_deuda, name='toggle_edicion_deuda'),
 ]

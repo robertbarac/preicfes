@@ -1,31 +1,73 @@
 {% extends 'base.html' %}
 
-{% block title %}Crear Deuda{% endblock title %}
+{% block title %}{% if object %}Editar Deuda{% else %}Crear Deuda{% endif %}{% endblock title %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Crear Deuda para {{ alumno.nombres }} {{ alumno.primer_apellido }} {{ alumno.segundo_apellido }}</h1>
+    <h1 class="text-3xl font-bold mb-6">
+        {% if object %}
+            Editar Deuda para {{ object.alumno.nombres }} {{ object.alumno.primer_apellido }} {{ object.alumno.segundo_apellido }}
+        {% else %}
+            Crear Deuda para {{ alumno.nombres }} {{ alumno.primer_apellido }} {{ alumno.segundo_apellido }}
+        {% endif %}
+    </h1>
+    
+    {% if object %}
+    <!-- Modo Edición -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Información Actual</h3>
+        </div>
+        <div class="border-t border-gray-200">
+            <dl>
+                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Valor Actual</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">${{ object.valor_total }}</dd>
+                </div>
+                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Saldo Pendiente</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">${{ object.saldo_pendiente }}</dd>
+                </div>
+                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Estado</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ object.get_estado_display }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+    
     <form method="post">
         {% csrf_token %}
+        {% if not object %}
         <input type="hidden" name="alumno" value="{{ alumno.id }}">
+        {% endif %}
+        
         <div class="mb-4">
-            <label for="valor_total" class="block text-sm font-medium text-gray-700">Valor Total</label>
-            <input type="number" name="valor_total" id="valor_total" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ingrese el valor total">
+            <label for="id_valor_total" class="block text-sm font-medium text-gray-700">Nuevo valor de deuda </label>
+            <input type="number" name="valor_total" id="id_valor_total" value="{% if object %}{{ object.valor_total }}{% endif %}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ingrese el valor total" step="any">
         </div>
+        
+        {% if not object %}
         <div class="mb-4">
-            <label for="saldo_pendiente" class="block text-sm font-medium text-gray-700">Saldo Pendiente</label>
-            <input type="number" name="saldo_pendiente" id="saldo_pendiente" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ingrese el saldo pendiente">
+            <label for="id_saldo_pendiente" class="block text-sm font-medium text-gray-700">Saldo Pendiente</label>
+            <input type="number" name="saldo_pendiente" id="id_saldo_pendiente" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ingrese el saldo pendiente" step="any">
         </div>
+        
         <div class="mb-4">
-            <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
-            <select name="estado" id="estado" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <label for="id_estado" class="block text-sm font-medium text-gray-700">Estado</label>
+            <select name="estado" id="id_estado" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 <option value="emitida">Emitida</option>
                 <option value="pagada">Pagada</option>
             </select>
         </div>
+        {% endif %}
         <button type="submit" class="mt-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-            Guardar Deuda
+            {% if object %}Actualizar Deuda{% else %}Guardar Deuda{% endif %}
         </button>
+        <a href="javascript:history.back()" class="ml-2 mt-4 inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Cancelar
+        </a>
     </form>
 </div>
 {% endblock %}

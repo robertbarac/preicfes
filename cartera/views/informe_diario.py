@@ -1,3 +1,4 @@
+from cartera.models.deuda import Deuda
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponse
@@ -131,9 +132,13 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             )
         
         # Valor total de cartera (suma de todos los montos de cuotas de alumnos activos)
-        context['valor_cartera'] = todas_cuotas_qs.filter(
-            deuda__alumno__estado='activo'
-        ).aggregate(Sum('monto'))['monto__sum'] or 0
+        context['valor_cartera'] = Deuda.objects.filter(
+            alumno__estado='activo'
+        ).aggregate(Sum('valor_total'))['valor_total__sum'] or 0
+        
+        # context['valor_cartera'] = todas_cuotas_qs.filter(
+        #     deuda__alumno__estado='activo'
+        # ).aggregate(Sum('monto'))['monto__sum'] or 0
         
         # Total cobrado (suma de todos los montos_abonados)
         context['cobrado'] = todas_cuotas_qs.aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
