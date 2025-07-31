@@ -72,6 +72,14 @@
                         <dt class="text-sm font-medium text-gray-500">Es Becado</dt>
                         <dd class="text-sm text-gray-900">{% if alumno.es_becado %}Sí{% else %}No{% endif %}</dd>
                     </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Fecha de Ingreso</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.fecha_ingreso }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Fecha de culminación</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.fecha_culminacion }}</dd>
+                    </div>
                 </dl>
             </div>
         </div>
