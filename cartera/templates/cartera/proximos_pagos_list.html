@@ -74,12 +74,14 @@
                     <td class="px-3 py-2 whitespace-nowrap">{{ cuota.fecha_vencimiento }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ cuota.dias_restantes }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">
+                        {% if cuota.deuda.alumno.celular %}
                         <a href="whatsapp://send?phone={{ cuota.deuda.alumno.celular|slice:':13' }}&text={{ cuota.whatsapp_message }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-green-500">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
                             <span class="ml-1">Estudiante</span>
                         </a>
+                        {% endif %}
                         {% if cuota.deuda.alumno.celular_padre %}
                         <a href="whatsapp://send?phone={{ cuota.deuda.alumno.celular_padre|slice:':13' }}&text={{ cuota.whatsapp_message }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500 mb-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
