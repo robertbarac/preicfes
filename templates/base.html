@@ -27,6 +27,17 @@
               />
             </div>
 
+            <!-- Botón de menú móvil (visible solo en móvil) -->
+            <button 
+              id="mobile-menu-button" 
+              class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
+              onclick="document.getElementById('mobile-menu').classList.toggle('hidden');"
+            >
+              <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
             <!-- Enlaces de navegación (centrados) -->
             {% if user.is_authenticated %}
             <div class="hidden md:block mx-auto">
@@ -270,9 +281,62 @@
         </div>
       </nav>
 
+      <!-- Menú móvil desplegable -->
+      <div id="mobile-menu" class="hidden md:hidden bg-gray-800 pb-3 pt-2">
+        {% if user.is_authenticated %}
+          <div class="space-y-1 px-4">
+            {% if user.is_staff %}
+              <!-- Sección Académico -->
+              <div class="py-2 border-b border-gray-700">
+                <div class="text-white font-medium mb-2">Académico</div>
+                <a href="{% url 'alumnos_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Alumnos</a>
+                <a href="{% url 'alumnos-retirados-list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Alumnos Retirados</a>
+                <a href="{% url 'salon_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Salones</a>
+                <a href="{% url 'grupo_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Grupos</a>
+                <a href="{% url 'clase_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Clases</a>
+                <a href="{% url 'profesor_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Profesores</a>
+                <a href="{% url 'cartera:becados_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Becados</a>
+              </div>
+            {% endif %}
+
+            {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+              <!-- Sección Cartera -->
+              <div class="py-2 border-b border-gray-700">
+                <div class="text-white font-medium mb-2">Cartera</div>
+                <a href="{% url 'cartera:mantenimiento' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Mantenimiento</a>
+                <a href="{% url 'cartera:proximos_pagos' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Próximos Pagos</a>
+                <a href="{% url 'cartera:cuotas_vencidas' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Cuotas Vencidas</a>
+                <a href="{% url 'cartera:grafica' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Gráficas de Ingresos</a>
+                <a href="{% url 'cartera:grafica_egresos' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Gráficas de Egresos</a>
+                <a href="{% url 'cartera:informe_diario' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Informe del día</a>
+                <a href="{% url 'cartera:paz_salvo' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Certificado Paz y Salvo</a>
+                <a href="{% url 'cartera:alumnos_retirados_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Alumnos Retirados</a>
+              </div>
+            {% endif %}
+
+            {% if request.user.is_staff %}
+              <a href="{% url 'admin:index' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md mt-2">Admin</a>
+            {% endif %}
+
+            <!-- Opciones de usuario -->
+            <div class="mt-3 pt-3 border-t border-gray-700">
+              <a href="{% url 'cambiar_contraseña' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Cambiar contraseña</a>
+              <form action="{% url 'logout' %}" method="post" class="block">
+                {% csrf_token %}
+                <button type="submit" class="w-full text-left py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Cerrar sesión</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <div class="px-4">
+            <a href="{% url 'login' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Iniciar sesión</a>
+          </div>
+        {% endif %}
+      </div>
+
       <!-- Contenido principal -->
       <main>
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
           {% block content %}
           <!-- El contenido de las páginas se insertará aquí -->
           {% endblock %}
