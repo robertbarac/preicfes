@@ -13,7 +13,7 @@
             {% if request.user.is_superuser %}
             <div>
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio:</label>
-                <select name="municipio" id="municipio" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm">
+                <select name="municipio" id="municipio" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
                     <option value="">Todos los municipios</option>
                     {% for municipio in municipios %}
                         <option value="{{ municipio.id }}" {% if municipio.id == municipio_seleccionado %}selected{% endif %}>{{ municipio.nombre }}</option>
@@ -24,7 +24,7 @@
             
             <div>
                 <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa:</label>
-                <select name="tipo_programa" id="tipo_programa" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm">
+                <select name="tipo_programa" id="tipo_programa" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
                     <option value="">Todos los programas</option>
                     {% for valor, nombre in tipos_programa.items %}
                         <option value="{{ valor }}" {% if valor == tipo_programa_seleccionado %}selected{% endif %}>{{ nombre }}</option>
@@ -32,7 +32,7 @@
                 </select>
             </div>
             
-            <button type="submit" class="mt-6 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <button type="submit" class="mt-4 sm:mt-6 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Filtrar
             </button>
         </form>

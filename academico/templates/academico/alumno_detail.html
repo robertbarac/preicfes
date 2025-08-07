@@ -9,7 +9,7 @@
     <!-- Pestañas -->
     <div class="bg-white p-6 rounded-lg shadow-md">
         <!-- Navegación de pestañas -->
-        <nav class="flex space-x-4 border-b mb-6">
+        <nav class="flex space-x-4 border-b mb-6 overflow-x-auto whitespace-nowrap pb-2">
             <button id="tab-info-alumno" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
                 Información del Alumno
             </button>
@@ -127,7 +127,8 @@
             <div class="space-y-4">
                 <!-- Tabla de cuotas -->
                 <h3 class="text-xl font-semibold mb-4">Historial de Pagos</h3>
-                <table class="min-w-full bg-white border border-gray-200">
+                <div class="overflow-x-auto shadow-md rounded-lg">
+                    <table class="min-w-full bg-white border border-gray-200">
                     <thead>
                         <tr>
                             <th class="py-2 px-4 border-b">Monto Total</th>
@@ -253,6 +254,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
@@ -277,7 +279,8 @@
                 <!-- Tabla de Asistencias -->
                 <div class="mt-6">
                     <h3 class="text-lg font-semibold mb-4">Historial Detallado</h3>
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <div class="overflow-x-auto shadow-md rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
                         <thead>
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -324,6 +327,7 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -333,7 +337,8 @@
             <div class="space-y-4">
                 <!-- Tabla de Promedios por Materia -->
                 <h3 class="text-lg font-semibold mb-4">Promedios por Materia</h3>
-                <table class="min-w-full divide-y divide-gray-200">
+                <div class="overflow-x-auto shadow-md rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -363,10 +368,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
-
+                </div>
                 <!-- Tabla de Notas Detalladas -->
                 <h3 class="text-lg font-semibold mt-6 mb-4">Historial Detallado</h3>
-                <table class="min-w-full divide-y divide-gray-200">
+                <div class="overflow-x-auto shadow-md rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -402,6 +408,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>

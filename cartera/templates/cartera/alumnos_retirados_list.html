@@ -4,60 +4,61 @@
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-2xl font-bold mb-6">Alumnos Retirados</h1>
     <!-- Filtros -->
-    <form method="get" class="mb-6 flex flex-wrap gap-4">
-        {% if user.is_superuser %}
-        <div>
-            <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
-            <select name="municipio" id="municipio" class="block w-full border-gray-300 rounded-md">
-                <option value="">Todos</option>
-                {% for municipio in municipios %}
-                <option value="{{ municipio.id }}" {% if municipio_seleccionado == municipio.id|stringformat:'i' %}selected{% endif %}>{{ municipio.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        {% endif %}
-        
-        <div>
-            <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa</label>
-            <select name="tipo_programa" id="tipo_programa" class="block w-full border-gray-300 rounded-md">
-                <option value="">Todos</option>
-                {% for key, value in tipos_programa %}
-                <option value="{{ key }}" {% if tipo_programa_seleccionado == key %}selected{% endif %}>{{ value }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label for="mes" class="block text-sm font-medium text-gray-700">Mes</label>
-            <select name="mes" id="mes" class="block w-full border-gray-300 rounded-md">
-                <option value="">Todos</option>
-                <option value="1" {% if mes == '1' %}selected{% endif %}>Enero</option>
-                <option value="2" {% if mes == '2' %}selected{% endif %}>Febrero</option>
-                <option value="3" {% if mes == '3' %}selected{% endif %}>Marzo</option>
-                <option value="4" {% if mes == '4' %}selected{% endif %}>Abril</option>
-                <option value="5" {% if mes == '5' %}selected{% endif %}>Mayo</option>
-                <option value="6" {% if mes == '6' %}selected{% endif %}>Junio</option>
-                <option value="7" {% if mes == '7' %}selected{% endif %}>Julio</option>
-                <option value="8" {% if mes == '8' %}selected{% endif %}>Agosto</option>
-                <option value="9" {% if mes == '9' %}selected{% endif %}>Septiembre</option>
-                <option value="10" {% if mes == '10' %}selected{% endif %}>Octubre</option>
-                <option value="11" {% if mes == '11' %}selected{% endif %}>Noviembre</option>
-                <option value="12" {% if mes == '12' %}selected{% endif %}>Diciembre</option>
-            </select>
-        </div>
-        <div>
-            <label for="anio" class="block text-sm font-medium text-gray-700">Año</label>
-            <select name="anio" id="anio" class="block w-full border-gray-300 rounded-md">
-                <option value="">Todos</option>
-                {% for y in anios %}
-                <option value="{{ y }}" {% if anio == y|stringformat:'s' %}selected{% endif %}>{{ y }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="flex items-end space-x-2">
-            <button type="submit" class="py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filtrar</button>
-            <a href="{% url 'cartera:alumnos_retirados_list' %}" class="py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar filtros</a>
-        </div>
-    </form>
+    <div class="bg-white shadow-md rounded-lg p-4 mb-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            {% if user.is_superuser %}
+            <div>
+                <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
+                <select name="municipio" id="municipio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    {% for municipio in municipios %}
+                    <option value="{{ municipio.id }}" {% if municipio_seleccionado == municipio.id|stringformat:'i' %}selected{% endif %}>{{ municipio.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div>
+                <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa</label>
+                <select name="tipo_programa" id="tipo_programa" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    {% for key, value in tipos_programa %}
+                    <option value="{{ key }}" {% if tipo_programa_seleccionado == key %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="mes" class="block text-sm font-medium text-gray-700">Mes</label>
+                <select name="mes" id="mes" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    <option value="1" {% if mes == '1' %}selected{% endif %}>Enero</option>
+                    <option value="2" {% if mes == '2' %}selected{% endif %}>Febrero</option>
+                    <option value="3" {% if mes == '3' %}selected{% endif %}>Marzo</option>
+                    <option value="4" {% if mes == '4' %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes == '5' %}selected{% endif %}>Mayo</option>
+                    <option value="6" {% if mes == '6' %}selected{% endif %}>Junio</option>
+                    <option value="7" {% if mes == '7' %}selected{% endif %}>Julio</option>
+                    <option value="8" {% if mes == '8' %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes == '9' %}selected{% endif %}>Septiembre</option>
+                    <option value="10" {% if mes == '10' %}selected{% endif %}>Octubre</option>
+                    <option value="11" {% if mes == '11' %}selected{% endif %}>Noviembre</option>
+                    <option value="12" {% if mes == '12' %}selected{% endif %}>Diciembre</option>
+                </select>
+            </div>
+            <div>
+                <label for="anio" class="block text-sm font-medium text-gray-700">Año</label>
+                <select name="anio" id="anio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    {% for y in anios %}
+                    <option value="{{ y }}" {% if anio == y|stringformat:'s' %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Filtrar</button>
+                <a href="{% url 'cartera:alumnos_retirados_list' %}" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Limpiar</a>
+            </div>
+        </form>
+    </div>
     <!-- Estadísticas -->
     <div class="mb-6">
         <span class="font-semibold">Total retirados:</span> {{ total_retirados }}<br>

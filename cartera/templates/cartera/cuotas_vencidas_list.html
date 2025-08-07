@@ -8,8 +8,8 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Cuotas Vencidas</h1>
         
-        <div class="flex space-x-4">
-            <form method="GET" class="flex space-x-2">
+        <div class="flex flex-col sm:flex-row sm:space-x-4">
+            <form method="GET" class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                 <select name="dias_filtro" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     <option value="todos" {% if dias_filtro == 'todos' %}selected{% endif %}>Todos</option>
                     <option value="1-30" {% if dias_filtro == '1-30' %}selected{% endif %}>1-30 días</option>
@@ -43,8 +43,8 @@
         </div>
     </div>
 
-    <div class="bg-white shadow rounded-lg">
-        <div class="min-w-full divide-y divide-gray-200">
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
             <table class="min-w-full">
                 <thead class="bg-gray-50">
                     <tr>
@@ -118,6 +118,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
         </div>
     </div>
 
