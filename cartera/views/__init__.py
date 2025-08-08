@@ -16,6 +16,7 @@ from .paz_salvo_list import PazSalvoListView
 from .paz_salvo_pdf import PazSalvoPDFView
 from .proximos_pagos_list import ProximosPagosListView
 from .recibo_pdf import ReciboPDFView
+from .generar_cuotas import generar_cuotas_view
 
 __all__ = [
     'AlumnosRetiradosListView',
@@ -35,5 +36,6 @@ __all__ = [
     'generar_pdf_informe',
     'PazSalvoListView',
     'PazSalvoPDFView',
-    'ReciboPDFView'
+    'ReciboPDFView',
+    'generar_cuotas_view'
 ]

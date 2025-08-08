@@ -8,39 +8,22 @@
     <form method="post">
         {% csrf_token %}
         <div class="mb-4">
-            <label for="monto" class="block text-sm font-medium text-gray-700">Monto</label>
-            <input type="number" name="monto" id="monto" value="{{ object.monto|stringformat:'0.1f'|default:0 }}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <label class="block text-sm font-medium text-gray-700">Fecha de Vencimiento</label>
+            <p class="mt-1 text-lg text-gray-900">{{ object.fecha_vencimiento|date:"d/m/Y" }}</p>
         </div>
-        <div class="mb-4">
-            <label for="monto_abonado" class="block text-sm font-medium text-gray-700">Monto Abonado</label>
-            <input type="number" name="monto_abonado" id="monto_abonado" value="{{ object.monto_abonado|stringformat:'0.1f'|default:0 }}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-        </div>
-        <div class="mb-4">
-            <label for="fecha_vencimiento" class="block text-sm font-medium text-gray-700">Fecha de Vencimiento</label>
-            <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" value="{{ object.fecha_vencimiento|date:'Y-m-d' }}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-        </div>
-        <div class="mb-4">
-            <label for="fecha_pago" class="block text-sm font-medium text-gray-700">Fecha de Pago</label>
-            <input type="date" name="fecha_pago" id="fecha_pago" value="{{ object.fecha_pago|date:'Y-m-d' }}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-            <p class="text-sm text-gray-500 mt-1">Dejar en blanco si aún no se ha realizado el pago. Se establecerá automáticamente al registrar un abono.</p>
-        </div>
-        <div class="mb-4">
-            <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
-            <select name="estado" id="estado" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                <option value="emitida" {% if object.estado == 'emitida' %}selected{% endif %}>Emitida</option>
-                <option value="pagada" {% if object.estado == 'pagada' %}selected{% endif %}>Pagada</option>
-                <option value="pagada_parcial" {% if object.estado == 'pagada_parcial' %}selected{% endif %}>Pagada Parcial</option>
-                <option value="vencida" {% if object.estado == 'vencida' %}selected{% endif %}>Vencida</option>
-            </select>
-        </div>
-        <div class="mb-4">
-            <label for="metodo_pago" class="block text-sm font-medium text-gray-700">Método de Pago</label>
-            <select name="metodo_pago" id="metodo_pago" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                <option value="efectivo" {% if object.metodo_pago == 'efectivo' %}selected{% endif %}>Efectivo</option>
-                <option value="transferencia" {% if object.metodo_pago == 'transferencia' %}selected{% endif %}>Transferencia</option>
-                <option value="datáfono" {% if object.metodo_pago == 'datáfono' %}selected{% endif %}>Datáfono</option>
-            </select>
-        </div>
+
+        {% for field in form %}
+            <div class="mb-4">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="text-sm text-gray-500 mt-1">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p class="text-red-500 text-xs italic">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
         <div class="flex justify-end space-x-4">
             <a href="{% url 'alumno_detail' pk=object.deuda.alumno.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                 Cancelar
