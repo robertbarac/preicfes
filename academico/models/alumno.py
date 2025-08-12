@@ -21,8 +21,9 @@ class Alumno(models.Model):
         ('pre_privado', 'PreICFES Privado'),
         ('pre_publico', 'PreICFES Público'),
         ('premedico', 'PreMédico'),
-        ('politecnico', 'Politécnico'),
+        ('formacion_laboral', 'Formación Laboral'),
         ('semillero', 'Semillero de Investigación'),
+        ('preicfes_kids', 'PreICFES Kids'),
     ]
 
     # Campos obligatorios
