@@ -11,9 +11,13 @@ class Egreso(models.Model):
     CONCEPTO_CHOICES = [
         ('nomina_profesores', 'Nómina profesores'),
         ('nomina_administrativos', 'Nómina administrativos'),
+        ('arriendo', 'Arriendo'),
+        ('nomina_vendedoras', 'Nómina vendedoras'),
+        ('nomina_auxiliares', 'Nómina auxiliares'),
         ('servicios_publicos', 'Servicios públicos'),
         ('servicio_tecnico_pc', 'Servicio técnico PC'),
         ('servicio_tecnico_fotocopias', 'Servicio técnico fotocopias'),
+        ('publicidad', 'Publicidad'),
         ('arreglo_planta_fisica', 'Arreglo planta física'),
         ('adquisiciones', 'Adquisiciones'),
         ('viaticos', 'Viáticos'),
