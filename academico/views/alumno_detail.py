@@ -23,7 +23,7 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
         # Obtener cuotas
         try:
             deuda = alumno.deuda
-            cuotas = deuda.cuotas.all()
+            cuotas = deuda.cuotas.all().order_by('fecha_vencimiento')
             
             # Agregar mensaje WhatsApp a cada cuota
             for cuota in cuotas:

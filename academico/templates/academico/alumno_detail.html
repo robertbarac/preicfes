@@ -168,12 +168,14 @@
                                 <td class="py-2 px-4 border-b text-center">
                                     {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
                                         <div class="flex space-x-2">
+                                            {% if request.user.username == 'vvgomez' or cuota.monto_abonado == 0 %}
                                             <a href="{% url 'cartera:cuota_editar' cuota.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                                 Editar
                                             </a>
                                             <a href="{% url 'cartera:cuota_eliminar' cuota.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                                                 Eliminar
                                             </a>
+                                            {% endif %}
                                             <a href="{% url 'cartera:cuota_recibo' cuota.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" target="_blank">
                                                 Generar Recibo
                                             </a>                                            

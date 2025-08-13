@@ -1,7 +1,10 @@
-from django.views.generic.edit import DeleteView
+# Django imports
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import redirect
 from django.urls import reverse
+from django.views.generic.edit import DeleteView
 
+# Local imports
 from cartera.models import Cuota
 
 class CuotaDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -9,7 +12,15 @@ class CuotaDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = 'cartera/cuota_confirm_delete.html'
     
     def test_func(self):
-        return self.request.user.is_staff or self.request.user.is_superuser
+        # vvgomez tiene acceso total para eliminar cualquier cuota.
+        if self.request.user.username == 'vvgomez':
+            return True
+
+        # Para otros usuarios, permitir solo si son staff/superuser Y la cuota no tiene abonos.
+        cuota = self.get_object()
+        user_is_authorized = self.request.user.is_staff or self.request.user.is_superuser
+        cuota_is_deletable = cuota.monto_abonado == 0
+        return user_is_authorized and cuota_is_deletable
 
     def handle_no_permission(self):
         return redirect('login')

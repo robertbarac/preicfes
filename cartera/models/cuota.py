@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.timezone import now
+from django.utils import timezone
 from .deuda import Deuda
 
 class Cuota(models.Model):
@@ -38,15 +39,18 @@ class Cuota(models.Model):
         else:
             self.estado = "emitida"
 
-    def save(self, *args, **kwargs):
-        """Antes de guardar, actualiza el estado de la cuota y el saldo de la deuda."""
-        # Si se está realizando un pago y no hay fecha_pago registrada, establecerla ahora
-        if self.monto_abonado > 0 and not self.fecha_pago:
-            self.fecha_pago = now().date()
-            
-        self.actualizar_estado()
+    def save(self, run_logic=True, *args, **kwargs):
+        """Guarda la cuota. Si run_logic es True, ejecuta la lógica de actualización de estado y deuda."""
+        if run_logic:
+            # Si se está realizando un pago y no hay fecha_pago registrada, establecerla ahora
+            if self.monto_abonado > 0 and not self.fecha_pago:
+                self.fecha_pago = timezone.localtime(now()).date()
+            self.actualizar_estado()
+
         super().save(*args, **kwargs)
-        self.deuda.actualizar_saldo_y_estado()
+
+        if run_logic:
+            self.deuda.actualizar_saldo_y_estado()
 
     def delete(self, *args, **kwargs):
         """Si se elimina una cuota, se recalcula el saldo pendiente de la deuda."""
