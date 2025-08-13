@@ -23,8 +23,12 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Obtener municipio seleccionado
         municipio_id = self.request.GET.get('municipio')
         if not self.request.user.is_superuser:
-            # Si no es superuser, usar su municipio asignado
-            municipio_id = self.request.user.municipio.id
+            try:
+                municipio_id = self.request.user.municipio.id
+            except AttributeError:
+                # User has no assigned municipality, so they can't see any data.
+                municipio_id = None
+                context['warning_message'] = 'No tienes un municipio asignado. Contacta al administrador.'
             
         # Obtener tipo de programa seleccionado
         tipo_programa = self.request.GET.get('tipo_programa')

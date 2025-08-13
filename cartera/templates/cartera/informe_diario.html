@@ -50,7 +50,7 @@
             </div>
             
             <div>
-                <form method="post" action="{% url 'cartera:generar_pdf_informe' %}" id="pdfForm" target="_blank">
+                <form method="post" action="{% url 'cartera:generar_informe_pdf' %}" id="pdfForm" target="_blank">
                     {% csrf_token %}
                     <input type="hidden" name="recaudo_efectivo" value="{{ recaudo_efectivo }}">
                     <input type="hidden" name="recaudo_transferencia" value="{{ recaudo_transferencia }}">
