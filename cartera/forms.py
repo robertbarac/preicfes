@@ -30,9 +30,31 @@ class CuotaUpdateForm(forms.ModelForm):
 
 
 class GenerarCuotasForm(forms.Form):
-    FRECUENCIA_CHOICES = (
-        ('semanal', 'Semanal'),
-        ('quincenal', 'Quincenal'),
-        ('mensual', 'Mensual'),
+    monto_cuota_inicial = forms.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        required=True,
+        label="Monto de la Cuota Inicial",
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
     )
-    frecuencia = forms.ChoiceField(choices=FRECUENCIA_CHOICES, label="Frecuencia de Pago", widget=forms.Select(attrs={'class': 'form-select'}))
+    fecha_pago_inicial = forms.DateField(
+        required=True,
+        label="Fecha de Pago de la Cuota Inicial",
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+    metodo_pago_inicial = forms.ChoiceField(
+        choices=Cuota.METODO_PAGO, # Usa la lista del modelo Cuota
+        required=True,
+        label="Método de Pago de la Cuota Inicial",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    frecuencia = forms.ChoiceField(
+        choices=[
+            ('semanal', 'Semanal'),
+            ('quincenal', 'Quincenal'),
+            ('mensual', 'Mensual'),
+        ],
+        required=True, 
+        label="Frecuencia de Pago para Cuotas Restantes", 
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
