@@ -69,6 +69,10 @@
                         <dd class="text-sm text-gray-900">{{ alumno.grupo_actual.salon.sede.nombre }}</dd>
                     </div>
                     <div>
+                        <dt class="text-sm font-medium text-gray-500">Ciudad</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.grupo_actual.salon.sede.municipio.nombre }}</dd>
+                    </div>
+                    <div>
                         <dt class="text-sm font-medium text-gray-500">Es Becado</dt>
                         <dd class="text-sm text-gray-900">{% if alumno.es_becado %}Sí{% else %}No{% endif %}</dd>
                     </div>
@@ -79,6 +83,14 @@
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Fecha de culminación</dt>
                         <dd class="text-sm text-gray-900">{{ alumno.fecha_culminacion }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Nombre completo padre</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.nombres_padre }} {{ alumno.primer_apellido_padre }} {{ alumno.segundo_apellido_padre }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Nombre completo madre</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.nombres_madre }} {{ alumno.primer_apellido_madre }} {{ alumno.segundo_apellido_madre }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Número padre</dt>
