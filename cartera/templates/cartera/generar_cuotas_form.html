@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
 
 {% block title %}Generar Cuotas para {{ alumno.nombre }} {{ alumno.apellido }}{% endblock %}
 
@@ -16,16 +17,7 @@
 
         <form method="post" class="space-y-4">
             {% csrf_token %}
-            <div>
-                <label for="{{ form.frecuencia.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ form.frecuencia.label }}</label>
-                {{ form.frecuencia }}
-                {% if form.frecuencia.help_text %}
-                    <p class="mt-2 text-sm text-gray-500">{{ form.frecuencia.help_text }}</p>
-                {% endif %}
-                {% for error in form.frecuencia.errors %}
-                    <p class="mt-2 text-sm text-red-600">{{ error }}</p>
-                {% endfor %}
-            </div>
+            {{ form|crispy }}
 
             <div class="flex items-center justify-end space-x-4">
                 <a href="{% url 'alumno_detail' pk=alumno.id %}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">

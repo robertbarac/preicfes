@@ -1,5 +1,53 @@
 from datetime import timedelta, date
 import calendar
+from dateutil.relativedelta import relativedelta
+
+def calcular_fecha_inicio_inteligente(fecha_base, frecuencia):
+    """
+    Calcula una fecha de inicio inteligente para la primera cuota,
+    asegurando que haya un mínimo de días desde el pago inicial.
+    """
+    MIN_DIAS_DIFERENCIA = 10
+
+    # Lógica para Quincenal
+    if frecuencia == 'quincenal':
+        posibles_fechas = []
+        # Generar candidatos para los próximos 2 meses
+        for i in range(2):
+            mes_siguiente = fecha_base + relativedelta(months=i)
+            dia_15 = date(mes_siguiente.year, mes_siguiente.month, 15)
+            ultimo_dia = date(mes_siguiente.year, mes_siguiente.month, calendar.monthrange(mes_siguiente.year, mes_siguiente.month)[1])
+            if dia_15 > fecha_base: posibles_fechas.append(dia_15)
+            if ultimo_dia > fecha_base: posibles_fechas.append(ultimo_dia)
+
+        for fecha_candidata in sorted(list(set(posibles_fechas))):
+            if (fecha_candidata - fecha_base).days >= MIN_DIAS_DIFERENCIA:
+                return fecha_candidata
+
+    # Lógica para Mensual
+    elif frecuencia == 'mensual':
+        fecha_candidata = fecha_base + relativedelta(months=1)
+        if fecha_base.day > 20: # Si se inscribe a final de mes
+             ultimo_dia_siguiente_mes = calendar.monthrange(fecha_candidata.year, fecha_candidata.month)[1]
+             fecha_candidata = date(fecha_candidata.year, fecha_candidata.month, ultimo_dia_siguiente_mes)
+        
+        while (fecha_candidata - fecha_base).days < MIN_DIAS_DIFERENCIA:
+            fecha_candidata += relativedelta(months=1)
+        return fecha_candidata
+
+    # Lógica para Semanal (pago los viernes)
+    elif frecuencia == 'semanal':
+        dias_para_viernes = (4 - fecha_base.weekday() + 7) % 7
+        fecha_candidata = fecha_base + timedelta(days=dias_para_viernes)
+        if fecha_candidata == fecha_base: # si hoy es viernes, la próxima es la otra semana
+            fecha_candidata += timedelta(weeks=1)
+
+        if (fecha_candidata - fecha_base).days < MIN_DIAS_DIFERENCIA:
+            fecha_candidata += timedelta(weeks=1)
+        return fecha_candidata
+
+    return fecha_base + timedelta(days=MIN_DIAS_DIFERENCIA) # Fallback por si algo falla
+
 
 def generar_fechas_pago(fecha_inicio, fecha_fin, frecuencia_pago, valor_total):
     """

@@ -5,7 +5,7 @@ from django.utils import timezone
 from academico.models import Alumno
 from cartera.models import Deuda, Cuota
 from cartera.forms import GenerarCuotasForm
-from cartera.utils import generar_fechas_pago
+from cartera.utils import generar_fechas_pago, calcular_fecha_inicio_inteligente
 from academico.permissions import group_required
 
 @login_required
@@ -25,39 +25,61 @@ def generar_cuotas_view(request, alumno_id):
     if request.method == 'POST':
         form = GenerarCuotasForm(request.POST)
         if form.is_valid():
+            # 1. Extraer datos del formulario
             frecuencia = form.cleaned_data['frecuencia']
+            monto_inicial = form.cleaned_data['monto_cuota_inicial']
+            fecha_pago_inicial = form.cleaned_data['fecha_pago_inicial']
+            metodo_pago_inicial = form.cleaned_data['metodo_pago_inicial']
+
+            # 2. Crear y registrar la cuota inicial como pagada
+            Cuota.objects.create(
+                deuda=deuda,
+                monto=monto_inicial,
+                monto_abonado=monto_inicial,
+                fecha_vencimiento=fecha_pago_inicial,
+                fecha_pago=fecha_pago_inicial,
+                estado='pagada',
+                metodo_pago=metodo_pago_inicial
+            )
+            # La lógica del modelo Cuota.save() ya actualiza el saldo de la deuda.
+
+            # 3. Preparar para generar cuotas restantes
+            deuda.refresh_from_db() # Recargar la deuda para obtener el saldo pendiente actualizado
+            valor_restante = deuda.saldo_pendiente
+
+            if valor_restante <= 0:
+                deuda.cuotas_generadas = True
+                deuda.save()
+                messages.success(request, 'La deuda ha sido saldada con el pago inicial. No se generaron cuotas adicionales.')
+                return redirect('alumno_detail', pk=alumno.id)
+
+            # 4. Calcular la fecha de inicio inteligente para la primera cuota masiva
+            fecha_inicio_inteligente = calcular_fecha_inicio_inteligente(fecha_pago_inicial, frecuencia)
             
-            # Determinar las fechas de inicio y fin para la generación de cuotas
-            if alumno.fecha_ingreso:
-                fecha_inicio = alumno.fecha_ingreso
-            else:
-                fecha_inicio = timezone.localtime(timezone.now()).date()
+            fecha_fin = alumno.fecha_culminacion or (fecha_inicio_inteligente + timezone.timedelta(days=365))
 
-            if alumno.fecha_culminacion:
-                fecha_fin = alumno.fecha_culminacion
-            else:
-                fecha_fin = fecha_inicio + timezone.timedelta(days=365)
-
-            valor_total = deuda.valor_total
-
-            cuotas_a_crear = generar_fechas_pago(fecha_inicio, fecha_fin, frecuencia, valor_total)
+            # 5. Generar las fechas y montos para las cuotas restantes
+            cuotas_a_crear = generar_fechas_pago(fecha_inicio_inteligente, fecha_fin, frecuencia, valor_restante)
 
             if not cuotas_a_crear:
-                messages.error(request, 'No se pudieron generar cuotas con los parámetros seleccionados. Verifique las fechas del alumno.')
-                return redirect('generar_cuotas', alumno_id=alumno.id)
+                deuda.cuotas_generadas = True # Se generó la cuota inicial
+                deuda.save()
+                messages.warning(request, f'Cuota inicial de {monto_inicial} registrada, pero no se pudieron generar cuotas restantes. El valor restante podría ser muy bajo o las fechas no son válidas.')
+                return redirect('alumno_detail', pk=alumno.id) # Redirigir a detalle, ya que la cuota inicial sí se creó
 
+            # 6. Crear las cuotas restantes en la base de datos
             for fecha_vencimiento, monto in cuotas_a_crear:
                 Cuota.objects.create(
                     deuda=deuda,
                     monto=monto,
                     fecha_vencimiento=fecha_vencimiento,
-                    estado='pendiente'
+                    estado='emitida'
                 )
             
             deuda.cuotas_generadas = True
             deuda.save()
 
-            messages.success(request, f'{len(cuotas_a_crear)} cuotas han sido creadas exitosamente.')
+            messages.success(request, f'Cuota inicial registrada. Se generaron {len(cuotas_a_crear)} cuotas adicionales exitosamente.')
             return redirect('alumno_detail', pk=alumno.id)
     else:
         form = GenerarCuotasForm()
