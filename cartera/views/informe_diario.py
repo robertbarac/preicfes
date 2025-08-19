@@ -135,17 +135,28 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 deuda__alumno__tipo_programa=tipo_programa
             )
         
-        # Valor total de cartera (suma de todos los montos de cuotas de alumnos activos)
-        context['valor_cartera'] = Deuda.objects.filter(
-            alumno__estado='activo'
-        ).aggregate(Sum('valor_total'))['valor_total__sum'] or 0
+        # Construir queryset de Deuda para aplicar filtros
+        deudas_qs = Deuda.objects.filter(alumno__estado='activo')
+
+        if municipio_id:
+            deudas_qs = deudas_qs.filter(alumno__grupo_actual__salon__sede__municipio_id=municipio_id)
+        elif not self.request.user.is_superuser:
+            deudas_qs = deudas_qs.filter(alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio)
+
+        if tipo_programa:
+            deudas_qs = deudas_qs.filter(alumno__tipo_programa=tipo_programa)
+
+        # Valor total de cartera (suma de todos los montos de deudas filtradas)
+        context['valor_cartera'] = deudas_qs.aggregate(Sum('valor_total'))['valor_total__sum'] or 0
         
         # context['valor_cartera'] = todas_cuotas_qs.filter(
         #     deuda__alumno__estado='activo'
         # ).aggregate(Sum('monto'))['monto__sum'] or 0
         
-        # Total cobrado (suma de todos los montos_abonados)
-        context['cobrado'] = todas_cuotas_qs.aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
+        # Total cobrado (suma de todos los montos_abonados de alumnos activos)
+        context['cobrado'] = todas_cuotas_qs.filter(
+            deuda__alumno__estado='activo'
+        ).aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
         
         # Falta por cobrar
         context['falta_cobrar'] = context['valor_cartera'] - context['cobrado']
