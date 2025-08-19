@@ -46,7 +46,7 @@ class CuotaUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         # Recalculamos el saldo pendiente después del guardado inicial
         saldo_pendiente = cuota_actual.monto - cuota_actual.monto_abonado
 
-        # Si hay un saldo pendiente y se ha hecho un abono, procedemos a transferir
+        # Caso 1: Hay un saldo pendiente (pago parcial)
         if saldo_pendiente > 0 and cuota_actual.monto_abonado > 0:
             siguiente_cuota = Cuota.objects.filter(
                 deuda=cuota_actual.deuda,
@@ -66,6 +66,22 @@ class CuotaUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                 messages.success(self.request, f"Pago parcial registrado. Saldo de ${saldo_pendiente:,.2f} transferido a la próxima cuota.")
             else:
                 messages.warning(self.request, f"Pago parcial registrado, pero no se encontró próxima cuota para transferir el saldo.")
+
+        # Caso 2: Hay un excedente de pago
+        elif saldo_pendiente < 0:
+            excedente = -saldo_pendiente  # Convertir a valor positivo
+            siguiente_cuota = Cuota.objects.filter(
+                deuda=cuota_actual.deuda,
+                fecha_vencimiento__gt=cuota_actual.fecha_vencimiento,
+                estado__in=['emitida', 'pagada_parcial']
+            ).order_by('fecha_vencimiento').first()
+
+            if siguiente_cuota:
+                siguiente_cuota.monto -= excedente
+                siguiente_cuota.save()
+                messages.success(self.request, f"Pago registrado con un excedente de ${excedente:,.2f}, que ha sido acreditado a la próxima cuota.")
+            else:
+                messages.info(self.request, f"Pago registrado con un excedente de ${excedente:,.2f}. No se encontró una próxima cuota para aplicar el crédito.")
 
         # Al final, nos aseguramos de que el estado general de la deuda se recalcule
         cuota_actual.deuda.actualizar_saldo_y_estado()
