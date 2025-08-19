@@ -17,8 +17,14 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Usar una sola variable de fecha para mayor claridad
-        fecha_actual = timezone.localtime(timezone.now()).date()
+        # Obtener fecha del filtro o usar la actual
+        fecha_str = self.request.GET.get('fecha')
+        if fecha_str:
+            fecha_seleccionada = timezone.datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        else:
+            fecha_seleccionada = timezone.localtime(timezone.now()).date()
+        
+        context['fecha_seleccionada'] = fecha_seleccionada.strftime('%Y-%m-%d')
         
         # Obtener municipio seleccionado
         municipio_id = self.request.GET.get('municipio')
@@ -63,9 +69,9 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 deuda__alumno__tipo_programa=tipo_programa
             )
         
-        # Datos de recaudación del día (basado en la fecha de pago, no de vencimiento)
+        # Datos de recaudación del día (basado en la fecha de pago seleccionada)
         cuotas_hoy = cuotas_qs.filter(
-            fecha_pago=fecha_actual,
+            fecha_pago=fecha_seleccionada,
             monto_abonado__gt=0
         )
         
@@ -88,9 +94,9 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             context['recaudo_datáfono']
         )
         
-        # Objetivo del mes
-        mes_actual = fecha_actual.month
-        anio_actual = fecha_actual.year
+        # Objetivo del mes (basado en el mes de la fecha seleccionada)
+        mes_actual = fecha_seleccionada.month
+        anio_actual = fecha_seleccionada.year
         
         # Calcular el objetivo del mes como la suma de todas las cuotas con vencimiento en el mes actual de alumnos activos
         # Esto sigue usando fecha_vencimiento ya que es el objetivo contractual
@@ -135,8 +141,11 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 deuda__alumno__tipo_programa=tipo_programa
             )
         
-        # Construir queryset de Deuda para aplicar filtros
-        deudas_qs = Deuda.objects.filter(alumno__estado='activo')
+        # Construir queryset de Deuda para aplicar filtros, considerando la fecha seleccionada
+        deudas_qs = Deuda.objects.filter(
+            alumno__estado='activo',
+            fecha_creacion__date__lte=fecha_seleccionada
+        )
 
         if municipio_id:
             deudas_qs = deudas_qs.filter(alumno__grupo_actual__salon__sede__municipio_id=municipio_id)
@@ -153,17 +162,18 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         #     deuda__alumno__estado='activo'
         # ).aggregate(Sum('monto'))['monto__sum'] or 0
         
-        # Total cobrado (suma de todos los montos_abonados de alumnos activos)
+        # Total cobrado hasta la fecha seleccionada
         context['cobrado'] = todas_cuotas_qs.filter(
-            deuda__alumno__estado='activo'
+            deuda__alumno__estado='activo',
+            fecha_pago__lte=fecha_seleccionada
         ).aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
         
         # Falta por cobrar
         context['falta_cobrar'] = context['valor_cartera'] - context['cobrado']
         
-        # Fecha formateada
+        # Fecha formateada para mostrar en el título
         context['fecha_actual'] = date_format(
-            fecha_actual, 
+            fecha_seleccionada, 
             "l, j \d\e F \d\e Y"
         ).capitalize()
         

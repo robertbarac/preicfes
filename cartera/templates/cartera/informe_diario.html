@@ -31,6 +31,11 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <div>
+                <label for="fecha" class="block text-sm font-medium text-gray-700">Fecha:</label>
+                <input type="date" name="fecha" id="fecha" value="{{ fecha_seleccionada }}" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
+            </div>
             
             <button type="submit" class="mt-4 sm:mt-6 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Filtrar
