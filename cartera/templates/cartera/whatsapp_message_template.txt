@@ -1,8 +1,8 @@
-Hola *{{ nombres }} {{ primer_apellido }}* 👋, te escribe *Pre-ICFES Victor Valdez*.
+Hola muy Buenas tardes bendiciones señor(a) padre/madre de familia de *{{ nombres }} {{ primer_apellido }}* 👋, somos el Departamento de Cartera del *Pre-ICFES Victor Valdez*.
 
-📅 Hemos notado que has tenido un retraso últimamente con las cuotas.
-📅 Vemos que tu cuota del *{{ fecha_vencimiento|date:"j \\d\\e F \\d\\e Y" }}* está pendiente. 
-⚠️ Llevas *{{ dias_atraso }} días* de atraso por un valor de *${{ monto|floatformat:0 }} pesos*.
+📅 Hemos notado en los últimos *{{ dias_atraso }} días* su mora de la cuota pactada
+📅 del *{{ fecha_vencimiento|date:"j \\d\\e F \\d\\e Y" }}* que se encuentra pendiente con una mora de 
+⚠️ un valor de *${{ monto|floatformat:0 }} pesos*.
 
 Hasta ahora has abonado *${{ monto_abonado|floatformat:0 }} pesos* y el saldo restante es de *${{ saldo_pendiente|floatformat:0 }} pesos*.
 
@@ -13,8 +13,8 @@ Hasta ahora has abonado *${{ monto_abonado|floatformat:0 }} pesos* y el saldo re
 🔹 Datáfono
 🔹 Efectivo
 
-¿Tienes alguna dificultad? Escríbenos 📲 para buscar una solución juntos.
+¿Tiene alguna dificultad? Por favor comuniquese con nosotros al número 3205052106📲 para buscar una solución juntos.
 
 ¡Quedamos atentos! 😊
 
-Gracias, Victor Valdez.
+Gracias, atentamente departamento de Cartera ✍
