@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.timezone import now
 from django.utils import timezone
 from .deuda import Deuda
+from django.core.exceptions import ValidationError
+from datetime import date
 
 class Cuota(models.Model):
     ESTADO_CUOTA = [
@@ -24,6 +26,25 @@ class Cuota(models.Model):
     fecha_pago = models.DateField(blank=True, null=True, help_text="Fecha en que se realizó el pago efectivamente.")
     estado = models.CharField(max_length=20, choices=ESTADO_CUOTA, default='emitida', help_text="Estado actual de la cuota.")
     metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO, blank=True, null=True, help_text="Método de pago utilizado.")
+
+    def clean(self):
+        """Validaciones personalizadas para el modelo Cuota."""
+        super().clean()
+        if self.fecha_pago:
+            today = timezone.now().date()
+            fecha_inicio_sistema = date(2025, 8, 1)
+
+            # Validación 1: La fecha de pago no puede ser una fecha futura.
+            if self.fecha_pago > today:
+                raise ValidationError({
+                    'fecha_pago': 'La fecha de pago no puede ser una fecha futura.'
+                })
+
+            # Validación 2: La fecha de pago no puede ser anterior al inicio del sistema.
+            if self.fecha_pago < fecha_inicio_sistema:
+                raise ValidationError({
+                    'fecha_pago': f'La fecha de pago no puede ser anterior al {fecha_inicio_sistema.strftime("%d de %B de %Y")}.'
+                })
 
     def __str__(self):
         return f"Cuota de {self.monto} - {self.estado} (Vence: {self.fecha_vencimiento})"

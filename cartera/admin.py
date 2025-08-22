@@ -9,7 +9,7 @@ Usuario = get_user_model()  # Obtener dinámicamente el modelo de usuario
 @admin.register(Cuota)
 class CuotaAdmin(admin.ModelAdmin):
     list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago')
-    list_filter = ('estado', 'metodo_pago', 'fecha_vencimiento')
+    list_filter = ('estado', 'metodo_pago', 'fecha_vencimiento', 'fecha_pago', 'deuda__alumno__grupo_actual__salon__sede__municipio')
     search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido', 'deuda__alumno__municipio__nombre')
     date_hierarchy = 'fecha_vencimiento'
     list_editable = ('monto_abonado', 'estado', 'metodo_pago')  

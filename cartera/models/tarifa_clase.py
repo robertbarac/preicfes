@@ -21,6 +21,7 @@ class TarifaClase(models.Model):
         ('15:00-17:30', '3:00 PM - 5:30 PM'),
         ('18:45-20:45', '6:45 PM - 8:45 PM'),
         ('13:30-15:30', '1:30 PM - 3:30 PM'),
+        ('15:30-17:30', '3:30 PM - 5:30 PM'),
         ('08:00-12:00', '8:00 AM - 12:00 PM (Medio Simulacro)'),
         ('08:00-17:00', '8:00 AM - 5:00 PM (Simulacro Completo)'),
         ('07:00-14:00', '7:00 AM - 2:00 PM (Jornada Especial Colegios)'),
