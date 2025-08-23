@@ -1,4 +1,4 @@
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404
@@ -45,6 +45,7 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
         if self.filter_form.is_valid():
             departamento = self.filter_form.cleaned_data.get('departamento')
             municipio = self.filter_form.cleaned_data.get('municipio')
+            estado = self.filter_form.cleaned_data.get('estado')
             dias_restantes = self.filter_form.cleaned_data.get('dias_restantes')
 
             if municipio:
@@ -53,8 +54,9 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
                 queryset = queryset.filter(cuota__deuda__alumno__municipio__departamento=departamento)
 
             if dias_restantes is not None:
-                fecha_exacta = hoy + timezone.timedelta(days=dias_restantes)
-                queryset = queryset.filter(fecha_prometida_pago=fecha_exacta)
+                queryset = queryset.filter(dias_faltantes__lte=dias_restantes)
+            if estado:
+                queryset = queryset.filter(estado=estado)
         
         return queryset
 
@@ -72,17 +74,26 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
 class AcuerdoPagoCreateView(LoginRequiredMixin, CreateView):
     model = AcuerdoPago
     form_class = AcuerdoPagoForm
-    template_name = 'cartera/acuerdo_pago_form.html'
 
-    def form_valid(self, form):
-        cuota = get_object_or_404(Cuota, pk=self.kwargs['cuota_pk'])
-        form.instance.cuota = cuota
-        return super().form_valid(form)
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['cuota_pk'] = self.kwargs.get('cuota_pk')
+        return kwargs
+
+    def get_success_url(self):
+        return reverse_lazy('cartera:acuerdo_pago_list')
+
+
+class AcuerdoPagoUpdateView(LoginRequiredMixin, UpdateView):
+    model = AcuerdoPago
+    form_class = AcuerdoPagoForm
+    template_name = 'cartera/acuerdo_pago_form.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['cuota'] = get_object_or_404(Cuota, pk=self.kwargs['cuota_pk'])
+        # self.object es el acuerdo de pago que se está editando
+        context['cuota'] = self.object.cuota
         return context
 
     def get_success_url(self):
-        return reverse_lazy('alumno_detail', kwargs={'pk': self.object.cuota.deuda.alumno.pk})
+        return reverse_lazy('cartera:acuerdo_pago_list')

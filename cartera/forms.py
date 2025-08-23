@@ -32,6 +32,12 @@ class CuotaUpdateForm(forms.ModelForm):
 
 
 class AcuerdoPagoFilterForm(forms.Form):
+    estado = forms.ChoiceField(
+                choices=[('', 'Todos')] + list(AcuerdoPago.ESTADO_ACUERDO),
+        required=False,
+        label="Estado del Acuerdo",
+        widget=forms.Select(attrs={'class': 'form-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm'})
+    )
     departamento = forms.ModelChoiceField(
         queryset=Departamento.objects.all(),
         required=False,
@@ -46,7 +52,7 @@ class AcuerdoPagoFilterForm(forms.Form):
     )
     dias_restantes = forms.IntegerField(
         required=False,
-        label="Días Restantes (Exacto)",
+        label="Días Restantes (<=)",
         validators=[MinValueValidator(0)],
         widget=forms.NumberInput(attrs={'class': 'form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'Ej: 0'})
     )
@@ -87,6 +93,7 @@ class AcuerdoPagoForm(forms.ModelForm):
         fields = ['fecha_prometida_pago', 'nota']
         widgets = {
             'fecha_prometida_pago': forms.DateInput(
+                format='%Y-%m-%d',
                 attrs={'type': 'date', 'class': 'mt-1 block w-full border border-gray-300 rounded-md shadow-sm'}
             ),
             'nota': forms.Textarea(

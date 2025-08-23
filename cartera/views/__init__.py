@@ -1,4 +1,4 @@
-from .acuerdo_pago import AcuerdoPagoListView, AcuerdoPagoCreateView
+from .acuerdo_pago import AcuerdoPagoListView, AcuerdoPagoCreateView, AcuerdoPagoUpdateView
 from .alumnos_retirados_list import AlumnosRetiradosListView
 from .becados_list import BecadosListView
 from .cuota_create import CuotaCreateView
@@ -23,6 +23,7 @@ from .generar_pdf_retirados import generar_pdf_retirados_view
 __all__ = [
     'AcuerdoPagoListView',
     'AcuerdoPagoCreateView',
+    'AcuerdoPagoUpdateView',
     'AlumnosRetiradosListView',
     'BecadosListView',
     'CuotasVencidasListView',
