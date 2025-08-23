@@ -5,6 +5,7 @@ from .recibo import Recibo
 from .egreso import Egreso
 from .meta import MetaRecaudo
 from .tarifa_clase import TarifaClase
+from .acuerdo_pago import AcuerdoPago
 
 __all__ = [
     'Deuda',
@@ -13,5 +14,6 @@ __all__ = [
     'Recibo',
     'Egreso',
     'MetaRecaudo',
-    'TarifaClase'
+    'TarifaClase',
+    'AcuerdoPago'
 ]

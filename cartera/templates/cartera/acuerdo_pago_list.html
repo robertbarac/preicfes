@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Acuerdos de Pago{% endblock title %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Listado de Acuerdos de Pago</h1>
+
+    <!-- Formulario de Filtros -->
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="{{ filter_form.departamento.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ filter_form.departamento.label }}</label>
+                {{ filter_form.departamento }}
+            </div>
+            <div>
+                <label for="{{ filter_form.municipio.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ filter_form.municipio.label }}</label>
+                {{ filter_form.municipio }}
+            </div>
+            <div>
+                <label for="{{ filter_form.dias_restantes.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ filter_form.dias_restantes.label }}</label>
+                {{ filter_form.dias_restantes }}
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Filtrar</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full leading-normal">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                        <th class="py-3 px-6 text-left">Alumno</th>
+                        <th class="py-3 px-6 text-left">Nota</th>
+                        <th class="py-3 px-6 text-center">Fecha Prometida</th>
+                        <th class="py-3 px-6 text-center">Días Restantes</th>
+                        <th class="py-3 px-6 text-center">Estado</th>
+                        <th class="py-3 px-6 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-700 text-sm font-light">
+                    {% for acuerdo in acuerdos %}
+                        {% if acuerdo.estado == 'emitido' or acuerdo.estado == 'incumplido' %}
+                            <tr class="border-b border-gray-200 hover:bg-gray-100 
+                                {% if acuerdo.estado == 'incumplido' %} bg-red-100 text-red-800
+                                {% elif acuerdo.dias_faltantes <= 3 %} bg-yellow-100 text-yellow-800
+                                {% else %} bg-white {% endif %}">
+                                <td class="py-3 px-6 text-left whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <a href="{% url 'alumno_detail' acuerdo.cuota.deuda.alumno.pk %}" class="font-semibold hover:text-blue-600">
+                                            {{ acuerdo.cuota.deuda.alumno.nombres }} {{ acuerdo.cuota.deuda.alumno.apellidos }}
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-6 text-left">
+                                    {{ acuerdo.nota }}
+                                </td>
+                                <td class="py-3 px-6 text-center">
+                                    {{ acuerdo.fecha_prometida_pago|date:"d/m/Y" }}
+                                </td>
+                                <td class="py-3 px-6 text-center">
+                                    {% if acuerdo.estado == 'incumplido' %}
+                                        <span class="font-bold">Vencido</span>
+                                    {% else %}
+                                        <span class="font-semibold">{{ acuerdo.dias_faltantes }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-6 text-center">
+                                    <span class="py-1 px-3 rounded-full text-xs font-semibold 
+                                        {% if acuerdo.estado == 'incumplido' %} bg-red-200 text-red-800
+                                        {% elif acuerdo.estado == 'emitido' %} bg-blue-200 text-blue-800
+                                        {% elif acuerdo.estado == 'cumplido' %} bg-green-200 text-green-800
+                                        {% endif %}">
+                                        {{ acuerdo.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-6 text-center">
+                                    <a href="{% url 'alumno_detail' acuerdo.cuota.deuda.alumno.pk %}" class="text-blue-600 hover:text-blue-900">Ver Alumno</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="py-4 px-6 text-center text-gray-500">No hay acuerdos de pago pendientes o incumplidos.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

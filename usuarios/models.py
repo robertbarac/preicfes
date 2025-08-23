@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.exceptions import ValidationError
-from ubicaciones.models import Municipio
+from ubicaciones.models import Municipio, Departamento
 import re
 from django.conf import settings
 import os
@@ -11,6 +11,13 @@ class Usuario(AbstractUser):
     cedula = models.CharField(max_length=20, blank=True, null=True, unique=True)
     municipio = models.ForeignKey(
         Municipio, 
+        on_delete=models.SET_NULL, 
+        related_name='usuarios', 
+        blank=True, 
+        null=True
+    )
+    departamento = models.ForeignKey(
+        Departamento, 
         on_delete=models.SET_NULL, 
         related_name='usuarios', 
         blank=True, 

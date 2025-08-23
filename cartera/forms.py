@@ -1,5 +1,7 @@
 from django import forms
-from .models import Deuda, Cuota
+from .models import Deuda, Cuota, AcuerdoPago
+from ubicaciones.models import Departamento, Municipio
+from django.core.validators import MinValueValidator
 
 class DeudaForm(forms.ModelForm):
     class Meta:
@@ -28,6 +30,26 @@ class CuotaUpdateForm(forms.ModelForm):
             'metodo_pago': forms.Select(attrs={'class': 'mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500'}),
         }
 
+
+class AcuerdoPagoFilterForm(forms.Form):
+    departamento = forms.ModelChoiceField(
+        queryset=Departamento.objects.all(),
+        required=False,
+        label="Departamento",
+        widget=forms.Select(attrs={'class': 'form-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm'})
+    )
+    municipio = forms.ModelChoiceField(
+        queryset=Municipio.objects.all(),
+        required=False,
+        label="Municipio",
+        widget=forms.Select(attrs={'class': 'form-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm'})
+    )
+    dias_restantes = forms.IntegerField(
+        required=False,
+        label="Días Restantes (Exacto)",
+        validators=[MinValueValidator(0)],
+        widget=forms.NumberInput(attrs={'class': 'form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'placeholder': 'Ej: 0'})
+    )
 
 class GenerarCuotasForm(forms.Form):
     monto_cuota_inicial = forms.DecimalField(
@@ -58,3 +80,16 @@ class GenerarCuotasForm(forms.Form):
         label="Frecuencia de Pago para Cuotas Restantes", 
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
+class AcuerdoPagoForm(forms.ModelForm):
+    class Meta:
+        model = AcuerdoPago
+        fields = ['fecha_prometida_pago', 'nota']
+        widgets = {
+            'fecha_prometida_pago': forms.DateInput(
+                attrs={'type': 'date', 'class': 'mt-1 block w-full border border-gray-300 rounded-md shadow-sm'}
+            ),
+            'nota': forms.Textarea(
+                attrs={'rows': 3, 'class': 'mt-1 block w-full border border-gray-300 rounded-md shadow-sm'}
+            ),
+        }

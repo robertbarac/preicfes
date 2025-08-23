@@ -1,14 +1,22 @@
 from django.contrib import admin
-from .models import Cuota, Deuda, Egreso, HistorialModificacion, Recibo, MetaRecaudo, TarifaClase
+from .models import AcuerdoPago, Cuota, Deuda, Egreso, HistorialModificacion, Recibo, MetaRecaudo, TarifaClase
 from ubicaciones.models import Sede
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 Usuario = get_user_model()  # Obtener dinámicamente el modelo de usuario
 
+@admin.register(AcuerdoPago)
+class AcuerdoPagoAdmin(admin.ModelAdmin):
+    list_display = ('cuota', 'fecha_prometida_pago', 'estado')
+    list_filter = ('estado', 'fecha_prometida_pago', 'cuota__fecha_pago', 'cuota__deuda__alumno__grupo_actual__salon__sede__municipio')
+    search_fields = ('cuota__deuda__alumno__nombres', 'cuota__deuda__alumno__primer_apellido', 'cuota__deuda__alumno__municipio__nombre')
+    date_hierarchy = 'fecha_prometida_pago'
+    list_editable = ('estado',)
+
 @admin.register(Cuota)
 class CuotaAdmin(admin.ModelAdmin):
-    list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago')
+    list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'fecha_pago', 'estado', 'metodo_pago')
     list_filter = ('estado', 'metodo_pago', 'fecha_vencimiento', 'fecha_pago', 'deuda__alumno__grupo_actual__salon__sede__municipio')
     search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido', 'deuda__alumno__municipio__nombre')
     date_hierarchy = 'fecha_vencimiento'

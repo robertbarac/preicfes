@@ -9,7 +9,6 @@ Hasta ahora has abonado *${{ monto_abonado|floatformat:0 }} pesos* y el saldo re
 💳 Para regularizar tu situación, puedes realizar el pago 💰 por:
 🔹 Nequi: 310-452-6623
 🔹 Bancolombia: 504-776-16576
-🔹 Daviplata: 310-452-6623
 🔹 Datáfono
 🔹 Efectivo
 

@@ -81,6 +81,7 @@ class ProximosPagosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             message_context = {
                 'nombres': alumno.nombres,
                 'primer_apellido': alumno.primer_apellido,
+                'segundo_apellido': alumno.segundo_apellido,
                 'fecha_vencimiento': cuota.fecha_vencimiento,
                 'dias_restantes': (cuota.fecha_vencimiento - timezone.localtime(timezone.now()).date()).days,
                 'monto': cuota.monto

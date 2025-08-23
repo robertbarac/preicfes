@@ -1,3 +1,4 @@
+from .acuerdo_pago import AcuerdoPagoListView, AcuerdoPagoCreateView
 from .alumnos_retirados_list import AlumnosRetiradosListView
 from .becados_list import BecadosListView
 from .cuota_create import CuotaCreateView
@@ -19,6 +20,8 @@ from .recibo_pdf import ReciboPDFView
 from .generar_cuotas import generar_cuotas_view
 
 __all__ = [
+    'AcuerdoPagoListView',
+    'AcuerdoPagoCreateView',
     'AlumnosRetiradosListView',
     'BecadosListView',
     'CuotasVencidasListView',
@@ -28,7 +31,6 @@ __all__ = [
     'CuotaDeleteView',
     'DeudaCreateView',
     'DeudaUpdateView',
-    
     'GraficaIngresosView',
     'GraficaEgresosView',
     'MantenimientoCarteraView',

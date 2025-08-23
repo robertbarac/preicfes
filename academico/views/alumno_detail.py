@@ -2,10 +2,11 @@ from django.views.generic import DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Avg
 from django.utils import timezone
+import json
 from django.template.loader import render_to_string
 
 from academico.models import Alumno, Asistencia, Nota
-from cartera.models import Deuda
+from cartera.models import Deuda, AcuerdoPago
 
 class AlumnoDetailView(LoginRequiredMixin, DetailView):
     model = Alumno
@@ -79,11 +80,27 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
                         'cartera/whatsapp_message_template.txt',
                         message_context
                     ).replace('\n', '%0A').replace(' ', '%20')
+            # Preparar datos de acuerdos para JSON
+            acuerdos_data = {}
+            for cuota in cuotas:
+                acuerdos = cuota.acuerdos.all().order_by('-fecha_acuerdo')
+                acuerdos_data[cuota.id] = [
+                    {
+                        'fecha_acuerdo': a.fecha_acuerdo.strftime('%d/%m/%Y'),
+                        'fecha_prometida_pago': a.fecha_prometida_pago.strftime('%d/%m/%Y'),
+                        'nota': a.nota,
+                        'estado': a.get_estado_display(),
+                    }
+                    for a in acuerdos
+                ]
+
         except Deuda.DoesNotExist:
             deuda = None
             cuotas = []
+            acuerdos_data = {}
 
         context.update({
+            'acuerdos_json': json.dumps(acuerdos_data),
             'titulo': f'Detalles de {alumno}',
             'deuda': deuda,
             'saldo_pendiente': deuda.saldo_pendiente if deuda else 0,

@@ -160,6 +160,7 @@
                             <th class="py-2 px-4 border-b">Método de Pago</th>
                             <th class="py-2 px-4 border-b">Acciones</th>
                             <th class="py-2 px-4 border-b">WhatsApp</th>
+                            <th class="py-2 px-4 border-b">Acuerdos</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -266,12 +267,19 @@
                                         <span class="ml-1">Madre</span>
                                     </a>
                                     {% endif %}
-                                    
+                                </td>
+                                <td class="py-2 px-4 border-b text-center">
+                                    {% if cuota.estado == 'vencida' %}
+                                        <a href="{% url 'cartera:acuerdo_pago_create' cuota.pk %}" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Crear Acuerdo</a>
+                                    {% endif %}
+                                    {% if cuota.acuerdos.all %}
+                                        <button data-cuota-id="{{ cuota.id }}" class="ver-acuerdos-btn inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 mt-1">Ver Acuerdos ({{ cuota.acuerdos.count }})</button>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="6" class="py-2 px-4 border-b text-center text-gray-600">No hay cuotas registradas.</td>
+                                <td colspan="7" class="py-2 px-4 border-b text-center text-gray-600">No hay cuotas registradas.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -524,4 +532,71 @@ document.addEventListener('DOMContentLoaded', function () {
     outline: none;
 }
 </style>
+
+<!-- Modal para Acuerdos de Pago -->
+<div id="acuerdos-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Historial de Acuerdos de Pago</h3>
+            <div class="mt-2 px-7 py-3">
+                <div id="modal-body" class="text-sm text-gray-500 overflow-x-auto">
+                    <!-- Contenido dinámico de acuerdos -->
+                </div>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="close-modal-btn" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('acuerdos-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modalBody = document.getElementById('modal-body');
+    const verAcuerdosBtns = document.querySelectorAll('.ver-acuerdos-btn');
+
+    const acuerdosData = JSON.parse('{{ acuerdos_json|escapejs }}');
+
+    verAcuerdosBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cuotaId = btn.dataset.cuotaId;
+            const acuerdos = acuerdosData[cuotaId];
+            
+            if (acuerdos && acuerdos.length > 0) {
+                let tableHtml = `<table class="min-w-full bg-white border"><thead><tr><th class="py-2 px-4 border-b">Fecha Acuerdo</th><th class="py-2 px-4 border-b">Fecha Prometida</th><th class="py-2 px-4 border-b">Nota</th><th class="py-2 px-4 border-b">Estado</th></tr></thead><tbody>`;
+                acuerdos.forEach(acuerdo => {
+                    tableHtml += `<tr>
+                        <td class="py-2 px-4 border-b text-center">${acuerdo.fecha_acuerdo}</td>
+                        <td class="py-2 px-4 border-b text-center">${acuerdo.fecha_prometida_pago}</td>
+                        <td class="py-2 px-4 border-b">${acuerdo.nota}</td>
+                        <td class="py-2 px-4 border-b text-center">${acuerdo.estado}</td>
+                    </tr>`;
+                });
+                tableHtml += '</tbody></table>';
+                modalBody.innerHTML = tableHtml;
+            } else {
+                modalBody.innerHTML = '<p>No hay acuerdos para esta cuota.</p>';
+            }
+
+            modal.classList.remove('hidden');
+        });
+    });
+
+    if(closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+
+    window.addEventListener('click', (event) => {
+        if (event.target == modal) {
+            modal.classList.add('hidden');
+        }
+    });
+});
+</script>
 {% endblock %}

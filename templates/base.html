@@ -179,6 +179,12 @@
                       Próximos Pagos
                     </a>
                     <a
+                      href="{% url 'cartera:acuerdo_pago_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Acuerdos de Pago
+                    </a>
+                    <a
                       href="{% url 'cartera:grafica' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
@@ -305,6 +311,7 @@
                 <div class="text-white font-medium mb-2">Cartera</div>
                 <a href="{% url 'cartera:mantenimiento' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Mantenimiento</a>
                 <a href="{% url 'cartera:proximos_pagos' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Próximos Pagos</a>
+                <a href="{% url 'cartera:acuerdo_pago_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Acuerdos de Pago</a>
                 <a href="{% url 'cartera:cuotas_vencidas' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Cuotas Vencidas</a>
                 <a href="{% url 'cartera:grafica' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Gráficas de Ingresos</a>
                 <a href="{% url 'cartera:grafica_egresos' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Gráficas de Egresos</a>
