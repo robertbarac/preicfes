@@ -2,7 +2,12 @@
 {% block title %}Alumnos Retirados{% endblock %}
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-6">Alumnos Retirados</h1>
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Alumnos Retirados</h1>
+        <a href="{% url 'cartera:generar_pdf_retirados' %}?municipio={{ request.GET.municipio|default:'' }}&mes={{ request.GET.mes|default:'' }}&anio={{ request.GET.anio|default:'' }}&tipo_programa={{ request.GET.tipo_programa|default:'' }}" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            Generar PDF
+        </a>
+    </div>
     <!-- Filtros -->
     <div class="bg-white shadow-md rounded-lg p-4 mb-6">
         <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">

@@ -5,7 +5,7 @@ from .views import (
     CuotasVencidasListView, DeudaCreateView, DeudaUpdateView, CuotaCreateView, CuotaUpdateView, CuotaDeleteView, ReciboPDFView,
     PazSalvoListView, PazSalvoPDFView, ProximosPagosListView, InformeDiarioView, generar_pdf_informe,
     MantenimientoCarteraView, toggle_edicion_deuda,
-    AcuerdoPagoListView, AcuerdoPagoCreateView
+    AcuerdoPagoListView, AcuerdoPagoCreateView, generar_pdf_retirados_view
 )
 
 app_name = 'cartera'
@@ -36,4 +36,5 @@ urlpatterns = [
     path('deuda/toggle-edicion/<int:pk>/', toggle_edicion_deuda, name='toggle_edicion_deuda'),
     path('acuerdos/', AcuerdoPagoListView.as_view(), name='acuerdo_pago_list'),
     path('cuota/<int:cuota_pk>/acuerdo/crear/', AcuerdoPagoCreateView.as_view(), name='acuerdo_pago_create'),
+    path('retirados/pdf/', generar_pdf_retirados_view, name='generar_pdf_retirados'),
 ]
