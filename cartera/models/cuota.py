@@ -69,16 +69,17 @@ class Cuota(models.Model):
                 self.fecha_pago = timezone.localtime(now()).date()
             self.actualizar_estado()
 
+        super().save(*args, **kwargs)
+
+        if run_logic:
             # Si se realiza un pago (parcial o total), buscar y cumplir el acuerdo activo.
+            # Esta lógica debe ir DESPUÉS de super().save() para que self.id exista.
             if self.monto_abonado > 0 and self.estado in ['pagada', 'pagada_parcial']:
                 acuerdo_activo = self.acuerdos.filter(estado='emitido').order_by('-fecha_acuerdo').first()
                 if acuerdo_activo:
                     acuerdo_activo.estado = 'cumplido'
                     acuerdo_activo.save()
 
-        super().save(*args, **kwargs)
-
-        if run_logic:
             self.deuda.actualizar_saldo_y_estado()
 
     def delete(self, *args, **kwargs):
