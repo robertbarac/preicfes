@@ -10,6 +10,7 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
     model = AcuerdoPago
     template_name = 'cartera/acuerdo_pago_list.html'
     context_object_name = 'acuerdos'
+    paginate_by = 2
 
     def get_queryset(self):
         hoy = timezone.localtime(timezone.now()).date()
