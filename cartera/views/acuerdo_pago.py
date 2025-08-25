@@ -54,7 +54,10 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
                 queryset = queryset.filter(cuota__deuda__alumno__municipio__departamento=departamento)
 
             if dias_restantes is not None:
-                queryset = queryset.filter(dias_faltantes__lte=dias_restantes)
+                hoy = timezone.localtime(timezone.now()).date()
+                fecha_limite = hoy + timezone.timedelta(days=dias_restantes)
+                # Filtrar acuerdos cuya fecha prometida está entre hoy y la fecha límite
+                queryset = queryset.filter(fecha_prometida_pago__gte=hoy, fecha_prometida_pago__lte=fecha_limite)
             if estado:
                 queryset = queryset.filter(estado=estado)
         
