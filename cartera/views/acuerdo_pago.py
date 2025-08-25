@@ -74,11 +74,17 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
 class AcuerdoPagoCreateView(LoginRequiredMixin, CreateView):
     model = AcuerdoPago
     form_class = AcuerdoPagoForm
+    template_name = 'cartera/acuerdo_pago_form.html'
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['cuota_pk'] = self.kwargs.get('cuota_pk')
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['cuota'] = get_object_or_404(Cuota, pk=self.kwargs.get('cuota_pk'))
+        return context
 
     def get_success_url(self):
         return reverse_lazy('cartera:acuerdo_pago_list')

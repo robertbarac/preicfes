@@ -1,4 +1,5 @@
 from django import forms
+from django.shortcuts import get_object_or_404
 from .models import Deuda, Cuota, AcuerdoPago
 from ubicaciones.models import Departamento, Municipio
 from django.core.validators import MinValueValidator
@@ -88,6 +89,25 @@ class GenerarCuotasForm(forms.Form):
     )
 
 class AcuerdoPagoForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        cuota_pk = kwargs.pop('cuota_pk', None)
+        super().__init__(*args, **kwargs)
+        if cuota_pk:
+            self.cuota = get_object_or_404(Cuota, pk=cuota_pk)
+        else:
+            # En modo de edición, la cuota se obtiene de la instancia
+            if self.instance and self.instance.pk:
+                self.cuota = self.instance.cuota
+            else:
+                self.cuota = None
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.cuota:
+            instance.cuota = self.cuota
+        if commit:
+            instance.save()
+        return instance
     class Meta:
         model = AcuerdoPago
         fields = ['fecha_prometida_pago', 'nota']
