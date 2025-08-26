@@ -49,6 +49,7 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
                     message_context = {
                         'nombres': alumno.nombres,
                         'primer_apellido': alumno.primer_apellido,
+                        'segundo_apellido': alumno.segundo_apellido,
                         'fecha_vencimiento': cuota.fecha_vencimiento,
                         'dias_restantes': cuota.dias_restantes,
                         'monto': cuota.monto
@@ -68,6 +69,7 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
                     message_context = {
                         'nombres': alumno.nombres,
                         'primer_apellido': alumno.primer_apellido,
+                        'segundo_apellido': alumno.segundo_apellido,
                         'fecha_vencimiento': cuota.fecha_vencimiento,
                         'dias_atraso': cuota.dias_atraso,
                         'monto': cuota.monto,
