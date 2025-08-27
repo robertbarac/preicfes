@@ -48,7 +48,7 @@
 
     <!-- Gráfica anual (se mantiene igual) -->
     <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 class="text-xl font-semibold mb-4">Ingresos vs Egresos - {{ año_seleccionado }}</h2>
+        <h2 class="text-xl font-semibold mb-4">Ingresos {{ año_seleccionado }}</h2>
         <img src="{% url 'cartera:grafica' %}?año={{ año_seleccionado }}&grafica=1{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if tipo_programa_seleccionado %}&tipo_programa={{ tipo_programa_seleccionado }}{% endif %}" 
              alt="Gráfica de Ingresos y Egresos" 
              class="w-full h-auto border rounded">
