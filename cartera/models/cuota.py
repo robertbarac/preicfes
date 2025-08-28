@@ -32,19 +32,12 @@ class Cuota(models.Model):
         """Validaciones personalizadas para el modelo Cuota."""
         super().clean()
         if self.fecha_pago:
-            today = timezone.now().date()
-            fecha_inicio_sistema = date(2025, 8, 1)
+            today = timezone.localtime(timezone.now()).date()
 
-            # Validación 1: La fecha de pago no puede ser una fecha futura.
+            # Validación: La fecha de pago no puede ser una fecha futura.
             if self.fecha_pago > today:
                 raise ValidationError({
                     'fecha_pago': 'La fecha de pago no puede ser una fecha futura.'
-                })
-
-            # Validación 2: La fecha de pago no puede ser anterior al inicio del sistema.
-            if self.fecha_pago < fecha_inicio_sistema:
-                raise ValidationError({
-                    'fecha_pago': f'La fecha de pago no puede ser anterior al {fecha_inicio_sistema.strftime("%d de %B de %Y")}.'
                 })
 
     def __str__(self):
