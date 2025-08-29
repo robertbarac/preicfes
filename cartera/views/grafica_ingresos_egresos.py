@@ -90,7 +90,6 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         ingresos_mes = cuotas_qs.filter(
             fecha_pago__year=año_cumplimiento,
             fecha_pago__month=mes_cumplimiento,
-            estado='pagada',
             monto_abonado__gt=0
         ).aggregate(total=Sum('monto_abonado'))['total'] or 0
 
@@ -142,7 +141,6 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         # Base queryset para cuotas - usando fecha_pago para mostrar cuándo realmente se recibió el dinero
         cuotas_qs = Cuota.objects.filter(
             fecha_pago__year=año_seleccionado,
-            estado='pagada',
             monto_abonado__gt=0  # Asegurarse de que se haya pagado algo
         )
         
