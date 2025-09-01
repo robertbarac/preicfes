@@ -27,7 +27,7 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        año_actual = timezone.now().year
+        año_actual = timezone.localtime(timezone.now()).year
 
         # Obtener el año seleccionado para la gráfica
         año_seleccionado = int(self.request.GET.get('año', año_actual))
@@ -124,7 +124,7 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
 
 
     def generar_grafica(self, context):
-        año_seleccionado = int(self.request.GET.get('año', timezone.now().year))
+        año_seleccionado = int(self.request.GET.get('año', timezone.localtime(timezone.now()).year))
 
         # Obtener municipio seleccionado
         municipio_id = self.request.GET.get('municipio')

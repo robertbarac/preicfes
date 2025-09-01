@@ -24,6 +24,7 @@ class Alumno(models.Model):
         ('formacion_laboral', 'Formación Laboral'),
         ('semillero', 'Semillero de Investigación'),
         ('preicfes_kids', 'PreICFES Kids'),
+        ('preicfes_virtual', 'PreICFES Virtual'),
     ]
 
     # Campos obligatorios
