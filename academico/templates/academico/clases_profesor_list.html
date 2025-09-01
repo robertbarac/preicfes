@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Clases profesor Lista{% endblock %}
+{% block title %}Clases profesor Lista: {{ profesor.get_full_name|default:profesor.username }}{% endblock %}
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 space-y-4 md:space-y-0">

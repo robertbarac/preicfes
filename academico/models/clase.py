@@ -115,7 +115,7 @@ class Clase(models.Model):
         ahora = timezone.localtime(timezone.now())  # Convertir a hora local
         inicio_clase = timezone.localtime(self.get_datetime_inicio())  # Asegurar que esté en hora local
         fin_clase = timezone.localtime(self.get_datetime_fin())  # Hora de fin en local
-        margen = timedelta(minutes=5)
+        margen = timedelta(minutes=60)
         
         # Permitir registro durante toda la clase, incluyendo 5 minutos antes y 5 minutos después
         puede = (inicio_clase - margen) <= ahora <= (fin_clase + margen)
