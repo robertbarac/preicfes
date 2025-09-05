@@ -20,7 +20,7 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def get_queryset(self):
 
         queryset = super().get_queryset().filter(
-            estado__in=['emitida', 'pagada_parcial', 'vencida'],
+            estado__in=['emitida', 'vencida'],  # Excluir 'pagada_parcial'
             fecha_vencimiento__lt=timezone.localtime(timezone.now()),
             deuda__alumno__estado='activo'  # Solo alumnos activos
         ).select_related('deuda', 'deuda__alumno', 'deuda__alumno__municipio')
@@ -67,7 +67,14 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 timezone.localtime(timezone.now()).date() - F('fecha_vencimiento'),
                 output_field=fields.IntegerField()
             )
-        ).order_by('-dias_atraso')
+        )
+        
+        # Aplicar ordenamiento por días de atraso
+        orden = self.request.GET.get('orden', 'desc')  # Por defecto descendente
+        if orden == 'asc':
+            queryset = queryset.order_by('dias_atraso')
+        else:
+            queryset = queryset.order_by('-dias_atraso')
 
         return queryset
 
@@ -101,7 +108,8 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         context.update({
             'dias_filtro': self.request.GET.get('dias_filtro', 'todos'),
             'identificacion': self.request.GET.get('identificacion', ''),
-            'apellido': self.request.GET.get('apellido', '')
+            'apellido': self.request.GET.get('apellido', ''),
+            'orden': self.request.GET.get('orden', 'desc')
         })
         
         # Solo agregar municipios al contexto si es superuser

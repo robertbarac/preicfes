@@ -12,6 +12,10 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
     context_object_name = 'acuerdos'
     paginate_by = 30
 
+    def test_func(self):
+        # Solo permitir acceso a superusers y secretarias de cartera
+        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists() or self.request.user.groups.filter(name='CoordinadorDepartamental').exists()
+    
     def get_queryset(self):
         hoy = timezone.localtime(timezone.now()).date()
         # Actualizar estados de acuerdos emitidos

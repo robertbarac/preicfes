@@ -12,6 +12,18 @@
         <form method="get" class="flex flex-wrap items-center gap-4">
             {% if request.user.is_superuser %}
             <div>
+                <label for="departamento" class="block text-sm font-medium text-gray-700">Departamento:</label>
+                <select name="departamento" id="departamento" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
+                    <option value="">Todos los departamentos</option>
+                    {% for departamento in departamentos %}
+                        <option value="{{ departamento.id }}" {% if departamento.id == departamento_seleccionado %}selected{% endif %}>{{ departamento.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            {% if request.user.is_superuser or request.user.groups.all|length > 0 and 'CoordinadorDepartamental' in request.user.groups.all.0.name %}
+            <div>
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio:</label>
                 <select name="municipio" id="municipio" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
                     <option value="">Todos los municipios</option>

@@ -35,6 +35,11 @@
                 </select>
                 {% endif %}
                 
+                <select name="orden" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <option value="desc" {% if orden == 'desc' %}selected{% endif %}>Mayor atraso primero</option>
+                    <option value="asc" {% if orden == 'asc' %}selected{% endif %}>Menor atraso primero</option>
+                </select>
+                
                 <button type="submit" 
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Filtrar
@@ -126,11 +131,11 @@
     <div class="mt-4">
         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
             {% if page_obj.has_previous %}
-            <a href="?page=1{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
+            <a href="?page=1{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Primero
             </a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
+            <a href="?page={{ page_obj.previous_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Anterior
             </a>
@@ -142,7 +147,7 @@
                 {{ num }}
             </span>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-            <a href="?page={{ num }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
+            <a href="?page={{ num }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 {{ num }}
             </a>
@@ -150,11 +155,11 @@
             {% endfor %}
 
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
+            <a href="?page={{ page_obj.next_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Siguiente
             </a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}" 
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Último
             </a>
