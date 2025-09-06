@@ -12,7 +12,7 @@ def es_staff_o_superuser(user):
 def retirar_alumno(request, pk):
     alumno = get_object_or_404(Alumno, pk=pk, estado='activo')
     # Buscar grupo RETIRADOS del municipio del alumno y sede central
-    grupo_retirados = Grupo.objects.filter(codigo='RETIRADOS', salon__sede__municipio=alumno.grupo_actual.salon.sede.municipio).first()
+    grupo_retirados = Grupo.objects.filter(codigo='RETIRADOS').first()
     if not grupo_retirados:
         messages.error(request, 'No existe un grupo RETIRADOS para el municipio del alumno.')
         return redirect('alumno_detail', pk=alumno.pk)
