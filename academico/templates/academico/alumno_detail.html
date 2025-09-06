@@ -37,20 +37,12 @@
             <div class="space-y-4">
                 <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
+                        <dt class="text-sm font-medium text-gray-500">Nombre completo</dt>
+                        <dd class="text-sm text-gray-900">{{ alumno.nombres }} {{alumno.primer_apellido}} {{alumno.segundo_apellido}}</dd>
+                    </div>
+                    <div>
                         <dt class="text-sm font-medium text-gray-500">Identificación</dt>
                         <dd class="text-sm text-gray-900">{{ alumno.identificacion }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Nombres</dt>
-                        <dd class="text-sm text-gray-900">{{ alumno.nombres }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Primer Apellido</dt>
-                        <dd class="text-sm text-gray-900">{{ alumno.primer_apellido }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Segundo Apellido</dt>
-                        <dd class="text-sm text-gray-900">{{ alumno.segundo_apellido|default:"" }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Teléfono</dt>
