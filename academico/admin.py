@@ -77,7 +77,7 @@ class GrupoAdmin(admin.ModelAdmin):
 @admin.register(Clase)
 class ClaseAdmin(admin.ModelAdmin):
     list_display = ('materia', 'fecha', 'horario', 'salon', 'profesor', 'grupo')
-    list_filter = ('fecha', 'horario', 'salon', 'materia', 'grupo__salon__sede', 'profesor', 'grupo__salon__sede__municipio')
+    list_filter = ('fecha', 'horario', 'salon', 'materia', 'grupo__salon__sede', 'profesor', 'grupo__salon__sede__municipio', 'grupo__codigo')
     search_fields = ('materia__nombre', 'profesor__username', 'grupo__codigo')
     
     def get_queryset(self, request):
