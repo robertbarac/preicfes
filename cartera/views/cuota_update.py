@@ -5,6 +5,7 @@ from django.db.models import F
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic.edit import UpdateView
+from datetime import timedelta
 
 # Local imports
 from cartera.forms import CuotaUpdateForm
@@ -36,56 +37,85 @@ class CuotaUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return context
 
     def form_valid(self, form):
-        # Obtenemos la instancia de la cuota sin guardarla aún en la BD
-        cuota_actual = form.save(commit=False)
+        from django.utils import timezone
 
-        # Guardado inicial para registrar el abono y actualizar el estado a 'pagada_parcial'
-        # Esto usa la lógica por defecto del modelo (run_logic=True)
+        # 1. OBTENER DATOS INICIALES
+        cuota_original = self.get_object()
+        monto_total_ingresado = form.cleaned_data['monto_abonado']
+        abono_transaccion = monto_total_ingresado - cuota_original.monto_abonado
+
+        if abono_transaccion <= 0:
+            form.save()
+            messages.info(self.request, "No se registró un nuevo abono.")
+            return redirect(self.get_success_url())
+
+        # 2. APLICAR PAGO A LA CUOTA ACTUAL
+        cuota_actual = self.get_object()
+        
+        # CORRECCIÓN: El monto_abonado debe reflejar el pago total ingresado.
+        cuota_actual.monto_abonado = monto_total_ingresado
         cuota_actual.save()
+        messages.success(self.request, f"Se registró un pago de ${abono_transaccion:,.2f}.")
+        cuota_actual.refresh_from_db()
 
-        # Recalculamos el saldo pendiente después del guardado inicial
-        saldo_pendiente = cuota_actual.monto - cuota_actual.monto_abonado
+        # 3. DETERMINAR LÓGICA: PAGO PARCIAL O EXCEDENTE
+        # El excedente es la diferencia entre lo que se abonó y el monto que se debía.
+        excedente = cuota_actual.monto_abonado - cuota_actual.monto
 
-        # Caso 1: Hay un saldo pendiente (pago parcial)
-        if saldo_pendiente > 0 and cuota_actual.monto_abonado > 0:
-            siguiente_cuota = Cuota.objects.filter(
+        if excedente > 0:
+            # --- LÓGICA DE EXCEDENTE: VACIADO DE CUOTAS FUTURAS ---
+            cuotas_siguientes = Cuota.objects.filter(
                 deuda=cuota_actual.deuda,
-                fecha_vencimiento__gt=cuota_actual.fecha_vencimiento,
-                estado__in=['emitida', 'pagada_parcial']
-            ).order_by('fecha_vencimiento').first()
+                fecha_vencimiento__gt=cuota_actual.fecha_vencimiento
+            ).order_by('fecha_vencimiento')
 
-            if siguiente_cuota:
-                siguiente_cuota.monto += saldo_pendiente
-                siguiente_cuota.save()  # Guardado normal, la lógica del modelo se encarga
+            for cuota_futura in cuotas_siguientes:
+                if excedente <= 0: break
+                
+                monto_a_reducir = min(excedente, cuota_futura.monto)
+                cuota_futura.monto -= monto_a_reducir
+                excedente -= monto_a_reducir
+                
+                # Si la cuota queda en 0, se marca como pagada.
+                if cuota_futura.monto == 0:
+                    cuota_futura.estado = 'pagada'
+                
+                cuota_futura.save()
+                messages.info(self.request, f"Excedente de ${monto_a_reducir:,.2f} redujo el monto de la cuota del {cuota_futura.fecha_vencimiento.strftime('%d/%m/%Y')}.")
 
-                # Forzamos el estado de la cuota actual a 'pagada' para "cerrarla"
-                cuota_actual.estado = 'pagada'
-                # Guardamos SIN ejecutar la lógica del modelo para que no revierta el estado
-                cuota_actual.save(run_logic=False, update_fields=['estado'])
+            if excedente > 0:
+                # Si aún queda excedente, se crea un saldo a favor.
+                ultima_fecha = cuota_actual.deuda.cuotas.latest('fecha_vencimiento').fecha_vencimiento
+                Cuota.objects.create(
+                    deuda=cuota_actual.deuda, monto=0, monto_abonado=-excedente,
+                    fecha_vencimiento=ultima_fecha + timedelta(days=30), concepto="Saldo a favor", estado='pagada'
+                )
+                messages.warning(self.request, f"¡Saldo a favor! Se registró un crédito de ${excedente:,.2f}.")
 
-                messages.success(self.request, f"Pago parcial registrado. Saldo de ${saldo_pendiente:,.2f} transferido a la próxima cuota.")
-            else:
-                messages.warning(self.request, f"Pago parcial registrado, pero no se encontró próxima cuota para transferir el saldo.")
+        elif cuota_actual.estado == 'pagada_parcial':
+            # --- LÓGICA DE PAGO PARCIAL: REFINANCIACIÓN ---
+            saldo_restante = cuota_actual.monto - cuota_actual.monto_abonado
+            if saldo_restante > 0:
+                siguiente_cuota = Cuota.objects.filter(
+                    deuda=cuota_actual.deuda, fecha_vencimiento__gt=cuota_actual.fecha_vencimiento
+                ).order_by('fecha_vencimiento').first()
 
-        # Caso 2: Hay un excedente de pago
-        elif saldo_pendiente < 0:
-            excedente = -saldo_pendiente  # Convertir a valor positivo
-            siguiente_cuota = Cuota.objects.filter(
-                deuda=cuota_actual.deuda,
-                fecha_vencimiento__gt=cuota_actual.fecha_vencimiento,
-                estado__in=['emitida', 'pagada_parcial']
-            ).order_by('fecha_vencimiento').first()
+                if siguiente_cuota:
+                    siguiente_cuota.monto += saldo_restante
+                    siguiente_cuota.save()
+                    messages.info(self.request, f"Saldo de ${saldo_restante:,.2f} fue transferido a la próxima cuota.")
+                else:
+                    Cuota.objects.create(
+                        deuda=cuota_actual.deuda, monto=saldo_restante,
+                        fecha_vencimiento=cuota_actual.fecha_vencimiento + timedelta(days=30),
+                        concepto="Saldo de cuota anterior", estado='emitida'
+                    )
+                    messages.warning(self.request, f"Se creó una nueva cuota por ${saldo_restante:,.2f}.")
+                
+                # La cuota original ya está como 'pagada_parcial', no se cambia su estado aquí.
 
-            if siguiente_cuota:
-                siguiente_cuota.monto -= excedente
-                siguiente_cuota.save()
-                messages.success(self.request, f"Pago registrado con un excedente de ${excedente:,.2f}, que ha sido acreditado a la próxima cuota.")
-            else:
-                messages.info(self.request, f"Pago registrado con un excedente de ${excedente:,.2f}. No se encontró una próxima cuota para aplicar el crédito.")
-
-        # Al final, nos aseguramos de que el estado general de la deuda se recalcule
+        # 4. ACTUALIZACIÓN FINAL
         cuota_actual.deuda.actualizar_saldo_y_estado()
-
         return redirect(self.get_success_url())
 
     def get_success_url(self):
