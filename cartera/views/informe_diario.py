@@ -123,11 +123,16 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['recaudo_datáfono'] = cuotas_hoy.filter(
             metodo_pago='datáfono'
         ).aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
+
+        context['recaudo_no_especificado'] = cuotas_hoy.filter(
+            metodo_pago__isnull=True
+        ).aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
         
         context['total_recaudado'] = (
             context['recaudo_efectivo'] + 
             context['recaudo_transferencia'] + 
-            context['recaudo_datáfono']
+            context['recaudo_datáfono'] + 
+            context['recaudo_no_especificado']
         )
         
         # Objetivo del mes (basado en el mes de la fecha seleccionada)

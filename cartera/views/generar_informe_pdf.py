@@ -51,6 +51,7 @@ def generar_pdf_informe(request):
             ("Efectivo:", format_currency(request.POST.get('recaudo_efectivo', '0'))),
             ("Transferencia:", format_currency(request.POST.get('recaudo_transferencia', '0'))),
             ("Datáfono:", format_currency(request.POST.get('recaudo_datáfono', '0'))),
+            ("No especificado:", format_currency(request.POST.get('recaudo_no_especificado', '0'))),
             ("Total Recaudado:", format_currency(request.POST.get('total_recaudado', '0'))),
             ("Efectivo en sedes:", format_currency(efectivo_sedes))
         ]

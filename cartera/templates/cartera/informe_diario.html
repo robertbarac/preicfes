@@ -63,6 +63,7 @@
                 <p class="font-medium">Efectivo: <span class="font-normal">${{ recaudo_efectivo|floatformat:0|intcomma }}</span></p>
                 <p class="font-medium">Transferencia: <span class="font-normal">${{ recaudo_transferencia|floatformat:0|intcomma }}</span></p>
                 <p class="font-medium">Datáfono: <span class="font-normal">${{ recaudo_datáfono|floatformat:0|intcomma }}</span></p>
+                <p class="font-medium">No especificado: <span class="font-normal">${{ recaudo_no_especificado|floatformat:0|intcomma }}</span></p>
                 <p class="font-medium">Total Recaudado: <span class="font-normal">${{ total_recaudado|floatformat:0|intcomma }}</span></p>
             </div>
             
@@ -72,6 +73,7 @@
                     <input type="hidden" name="recaudo_efectivo" value="{{ recaudo_efectivo }}">
                     <input type="hidden" name="recaudo_transferencia" value="{{ recaudo_transferencia }}">
                     <input type="hidden" name="recaudo_datáfono" value="{{ recaudo_datáfono }}">
+                    <input type="hidden" name="recaudo_no_especificado" value="{{ recaudo_no_especificado }}">
                     <input type="hidden" name="total_recaudado" value="{{ total_recaudado }}">
                     <input type="hidden" name="objetivo_mes" value="{{ objetivo_mes }}">
                     <input type="hidden" name="porcentaje_cumplimiento" value="{{ porcentaje_cumplimiento|floatformat:2 }}">
