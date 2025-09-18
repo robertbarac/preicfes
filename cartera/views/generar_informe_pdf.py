@@ -27,9 +27,7 @@ def generar_pdf_informe(request):
         # Crear el canvas
         p = canvas.Canvas(response, pagesize=letter)
         
-        # Obtener fecha formateada
-        from django.utils import timezone
-        from django.utils.formats import date_format
+        # Obtener fecha formateada (los módulos ya están importados globalmente)
         hoy = timezone.localtime(timezone.now()).date()
         fecha_str = date_format(hoy, "l, j \d\e F \d\e Y").capitalize()
         

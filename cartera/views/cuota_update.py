@@ -39,22 +39,23 @@ class CuotaUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def form_valid(self, form):
         from django.utils import timezone
 
-        # 1. OBTENER DATOS INICIALES
-        cuota_original = self.get_object()
-        monto_total_ingresado = form.cleaned_data['monto_abonado']
-        abono_transaccion = monto_total_ingresado - cuota_original.monto_abonado
+        # 1. OBTENER DATOS DEL FORMULARIO Y ESTADO ORIGINAL
+        # Obtenemos la instancia con los datos nuevos del form, pero sin guardar aún.
+        cuota_actual = form.save(commit=False)
+        # Obtenemos la cuota original de la BD para comparar.
+        cuota_original = Cuota.objects.get(pk=cuota_actual.pk)
+
+        # Calculamos la diferencia para saber si es un pago nuevo.
+        abono_transaccion = cuota_actual.monto_abonado - cuota_original.monto_abonado
+
+        # Guardamos la cuota con TODOS sus nuevos datos (fecha, método, etc.)
+        cuota_actual.save()
 
         if abono_transaccion <= 0:
-            form.save()
-            messages.info(self.request, "No se registró un nuevo abono.")
+            messages.info(self.request, "Cambios guardados, pero no se registró un nuevo abono.")
             return redirect(self.get_success_url())
 
-        # 2. APLICAR PAGO A LA CUOTA ACTUAL
-        cuota_actual = self.get_object()
-        
-        # CORRECCIÓN: El monto_abonado debe reflejar el pago total ingresado.
-        cuota_actual.monto_abonado = monto_total_ingresado
-        cuota_actual.save()
+        # Si hubo un abono, continuamos con la lógica de pagos.
         messages.success(self.request, f"Se registró un pago de ${abono_transaccion:,.2f}.")
         cuota_actual.refresh_from_db()
 
