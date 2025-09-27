@@ -1,5 +1,5 @@
 from django import forms
-from .models import Alumno, Clase, Materia, Grupo
+from .models import Alumno, Clase, Materia, Grupo, Inasistencia
 from django.utils import timezone
 
 class AlumnoForm(forms.ModelForm):
@@ -100,4 +100,19 @@ class ClaseForm(forms.ModelForm):
             'grupo': 'Grupo que recibirá la clase',
             'horario': 'Horario de la clase',
             'estado': 'Estado actual de la clase'
+        }
+
+
+class InasistenciaForm(forms.ModelForm):
+    class Meta:
+        model = Inasistencia
+        fields = ['motivo', 'justificada', 'soporte']
+        widgets = {
+            'motivo': forms.Textarea(attrs={'rows': 3}),
+            'justificada': forms.CheckboxInput(),
+        }
+        help_texts = {
+            'motivo': 'Describe la razón de la inasistencia.',
+            'justificada': 'Marca esta casilla si el alumno presentó una excusa válida.',
+            'soporte': 'Sube una imagen de la excusa (opcional).',
         }

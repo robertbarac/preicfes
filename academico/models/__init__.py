@@ -4,6 +4,7 @@ from .clase import Clase
 from .nota import Nota
 from .asistencia import Asistencia
 from .materia import Materia
+from .inasistencia import Inasistencia
 
 __all__ = [
     'Grupo',
@@ -12,4 +13,5 @@ __all__ = [
     'Nota',
     'Asistencia',
     'Materia',
+    'Inasistencia',
 ]

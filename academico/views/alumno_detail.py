@@ -5,7 +5,7 @@ from django.utils import timezone
 import json
 from django.template.loader import render_to_string
 
-from academico.models import Alumno, Asistencia, Nota
+from academico.models import Alumno, Asistencia, Nota, Inasistencia
 from cartera.models import Deuda, AcuerdoPago
 
 class AlumnoDetailView(LoginRequiredMixin, DetailView):
@@ -120,7 +120,13 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
                 clase__estado='vista'
             ).values('clase__materia__nombre').annotate(
                 promedio=Avg('nota')
-            ).order_by('clase__materia__nombre')
+            ).order_by('clase__materia__nombre'),
+
+            # Crear un diccionario para mapear inasistencias a clases
+            'inasistencias_justificadas': {
+                inasistencia.clase.id: inasistencia
+                for inasistencia in Inasistencia.objects.filter(alumno=alumno)
+            }
         })
         
         return context

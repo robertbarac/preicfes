@@ -3,7 +3,7 @@ from .views import (
     AlumnosListView, AlumnoDetailView, AlumnoCreateView, AlumnoUpdateView,
     ClasesProfesorListView, GenerarCertificadosSimulacroView, GenerarConstanciaPreICFESView, GrupoDetailView, 
     GrupoListView, ClaseListView, ClaseDetailView,
-    RegistroAsistenciaNotaView
+    RegistroAsistenciaNotaView, registrar_o_editar_inasistencia
 )
 from . import views
 
@@ -29,4 +29,4 @@ urlpatterns = [
     path('clase/certificados-simulacro/<int:clase_id>/', 
          GenerarCertificadosSimulacroView.as_view(), 
          name='generar_certificados_simulacro'),
-]
+    path('alumno/<int:alumno_pk>/clase/<int:clase_pk>/registrar-inasistencia/', registrar_o_editar_inasistencia, name='registrar_inasistencia'),]
