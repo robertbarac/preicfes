@@ -18,8 +18,17 @@
             {% for alumno in alumnos %}
                 <li>
                     <a href="{% url 'alumno_detail' alumno.id %}" class="block bg-gray-100 p-4 rounded-lg hover:bg-gray-200 transition duration-300">
-                        <span class="text-lg font-semibold">{{ alumno.nombres }} {{ alumno.primer_apellido }}</span>
-                        <span class="text-gray-600"> - {{ alumno.celular }}</span>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-lg font-semibold">{{ alumno.nombres }} {{ alumno.primer_apellido }}</span>
+                                <span class="text-gray-600"> - {{ alumno.celular }}</span>
+                            </div>
+                            {% if alumno.id in alumnos_con_cuotas_vencidas_ids %}
+                                <span class="px-3 py-1 text-sm font-semibold text-red-800 bg-red-100 rounded-full">No está al día</span>
+                            {% else %}
+                                <span class="px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">Al día</span>
+                            {% endif %}
+                        </div>
                     </a>
                 </li>
             {% empty %}

@@ -45,30 +45,39 @@ class GrupoDetailView(LoginRequiredMixin, DetailView):
         materias = [materia.nombre for materia in materias_preicfes]
         totales = [frecuencia_dict.get(materia.nombre, 0) for materia in materias_preicfes]
 
-        plt.figure(figsize=(12, 6))
+        # --- Gráfico Matplotlib ---
+        plt.figure(figsize=(10, 6))
         bars = plt.bar(materias, totales, color='skyblue')
         plt.xlabel('Materias')
-        plt.ylabel('Frecuencia de clases vistas')
-        plt.title(f'Frecuencia de materias vistas en clases - Grupo {grupo.codigo}')
-        plt.xticks(rotation=45)
+        plt.ylabel('Frecuencia de Clases')
+        plt.title(f'Frecuencia de Materias Vistas en el Grupo {grupo.codigo}')
+        plt.xticks(rotation=45, ha='right')
         plt.tight_layout()
 
         for bar in bars:
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width() / 2., height,
-                    f'{int(height)}',
-                    ha='center', va='bottom')
+                     f'{int(height)}', ha='center', va='bottom')
 
         buffer = io.BytesIO()
         plt.savefig(buffer, format='png')
         buffer.seek(0)
         image_png = buffer.getvalue()
         buffer.close()
-
         graphic = base64.b64encode(image_png).decode('utf-8')
-
-        alumnos = Alumno.objects.filter(grupo_actual=grupo)
-
         context['graphic'] = graphic
+        # --- Fin Gráfico ---
+
+        # Obtener alumnos del grupo
+        alumnos = Alumno.objects.filter(grupo_actual=grupo)
         context['alumnos'] = alumnos
+
+        # Identificar alumnos con cuotas vencidas
+        alumnos_con_cuotas_vencidas_ids = set(
+            Alumno.objects.filter(
+                id__in=alumnos.values_list('id', flat=True),
+                deuda__cuotas__estado='vencida'
+            ).values_list('id', flat=True)
+        )
+        context['alumnos_con_cuotas_vencidas_ids'] = alumnos_con_cuotas_vencidas_ids
         return context
