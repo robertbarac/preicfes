@@ -122,16 +122,63 @@
             </div>
         </div>
 
-        <!-- Barra de progreso -->
+        <!-- Barra de progreso con <meter> -->
         <div class="mb-4">
             <div class="flex justify-between text-sm text-gray-600 mb-1">
-                <span>0%</span>
-                <span>100%</span>
+                <span>$0</span>
+                <span>Meta: ${{ meta_mensual|floatformat:0|intcomma }}</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div class="h-2.5 rounded-full {% if porcentaje_cumplimiento >= 100 %}bg-green-600{% elif porcentaje_cumplimiento >= 80 %}bg-yellow-500{% else %}bg-red-600{% endif %}" 
-                     style="width: {{ porcentaje_cumplimiento }}%"></div>
-            </div>
+            <meter class="w-full h-6"
+                   min="0" 
+                   max="{{ meta_mensual }}" 
+                   value="{{ ingresos_mes }}"
+                   low="{{ meter_low }}"
+                   high="{{ meter_high }}"
+                   optimum="{{ meta_mensual }}">
+            </meter>
+            <style>
+                meter {
+                    /* Resetea la apariencia por defecto del navegador */
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                    appearance: none;
+                    
+                    border: 1px solid #e5e7eb; /* gray-200 */
+                    border-radius: 9999px; /* rounded-full */
+                    background-color: #e5e7eb; /* gray-200 */
+                }
+
+                /* Para Chrome, Safari, Edge */
+                meter::-webkit-meter-bar {
+                    background: none; /* El fondo lo da el elemento meter */
+                    border: none;
+                    border-radius: 9999px;
+                }
+                
+                /* El color de la barra se define aquí */
+                meter::-webkit-meter-optimum-value {
+                    border-radius: 9999px;
+                    {% if porcentaje_cumplimiento >= 100 %}
+                        background-color: #22c55e; /* green-500 */
+                    {% elif porcentaje_cumplimiento >= 80 %}
+                        background-color: #eab308; /* yellow-500 */
+                    {% else %}
+                        background-color: #ef4444; /* red-500 */
+                    {% endif %}
+                }
+
+                /* Para Firefox */
+                meter::-moz-progress-bar {
+                    border-radius: 9999px;
+                    {% if porcentaje_cumplimiento >= 100 %}
+                        background-color: #22c55e; /* green-500 */
+                    {% elif porcentaje_cumplimiento >= 80 %}
+                        background-color: #eab308; /* yellow-500 */
+                    {% else %}
+                        background-color: #ef4444; /* red-500 */
+                    {% endif %}
+                }
+            </style>
         </div>
 
         <!-- Balance -->

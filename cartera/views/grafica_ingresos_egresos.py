@@ -9,6 +9,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Sum
 from django.utils import timezone
 from calendar import month_name
+from decimal import Decimal
 
 from cartera.models import Cuota, Egreso
 from academico.models import Alumno
@@ -99,6 +100,10 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         # Calcular superávit o déficit
         superavit_deficit = ingresos_mes - meta_mensual
 
+        # Calcular umbrales para la etiqueta <meter>
+        meter_low = meta_mensual * Decimal('0.80')
+        meter_high = meta_mensual * Decimal('1.0')
+
         context.update({
             'año_seleccionado': año_seleccionado,
             'años_grafica': años_grafica,
@@ -111,6 +116,8 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             'ingresos_mes': ingresos_mes,
             'porcentaje_cumplimiento': porcentaje_cumplimiento,
             'superavit_deficit': superavit_deficit,
+            'meter_low': meter_low,
+            'meter_high': meter_high,
             'tipos_programa': dict(Alumno.TIPO_PROGRAMA),
             'tipo_programa_seleccionado': tipo_programa
         })
