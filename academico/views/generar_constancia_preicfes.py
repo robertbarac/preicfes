@@ -151,8 +151,16 @@ class GenerarConstanciaPreICFESView(UserPassesTestMixin, LoginRequiredMixin, Vie
             'Sunday': 'domingo'
         }
         
-        dias_clases = [dias_semana_es.get(dia, dia) for dia in dias_semana]
-        dias_clases.sort()  # Ordenar los días
+        dias_clases_traducidos = [dias_semana_es.get(dia, dia) for dia in dias_semana]
+        
+        # Definir el orden correcto de los días de la semana
+        orden_dias = {
+            'lunes': 0, 'martes': 1, 'miércoles': 2, 'jueves': 3, 
+            'viernes': 4, 'sábado': 5, 'domingo': 6
+        }
+        
+        # Ordenar los días de clase según el orden definido
+        dias_clases = sorted(dias_clases_traducidos, key=lambda dia: orden_dias.get(dia, 7))
         
         # Formatear los días para el texto
         if len(dias_clases) == 1:
