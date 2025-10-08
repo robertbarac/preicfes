@@ -45,30 +45,36 @@ class Clase(models.Model):
     horario = models.CharField(max_length=20, choices=HORARIOS_DISPONIBLES, help_text="Seleccione el horario de la clase.", default=None)
     estado = models.CharField(max_length=20, choices=ESTADO_CLASE, default='programada', help_text="Estado de la clase.")
 
+
     def clean(self):
-        # Validación 1: El profesor debe pertenecer al grupo "Profesor"
-        if not self.profesor.groups.filter(name="Profesor").exists():
-            raise ValidationError({'profesor': 'El usuario seleccionado no pertenece al grupo Profesor.'})
+        # Solo realizar validaciones de profesor si se ha asignado uno
+        if self.profesor:
+            # Validación 1: El profesor debe pertenecer al grupo "Profesor"
+            if not self.profesor.groups.filter(name="Profesor").exists():
+                raise ValidationError({'profesor': 'El usuario seleccionado no pertenece al grupo de Profesores.'})
+
+            # Validación 3: Evitar superposición de horarios para el mismo profesor
+            clases_profesor = Clase.objects.filter(
+                profesor=self.profesor,
+                fecha=self.fecha,
+                horario=self.horario
+            ).exclude(id=self.id)
+
+            if clases_profesor.exists():
+                raise ValidationError({
+                    'horario': f'El profesor {self.profesor.get_full_name()} ya tiene una clase asignada en este horario.'
+                })
 
         # Validación 2: Evitar superposición de horarios para el mismo salón
         clases_existentes = Clase.objects.filter(
             salon=self.salon,
             fecha=self.fecha,
-            horario=self.horario,  # Mismo horario
-        ).exclude(id=self.id)  # Excluir la clase actual si ya existe
+            horario=self.horario
+        ).exclude(id=self.id)
 
         if clases_existentes.exists():
             raise ValidationError({'horario': 'El salón ya está ocupado en este horario.'})
 
-        # Validación 3: Evitar superposición de horarios para el mismo profesor
-        clases_profesor = Clase.objects.filter(
-            profesor=self.profesor,
-            fecha=self.fecha,
-            horario=self.horario,  # Mismo horario
-        ).exclude(id=self.id)  # Excluir la clase actual si ya existe
-
-        if clases_profesor.exists():
-            raise ValidationError({'horario': 'El profesor ya tiene una clase en este horario.'})
 
     def get_hora_inicio(self):
         """Obtiene la hora de inicio como objeto time"""
