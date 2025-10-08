@@ -14,7 +14,7 @@ class DeudaUpdateView(UserPassesTestMixin, UpdateView):
         deuda = self.get_object()
         
         # Si el usuario es 'vvgomez', siempre tiene acceso sin restricciones
-        if self.request.user.username == 'vvgomez':
+        if self.request.user.username == 'vvgomez' or self.request.user.username == 'claudia2019':
             return True
         
         # Para otros usuarios, verificar si es superuser o pertenece al grupo SecretariaCartera

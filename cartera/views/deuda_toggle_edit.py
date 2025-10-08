@@ -5,7 +5,7 @@ from cartera.models import Deuda
 
 def is_vvgomez(user):
     """Verifica si el usuario es 'vvgomez'"""
-    return user.username == 'vvgomez'
+    return user.username == 'vvgomez' or user.username == 'claudia2019'
 
 @user_passes_test(is_vvgomez)
 def toggle_edicion_deuda(request, pk):
