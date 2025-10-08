@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from cartera.models import Cuota, Egreso
 from academico.models import Alumno
+from ubicaciones.models import Departamento, Municipio
 
 
 class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -30,35 +31,51 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         context = super().get_context_data(**kwargs)
         año_actual = timezone.localtime(timezone.now()).year
 
-        # Obtener el año seleccionado para la gráfica
-        año_seleccionado = int(self.request.GET.get('año', año_actual))
+        # Unificar año seleccionado desde el filtro de cumplimiento
+        año_seleccionado = int(self.request.GET.get('año_cumplimiento', año_actual))
+        context['año_seleccionado'] = año_seleccionado
 
         # Obtener el año y mes seleccionados para el cumplimiento
         año_cumplimiento = int(self.request.GET.get('año_cumplimiento', año_actual))
         mes_cumplimiento = int(self.request.GET.get('mes_cumplimiento', timezone.now().month))
 
-        # Obtener municipio seleccionado
+        # Obtener departamento y municipio seleccionados
+        departamento_id = self.request.GET.get('departamento')
         municipio_id = self.request.GET.get('municipio')
-        if not self.request.user.is_superuser:
-            # Si no es superuser, usar su municipio asignado
+
+        # Si no es superuser, forzar su municipio y departamento asignado
+        if not self.request.user.is_superuser and self.request.user.municipio:
+            departamento_id = self.request.user.municipio.departamento.id
             municipio_id = self.request.user.municipio.id
 
         # Obtener tipo de programa seleccionado
         tipo_programa = self.request.GET.get('tipo_programa')
 
-        # Obtener lista de municipios para superuser
-        if self.request.user.is_superuser:
-            from ubicaciones.models import Municipio
-            context['municipios'] = Municipio.objects.all()
-            context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
+        # Obtener lista de departamentos y municipios para los filtros
+        departamentos = Departamento.objects.all()
+        municipios = Municipio.objects.all()
+        if departamento_id:
+            municipios = municipios.filter(departamento_id=departamento_id)
+        
+        context['departamentos'] = departamentos
+        context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None
+        context['municipios'] = municipios
+        context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
 
         # Base queryset para cuotas
         cuotas_qs = Cuota.objects.all()
+        
+        # Aplicar filtros jerárquicos: municipio tiene prioridad sobre departamento
         if municipio_id:
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
             )
-        elif not self.request.user.is_superuser:
+        elif departamento_id:
+            cuotas_qs = cuotas_qs.filter(
+                deuda__alumno__grupo_actual__salon__sede__municipio__departamento_id=departamento_id
+            )
+        elif not self.request.user.is_superuser and self.request.user.municipio:
+            # Fallback para usuarios no-superuser sin selección explícita
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
             )
@@ -133,10 +150,13 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
     def generar_grafica(self, context):
         año_seleccionado = int(self.request.GET.get('año', timezone.localtime(timezone.now()).year))
 
-        # Obtener municipio seleccionado
+        # Obtener departamento y municipio seleccionados
+        departamento_id = self.request.GET.get('departamento')
         municipio_id = self.request.GET.get('municipio')
-        if not self.request.user.is_superuser:
-            # Si no es superuser, usar su municipio asignado
+
+        # Si no es superuser, forzar su municipio y departamento asignado
+        if not self.request.user.is_superuser and self.request.user.municipio:
+            departamento_id = self.request.user.municipio.departamento.id
             municipio_id = self.request.user.municipio.id
         
         # Obtener tipo de programa seleccionado
@@ -151,12 +171,16 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             monto_abonado__gt=0  # Asegurarse de que se haya pagado algo
         )
         
-        # Filtrar cuotas por municipio
+        # Aplicar filtros jerárquicos
         if municipio_id:
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
             )
-        elif not self.request.user.is_superuser:
+        elif departamento_id:
+            cuotas_qs = cuotas_qs.filter(
+                deuda__alumno__grupo_actual__salon__sede__municipio__departamento_id=departamento_id
+            )
+        elif not self.request.user.is_superuser and self.request.user.municipio:
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
             )

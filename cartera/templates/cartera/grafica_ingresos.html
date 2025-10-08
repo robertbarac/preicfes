@@ -8,97 +8,97 @@
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6">Reporte Financiero</h1>
 
-    <!-- Filtro para GRÁFICA (año y municipio para superuser) -->
+    <!-- Filtros Unificados -->
     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <form method="get" class="flex items-center space-x-4">
-            <div>
-                <label for="año" class="block text-sm font-medium text-gray-700">Año Gráfica:</label>
-                <select name="año" id="año" class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm">
-                    {% for año in años_grafica %}
-                        <option value="{{ año }}" {% if año == año_seleccionado %}selected{% endif %}>{{ año }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% if request.user.is_superuser %}
-            <div>
-                <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio:</label>
-                <select name="municipio" id="municipio" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm">
-                    <option value="">Todos los municipios</option>
-                    {% for municipio in municipios %}
-                        <option value="{{ municipio.id }}" {% if municipio.id == municipio_seleccionado %}selected{% endif %}>{{ municipio.nombre }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
+        <form method="get" id="filtros-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
             
+            <!-- Columna 1: Año y Mes -->
             <div>
-                <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa:</label>
-                <select name="tipo_programa" id="tipo_programa" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm">
-                    <option value="">Todos los programas</option>
-                    {% for key, value in tipos_programa.items %}
-                        <option value="{{ key }}" {% if key == tipo_programa_seleccionado %}selected{% endif %}>{{ value }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button type="submit" class="mt-6 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Actualizar Gráfica
-            </button>
-        </form>
-    </div>
-
-    <!-- Gráfica anual (se mantiene igual) -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 class="text-xl font-semibold mb-4">Ingresos {{ año_seleccionado }}</h2>
-        <img src="{% url 'cartera:grafica' %}?año={{ año_seleccionado }}&grafica=1{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if tipo_programa_seleccionado %}&tipo_programa={{ tipo_programa_seleccionado }}{% endif %}" 
-             alt="Gráfica de Ingresos y Egresos" 
-             class="w-full h-auto border rounded">
-    </div>
-
-    <!-- Filtro para CUMPLIMIENTO (año + mes + municipio para superuser) -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <form method="get" class="flex items-center space-x-4">
-            <div>
-                <label for="año_cumplimiento" class="block text-sm font-medium text-gray-700">Año Cumplimiento:</label>
-                <select name="año_cumplimiento" id="año_cumplimiento" class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm">
-                    {% for año in años_cumplimiento %}
-                        <option value="{{ año }}" {% if año == año_cumplimiento %}selected{% endif %}>{{ año }}</option>
+                <label for="año_cumplimiento" class="block text-sm font-medium text-gray-700">Año</label>
+                <select name="año_cumplimiento" id="año_cumplimiento" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    {% for anio in años_cumplimiento %}
+                        <option value="{{ anio }}" {% if anio == año_cumplimiento %}selected{% endif %}>{{ anio }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div>
-                <label for="mes_cumplimiento" class="block text-sm font-medium text-gray-700">Mes:</label>
-                <select name="mes_cumplimiento" id="mes_cumplimiento" class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm">
+                <label for="mes_cumplimiento" class="block text-sm font-medium text-gray-700">Mes</label>
+                <select name="mes_cumplimiento" id="mes_cumplimiento" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     {% for num, nombre in meses %}
                         <option value="{{ num }}" {% if num == mes_cumplimiento %}selected{% endif %}>{{ nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
-            {% if request.user.is_superuser %}
+
+            <!-- Columna 2: Departamento y Municipio (solo para superuser) -->
+            {% if user.is_superuser %}
             <div>
-                <label for="municipio_cumplimiento" class="block text-sm font-medium text-gray-700">Municipio:</label>
-                <select name="municipio" id="municipio_cumplimiento" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm">
-                    <option value="">Todos los municipios</option>
-                    {% for municipio in municipios %}
-                        <option value="{{ municipio.id }}" {% if municipio.id == municipio_seleccionado %}selected{% endif %}>{{ municipio.nombre }}</option>
+                <label for="departamento" class="block text-sm font-medium text-gray-700">Departamento</label>
+                <select name="departamento" id="departamento" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">Todos</option>
+                    {% for depto in departamentos %}
+                        <option value="{{ depto.id }}" {% if depto.id == departamento_seleccionado %}selected{% endif %}>{{ depto.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
+                <select name="municipio" id="municipio" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">Todos</option>
+                    {% for mun in municipios %}
+                        <option value="{{ mun.id }}" {% if mun.id == municipio_seleccionado %}selected{% endif %}>{{ mun.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
             {% endif %}
-            
+
+            <!-- Columna 3: Tipo de Programa y Botón -->
             <div>
-                <label for="tipo_programa_cumplimiento" class="block text-sm font-medium text-gray-700">Tipo de Programa:</label>
-                <select name="tipo_programa" id="tipo_programa_cumplimiento" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm">
-                    <option value="">Todos los programas</option>
+                <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa</label>
+                <select name="tipo_programa" id="tipo_programa" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">Todos</option>
                     {% for key, value in tipos_programa.items %}
                         <option value="{{ key }}" {% if key == tipo_programa_seleccionado %}selected{% endif %}>{{ value }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <button type="submit" class="mt-6 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Actualizar Cumplimiento
-            </button>
+            
+            <!-- Botón de Aplicar -->
+            <div class="self-end">
+                <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Aplicar Filtros
+                </button>
+            </div>
+            
+            <!-- Campos ocultos para mantener el estado del año de la gráfica -->
+            <input type="hidden" name="año" value="{{ año_cumplimiento }}">
         </form>
     </div>
+
+    <!-- Gráfica anual -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-xl font-semibold mb-4">Ingresos {{ año_cumplimiento }}</h2>
+        <img src="{% url 'cartera:grafica' %}?año={{ año_cumplimiento }}&grafica=1{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if tipo_programa_seleccionado %}&tipo_programa={{ tipo_programa_seleccionado }}{% endif %}" 
+             alt="Gráfica de Ingresos" 
+             class="w-full h-auto border rounded">
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('filtros-form');
+            const departamentoSelect = document.getElementById('departamento');
+            const municipioSelect = document.getElementById('municipio');
+
+            // Enviar formulario si cambia cualquier filtro para mantener todo sincronizado
+            form.addEventListener('change', function(event) {
+                // Si el cambio fue en departamento, reseteamos el municipio
+                if (event.target.id === 'departamento' && municipioSelect) {
+                    municipioSelect.value = '';
+                }
+                form.submit();
+            });
+        });
+    </script>
 
     <!-- Sección de Cumplimiento (actualiza las variables) -->
     <div class="bg-white p-6 rounded-lg shadow-md">
