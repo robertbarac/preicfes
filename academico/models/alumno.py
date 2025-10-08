@@ -33,7 +33,7 @@ class Alumno(models.Model):
     segundo_apellido = models.CharField(max_length=100, blank=True, null=True)
     fecha_nacimiento = models.DateField(null=True, blank=True, verbose_name="Fecha de Nacimiento")
     identificacion = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    tipo_identificacion = models.CharField(max_length=2, choices=TIPO_IDENTIFICACION)
+    tipo_identificacion = models.CharField(max_length=2, choices=TIPO_IDENTIFICACION, default='TI')
     tipo_programa = models.CharField(
         max_length=20, 
         choices=TIPO_PROGRAMA, 
