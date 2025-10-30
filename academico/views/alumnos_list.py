@@ -23,12 +23,20 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         return redirect('login')
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('municipio', 'grupo_actual__salon__sede')
+        queryset = super().get_queryset().select_related('municipio__departamento', 'grupo_actual__salon__sede')
+        user = self.request.user
 
-        # Filtrar por municipio según el usuario
-        if not self.request.user.is_superuser:
-            # Si no es superuser, solo ver alumnos de su municipio
-            queryset = queryset.filter(municipio=self.request.user.municipio)
+        # Lógica de filtrado por rol
+        if user.is_superuser:
+            # Superusuario ve todo
+            pass
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            # Coordinador ve todo su departamento
+            if user.departamento:
+                queryset = queryset.filter(municipio__departamento=user.departamento)
+        else:
+            # Otro personal (staff) ve solo su municipio
+            queryset = queryset.filter(municipio=user.municipio)
 
         # Aplicar filtros de búsqueda
         nombre = self.request.GET.get('nombre')
@@ -93,13 +101,22 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         # Agregar al contexto
         context['query_string'] = query_string
         
-        # Filtrar sedes por municipio del usuario si no es superusuario
-        if self.request.user.is_superuser:
+        # Lógica de contexto por rol
+        user = self.request.user
+        if user.is_superuser:
             context['sedes'] = Sede.objects.all()
             context['ciudades'] = Municipio.objects.all()
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                context['sedes'] = Sede.objects.filter(municipio__departamento=user.departamento)
+                context['ciudades'] = Municipio.objects.filter(departamento=user.departamento)
+            else:
+                context['sedes'] = Sede.objects.none()
+                context['ciudades'] = Municipio.objects.none()
         else:
-            # Solo mostrar sedes del municipio del usuario
-            context['sedes'] = Sede.objects.filter(municipio=self.request.user.municipio)
+            # Otro personal (staff) ve solo su municipio
+            context['sedes'] = Sede.objects.filter(municipio=user.municipio)
+            context['ciudades'] = Municipio.objects.filter(id=user.municipio.id)
             
         # Añadir tipos de programa al contexto
         context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)

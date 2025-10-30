@@ -13,7 +13,7 @@ class UsuarioCreationForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ('username', 'email', 'municipio')
+        fields = ('username', 'email', 'municipio', 'departamento')
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -62,14 +62,14 @@ class UsuarioAdmin(UserAdmin):
     form = UsuarioChangeForm
     
     # Campos a mostrar en el listado
-    list_display = ('username', 'email', 'municipio', 'is_staff')
-    list_filter = ('municipio', 'is_staff', 'is_superuser')
+    list_display = ('username', 'email', 'departamento', 'municipio', 'is_staff')
+    list_filter = ('departamento', 'municipio', 'is_staff', 'is_superuser')
     
     # Camposets para la edición
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Información personal', {'fields': ('first_name', 'last_name', 'email', 'cedula', 'telefono')}),
-        ('Ubicación', {'fields': ('municipio',)}),
+        ('Ubicación', {'fields': ('departamento', 'municipio',)}),
         ('Permisos', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),
@@ -79,7 +79,7 @@ class UsuarioAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'municipio', 'password1', 'password2'),
+            'fields': ('username', 'email', 'departamento', 'municipio', 'password1', 'password2'),
         }),
     )
 
