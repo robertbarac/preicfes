@@ -25,7 +25,7 @@ class ProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             pass  # Superuser ve todo
         elif user.groups.filter(name='CoordinadorDepartamental').exists():
             if user.departamento:
-                queryset = queryset.filter(departamento=user.departamento)
+                queryset = queryset.filter(municipio__departamento=user.departamento)
         else:
             # Otro personal (staff) ve solo su municipio
             queryset = queryset.filter(municipio=user.municipio)

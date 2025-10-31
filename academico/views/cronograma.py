@@ -11,10 +11,7 @@ class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     
     def test_func(self):
         # Verificar si el usuario es superuser o pertenece a los grupos permitidos
-        return (
-            self.request.user.is_superuser or
-            self.request.user.groups.filter(name__in=['SecretariaAcademica', 'SecretariaCartera']).exists()
-        )
+        return self.request.user.is_staff
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -51,24 +48,35 @@ class CronogramaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             fecha = fecha_inicial + timedelta(days=i)
             fechas.append(fecha)
         
-        # Filtrar sedes según el usuario
-        if self.request.user.is_superuser:
+        user = self.request.user
+        # Filtrar sedes y municipios según el rol del usuario
+        if user.is_superuser:
             sedes = Sede.objects.all()
             municipios = Municipio.objects.all()
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                sedes = Sede.objects.filter(municipio__departamento=user.departamento)
+                municipios = Municipio.objects.filter(departamento=user.departamento)
+            else:
+                sedes = Sede.objects.none()
+                municipios = Municipio.objects.none()
         else:
-            # Obtener municipio del usuario (asumiendo que está en el modelo Usuario)
-            municipio_usuario = self.request.user.municipio
-            sedes = Sede.objects.filter(municipio=municipio_usuario)
-            municipios = Municipio.objects.filter(id=municipio_usuario.id)
-        
+            sedes = Sede.objects.filter(municipio=user.municipio)
+            municipios = Municipio.objects.filter(id=user.municipio.id)
+
         # Aplicar filtros a las clases
         clases = Clase.objects.filter(fecha__range=[fecha_inicial, fechas[-1]])
-        
+
+        # Filtrado inicial por rol
+        if not user.is_superuser:
+            if user.groups.filter(name='CoordinadorDepartamental').exists():
+                if user.departamento:
+                    clases = clases.filter(salon__sede__municipio__departamento=user.departamento)
+            else:
+                clases = clases.filter(salon__sede__municipio=user.municipio)
+
         if sede_id and sede_id != 'None':
             clases = clases.filter(salon__sede_id=sede_id)
-        elif not self.request.user.is_superuser:
-            # Si no se selecciona sede, filtrar por municipio del usuario
-            clases = clases.filter(salon__sede__municipio=self.request.user.municipio)
         
         if municipio_id and municipio_id != 'None' and self.request.user.is_superuser:
             clases = clases.filter(salon__sede__municipio_id=municipio_id)

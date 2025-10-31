@@ -13,7 +13,7 @@
     
     <div class="mb-4">
         <form method="get" class="flex flex-wrap gap-4">
-            {% if user.is_superuser %}
+            {% if user.is_superuser or is_coordinador %}
             <div class="flex-1">
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
                 <select name="municipio" id="municipio" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
@@ -54,7 +54,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grupo</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Salón</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sede</th>
-                    {% if user.is_superuser %}
+                    {% if user.is_superuser or is_coordinador %}
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Municipio</th>
                     {% endif %}
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Programa</th>
@@ -82,7 +82,7 @@
                             -
                         {% endif %}
                     </td>
-                    {% if user.is_superuser %}
+                    {% if user.is_superuser or is_coordinador %}
                     <td class="px-6 py-4 whitespace-nowrap">
                         {% if alumno.grupo_actual %}
                             {{ alumno.grupo_actual.salon.sede.municipio.nombre }}

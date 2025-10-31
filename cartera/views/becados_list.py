@@ -7,8 +7,7 @@ from academico.models import Alumno
 
 class BecadosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def test_func(self):
-        # Solo permitir acceso a superusers y secretarias de cartera
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaAcademica').exists()
+        return self.request.user.is_staff
     model = Alumno
     template_name = 'cartera/becados_list.html'
     context_object_name = 'becados'
@@ -23,14 +22,21 @@ class BecadosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             'grupo_actual__salon__sede__municipio'
         )
         
-        # Si no es superuser, filtrar por municipio del usuario
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(grupo_actual__salon__sede__municipio=self.request.user.municipio)
-        else:
-            # Si es superuser y hay un filtro por municipio
+        user = self.request.user
+        # Filtrado por rol
+        if user.is_superuser:
             municipio_id = self.request.GET.get('municipio')
             if municipio_id:
-                queryset = queryset.filter(grupo_actual__salon__sede__municipio_id=municipio_id)
+                queryset = queryset.filter(municipio_id=municipio_id)
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                queryset = queryset.filter(municipio__departamento=user.departamento)
+                municipio_id = self.request.GET.get('municipio')
+                if municipio_id:
+                    queryset = queryset.filter(municipio_id=municipio_id)
+        else:
+            # Otro personal (staff) ve solo su municipio
+            queryset = queryset.filter(municipio=user.municipio)
                 
         # Filtrar por tipo de programa
         tipo_programa = self.request.GET.get('tipo_programa')
@@ -43,11 +49,19 @@ class BecadosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['total_becados'] = self.get_queryset().count()
         
-        # Solo agregar municipios al contexto si es superuser
-        if self.request.user.is_superuser:
-            from ubicaciones.models import Municipio
+        from ubicaciones.models import Municipio
+        user = self.request.user
+        # Lógica de contexto por rol
+        if user.is_superuser:
             context['municipios'] = Municipio.objects.all().order_by('nombre')
-            context['selected_municipio'] = self.request.GET.get('municipio')
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                context['municipios'] = Municipio.objects.filter(departamento=user.departamento).order_by('nombre')
+            else:
+                context['municipios'] = Municipio.objects.none()
+        
+        context['selected_municipio'] = self.request.GET.get('municipio', '')
+        context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
             
         # Añadir tipos de programa al contexto
         context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
