@@ -147,10 +147,11 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             deuda__alumno__estado='activo'
         ).aggregate(Sum('monto'))['monto__sum'] or 0
         
-        # % de cumplimiento - basado en pagos realizados en el mes actual
+        # % de cumplimiento - basado en pagos realizados en el mes actual HASTA LA FECHA SELECCIONADA
         recaudado_mes = cuotas_qs.filter(
             fecha_pago__month=mes_actual,
             fecha_pago__year=anio_actual,
+            fecha_pago__lte=fecha_seleccionada,  # <-- ESTA ES LA CORRECCIÓN CLAVE
             monto_abonado__gt=0
         ).aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
         
