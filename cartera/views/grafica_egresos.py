@@ -10,18 +10,21 @@ from django.db.models import Sum
 from django.utils import timezone
 from calendar import month_name
 from collections import defaultdict
+import json
 
 from cartera.models import Egreso
+from ubicaciones.models import Departamento, Municipio
 
 
 class GraficaEgresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    def test_func(self):
-        # Solo permitir acceso a superusers y secretarias de cartera
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists()
     template_name = 'cartera/grafica_egresos.html'
 
+    def test_func(self):
+        # Permitir acceso a superusers o a quienes tengan el permiso para ver egresos.
+        return self.request.user.is_superuser or self.request.user.has_perm('cartera.view_egreso')
+
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_superuser and not request.user.groups.filter(name='SecretariaCartera').exists():
+        if not self.test_func():
             return HttpResponseForbidden("No tienes permisos para ver esta página.")
         return super().dispatch(request, *args, **kwargs)
 
@@ -35,31 +38,45 @@ class GraficaEgresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Obtener el mes seleccionado para detalles
         mes_seleccionado = int(self.request.GET.get('mes', timezone.now().month))
 
-        # Obtener municipio seleccionado
+        departamento_id = self.request.GET.get('departamento')
         municipio_id = self.request.GET.get('municipio')
-        if not self.request.user.is_superuser:
-            # Si no es superuser, usar su municipio asignado
-            municipio_id = self.request.user.municipio.id
-
-        # Obtener concepto seleccionado
         concepto = self.request.GET.get('concepto')
 
-        # Obtener lista de municipios para superuser
-        if self.request.user.is_superuser:
-            from ubicaciones.models import Municipio
-            context['municipios'] = Municipio.objects.all()
-            context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
+        # --- Lógica de Filtros por Rol ---
+        user = self.request.user
+        is_coordinador_or_auxiliar = user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
 
-        # Base queryset para egresos
         egresos_qs = Egreso.objects.filter(fecha__year=año_seleccionado)
-        
-        if municipio_id:
-            egresos_qs = egresos_qs.filter(municipio_id=municipio_id)
-        elif not self.request.user.is_superuser:
-            egresos_qs = egresos_qs.filter(municipio=self.request.user.municipio)
+        departamentos_qs = Departamento.objects.none()
+        municipios_qs = Municipio.objects.none()
+
+        if user.is_superuser:
+            departamentos_qs = Departamento.objects.all()
+            municipios_qs = Municipio.objects.all()
+            if departamento_id:
+                municipios_qs = municipios_qs.filter(departamento_id=departamento_id)
+                egresos_qs = egresos_qs.filter(municipio__departamento_id=departamento_id)
             
+            if municipio_id:
+                egresos_qs = egresos_qs.filter(municipio_id=municipio_id)
+
+        elif is_coordinador_or_auxiliar:
+            if hasattr(user, 'departamento') and user.departamento:
+                departamentos_qs = Departamento.objects.filter(id=user.departamento.id)
+                municipios_qs = Municipio.objects.filter(departamento=user.departamento)
+                egresos_qs = egresos_qs.filter(municipio__departamento=user.departamento)
+
+                if municipio_id:
+                    egresos_qs = egresos_qs.filter(municipio_id=municipio_id)
+
         if concepto:
             egresos_qs = egresos_qs.filter(concepto=concepto)
+
+        context['departamentos'] = departamentos_qs
+        context['municipios'] = municipios_qs
+        context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None
+        context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
+        context['is_coordinador_or_auxiliar'] = is_coordinador_or_auxiliar
 
         # Obtener los años disponibles para la gráfica
         años_disponibles = list(Egreso.objects.dates('fecha', 'year').values_list('fecha__year', flat=True))
@@ -103,6 +120,7 @@ class GraficaEgresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             'total_egresos_año': sum(egresos_mensuales),
             'total_egresos_mes': total_mes,
             'detalles_conceptos': detalles_conceptos,
+            'detalles_conceptos_json': json.dumps(detalles_conceptos),
             'conceptos': Egreso.CONCEPTO_CHOICES,
             'concepto_seleccionado': concepto
         })
@@ -118,30 +136,33 @@ class GraficaEgresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def generar_grafica(self, context):
         año_seleccionado = int(self.request.GET.get('año', timezone.now().year))
 
-        # Obtener municipio seleccionado
+        departamento_id = self.request.GET.get('departamento')
         municipio_id = self.request.GET.get('municipio')
-        if not self.request.user.is_superuser:
-            # Si no es superuser, usar su municipio asignado
-            municipio_id = self.request.user.municipio.id
-        
-        # Obtener concepto seleccionado
         concepto = self.request.GET.get('concepto')
+
+        # --- Lógica de Filtros por Rol ---
+        user = self.request.user
+        is_coordinador_or_auxiliar = user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
+
+        egresos_qs = Egreso.objects.filter(fecha__year=año_seleccionado)
+
+        if user.is_superuser:
+            if departamento_id:
+                egresos_qs = egresos_qs.filter(municipio__departamento_id=departamento_id)
+            if municipio_id:
+                egresos_qs = egresos_qs.filter(municipio_id=municipio_id)
+
+        elif is_coordinador_or_auxiliar:
+            if hasattr(user, 'departamento') and user.departamento:
+                egresos_qs = egresos_qs.filter(municipio__departamento=user.departamento)
+                if municipio_id:
+                    egresos_qs = egresos_qs.filter(municipio_id=municipio_id)
+
+        if concepto:
+            egresos_qs = egresos_qs.filter(concepto=concepto)
 
         meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
         egresos = [0] * 12
-
-        # Base queryset para egresos
-        egresos_qs = Egreso.objects.filter(fecha__year=año_seleccionado)
-        
-        # Filtrar por municipio
-        if municipio_id:
-            egresos_qs = egresos_qs.filter(municipio_id=municipio_id)
-        elif not self.request.user.is_superuser:
-            egresos_qs = egresos_qs.filter(municipio=self.request.user.municipio)
-            
-        # Filtrar por concepto
-        if concepto:
-            egresos_qs = egresos_qs.filter(concepto=concepto)
 
         # Agrupar egresos por mes
         egresos_por_mes = egresos_qs.values('fecha__month').annotate(total=Sum('valor'))
