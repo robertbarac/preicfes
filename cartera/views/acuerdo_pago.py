@@ -13,8 +13,17 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
     paginate_by = 30
 
     def test_func(self):
-        # Solo permitir acceso a superusers y secretarias de cartera
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists() or self.request.user.groups.filter(name='CoordinadorDepartamental').exists()
+        user = self.request.user
+        if not user.is_staff:
+            return False
+        
+        # Si es staff, denegar solo si pertenece a grupos no autorizados
+        grupos_no_autorizados = ['SecretariaAcademica', 'Profesor']
+        if user.groups.filter(name__in=grupos_no_autorizados).exists():
+            return False
+            
+        # Permitir a superuser y al resto del staff (Cartera, Auxiliar, Coordinador)
+        return True
     
     def get_queryset(self):
         hoy = timezone.localtime(timezone.now()).date()
@@ -46,12 +55,12 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
                 return queryset.none()
 
         # Aplicar filtros del formulario
-        self.filter_form = AcuerdoPagoFilterForm(self.request.GET)
-        if self.filter_form.is_valid():
-            departamento = self.filter_form.cleaned_data.get('departamento')
-            municipio = self.filter_form.cleaned_data.get('municipio')
-            estado = self.filter_form.cleaned_data.get('estado')
-            dias_restantes = self.filter_form.cleaned_data.get('dias_restantes')
+        form = AcuerdoPagoFilterForm(self.request.GET)
+        if form.is_valid():
+            departamento = form.cleaned_data.get('departamento')
+            municipio = form.cleaned_data.get('municipio')
+            estado = form.cleaned_data.get('estado')
+            dias_restantes = form.cleaned_data.get('dias_restantes')
 
             if municipio:
                 queryset = queryset.filter(cuota__deuda__alumno__municipio=municipio)
@@ -61,7 +70,6 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
             if dias_restantes is not None:
                 hoy = timezone.localtime(timezone.now()).date()
                 fecha_limite = hoy + timezone.timedelta(days=dias_restantes)
-                # Filtrar acuerdos cuya fecha prometida está entre hoy y la fecha límite
                 queryset = queryset.filter(fecha_prometida_pago__gte=hoy, fecha_prometida_pago__lte=fecha_limite)
             if estado:
                 queryset = queryset.filter(estado=estado)
@@ -69,14 +77,27 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
         return queryset
 
     def get_context_data(self, **kwargs):
+        from ubicaciones.models import Municipio, Departamento
         context = super().get_context_data(**kwargs)
+        user = self.request.user
         hoy = timezone.localtime(timezone.now()).date()
+        
         for acuerdo in context['acuerdos']:
             delta = acuerdo.fecha_prometida_pago - hoy
             acuerdo.dias_faltantes = delta.days
-        
-        # Añadir el formulario de filtros al contexto
-        context['filter_form'] = self.filter_form
+
+        # Inicializar y configurar el formulario de filtros
+        form = AcuerdoPagoFilterForm(self.request.GET)
+        if not user.is_superuser:
+            if user.groups.filter(name='CoordinadorDepartamental').exists() and user.departamento:
+                form.fields['departamento'].queryset = Departamento.objects.filter(id=user.departamento.id)
+                form.fields['municipio'].queryset = Municipio.objects.filter(departamento=user.departamento)
+            elif user.municipio:
+                form.fields['departamento'].queryset = Departamento.objects.filter(id=user.municipio.departamento.id)
+                form.fields['municipio'].queryset = Municipio.objects.filter(id=user.municipio.id)
+
+        context['filter_form'] = form
+        context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
         return context
 
 class AcuerdoPagoCreateView(LoginRequiredMixin, CreateView):

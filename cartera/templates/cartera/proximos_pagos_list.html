@@ -29,7 +29,7 @@
                 <label for="apellido" class="block text-sm font-medium text-gray-700">Apellido</label>
                 <input type="text" name="apellido" id="apellido" value="{{ request.GET.apellido }}" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
             </div>
-            {% if user.is_superuser %}
+            {% if user.is_superuser or is_coordinador %}
             <div class="mb-4">
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
                 <select name="municipio" id="municipio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
@@ -75,6 +75,7 @@
                     <td class="px-3 py-2 whitespace-nowrap">{{ cuota.fecha_vencimiento }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ cuota.dias_restantes }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">
+                        {% if perms.cartera.add_cuota %}
                         {% if cuota.deuda.alumno.celular %}
                         <a href="whatsapp://send?phone={{ cuota.deuda.alumno.celular|slice:':13' }}&text={{ cuota.whatsapp_message }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-green-500">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,6 +99,7 @@
                             </svg>
                         <span class="ml-1">Madre</span>
                         </a>
+                        {% endif %}
                         {% endif %}
                     </td>
                 </tr>

@@ -10,8 +10,17 @@ from cartera.models import Cuota
 
 class ProximosPagosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def test_func(self):
-        # Solo permitir acceso a superusers y secretarias de cartera
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists()
+        user = self.request.user
+        if not user.is_staff:
+            return False
+        
+        # Si es staff, denegar solo si pertenece a grupos no autorizados
+        grupos_no_autorizados = ['SecretariaAcademica', 'Profesor']
+        if user.groups.filter(name__in=grupos_no_autorizados).exists():
+            return False
+            
+        # Permitir a superuser y al resto del staff (Cartera, Auxiliar, Coordinador)
+        return True
     model = Cuota
     template_name = 'cartera/proximos_pagos_list.html'
     context_object_name = 'cuotas'
@@ -24,14 +33,21 @@ class ProximosPagosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             deuda__alumno__estado='activo'  # Solo alumnos activos
         ).select_related('deuda', 'deuda__alumno')
         
-        # Si no es superuser, filtrar por municipio del usuario
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(deuda__alumno__municipio=self.request.user.municipio)
-        else:
-            # Si es superuser y hay un filtro por municipio
+        user = self.request.user
+        # Filtrado por rol
+        if user.is_superuser:
             municipio_id = self.request.GET.get('municipio')
             if municipio_id:
                 queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                queryset = queryset.filter(deuda__alumno__municipio__departamento=user.departamento)
+                municipio_id = self.request.GET.get('municipio')
+                if municipio_id:
+                    queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
+        else:
+            # Otro personal (staff) ve solo su municipio
+            queryset = queryset.filter(deuda__alumno__municipio=user.municipio)
 
         # Aplicar filtros
         dias_filtro = self.request.GET.get('dias_filtro', 'todos')
@@ -108,10 +124,18 @@ class ProximosPagosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             page_range = list(paginator.get_elided_page_range(page_number, on_each_side=1, on_ends=1))
             context['page_range'] = page_range
         
-        # Solo agregar municipios al contexto si es superuser
-        if self.request.user.is_superuser:
-            from ubicaciones.models import Municipio
+        from ubicaciones.models import Municipio
+        user = self.request.user
+        # Lógica de contexto por rol
+        if user.is_superuser:
             context['municipios'] = Municipio.objects.all().order_by('nombre')
-            context['municipio_seleccionado'] = self.request.GET.get('municipio')
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                context['municipios'] = Municipio.objects.filter(departamento=user.departamento).order_by('nombre')
+            else:
+                context['municipios'] = Municipio.objects.none()
+        
+        context['municipio_seleccionado'] = self.request.GET.get('municipio', '')
+        context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
         
         return context
