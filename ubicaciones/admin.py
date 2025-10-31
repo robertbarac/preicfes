@@ -43,13 +43,24 @@ class SalonAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        # Si no es superuser, filtrar por municipio del usuario
-        if not request.user.is_superuser:
-            queryset = queryset.filter(sede__municipio=request.user.municipio)
-        return queryset
-        
+        user = request.user
+
+        if user.is_superuser:
+            return queryset
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                return queryset.filter(sede__municipio__departamento=user.departamento)
+            return queryset.none() # Si no tiene departamento, no ve nada
+        else:
+            return queryset.filter(sede__municipio=user.municipio)
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        # Filtrar las sedes disponibles en el formulario según el municipio del usuario
-        if db_field.name == 'sede' and not request.user.is_superuser:
-            kwargs["queryset"] = Sede.objects.filter(municipio=request.user.municipio)
+        if db_field.name == 'sede':
+            user = request.user
+            if not user.is_superuser:
+                if user.groups.filter(name='CoordinadorDepartamental').exists():
+                    if user.departamento:
+                        kwargs["queryset"] = Sede.objects.filter(municipio__departamento=user.departamento)
+                else:
+                    kwargs["queryset"] = Sede.objects.filter(municipio=user.municipio)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
