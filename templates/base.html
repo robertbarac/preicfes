@@ -130,7 +130,7 @@
                   >Mis Clases</a
                 >
                 {% endif %} 
-                {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+                {% if perms.cartera.view_cuota %}
                 <div class="relative dropdown" x-data="{ open: false }">
                   <button
                     @click="open = !open"
@@ -305,7 +305,7 @@
               </div>
             {% endif %}
 
-            {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+            {% if perms.cartera.view_cuota %}
               <!-- Sección Cartera -->
               <div class="py-2 border-b border-gray-700">
                 <div class="text-white font-medium mb-2">Cartera</div>
