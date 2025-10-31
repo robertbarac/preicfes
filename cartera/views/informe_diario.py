@@ -13,8 +13,8 @@ from academico.models import Alumno
 
 class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def test_func(self):
-        # Solo permitir acceso a superusers y secretarias de cartera
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists() or self.request.user.groups.filter(name='CoordinadorDepartamental').exists()
+        # Permitir acceso a superusers o a quienes tengan el permiso para ver el informe diario.
+        return self.request.user.is_superuser or self.request.user.has_perm('cartera.view_cuota')
     template_name = 'cartera/informe_diario.html'
 
     def get_context_data(self, **kwargs):
@@ -34,47 +34,45 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Obtener municipio seleccionado
         municipio_id = self.request.GET.get('municipio')
         
-        # Lógica de permisos y filtros
+        # Lógica de permisos y filtros de ubicación
         user = self.request.user
+        is_coordinador_or_auxiliar = user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
+
         if user.is_superuser:
-            # Superusuarios pueden filtrar por departamento y municipio
-            pass  # departamento_id y municipio_id ya están definidos
-        elif user.groups.filter(name='CoordinadorDepartamental').exists():
-            # CoordinadorDepartamental solo ve datos de su departamento
-            if user.departamento:
+            # Superuser puede ver y filtrar todo.
+            pass
+        elif is_coordinador_or_auxiliar:
+            # Coordinador/Auxiliar ve su departamento. Puede filtrar por municipio dentro de él.
+            if hasattr(user, 'departamento') and user.departamento:
                 departamento_id = user.departamento.id
             else:
                 context['warning_message'] = 'No tienes un departamento asignado. Contacta al administrador.'
-                departamento_id = None
-            # Pueden filtrar por municipio dentro de su departamento
+                departamento_id = None # Forzar a no ver nada si no tiene depto.
         else:
-            # SecretariaCartera usa su municipio asignado
-            try:
+            # Otros roles (ej. Secretaria) ven solo su municipio.
+            if hasattr(user, 'municipio') and user.municipio:
                 municipio_id = user.municipio.id
-                departamento_id = None  # No filtran por departamento
-            except AttributeError:
-                municipio_id = None
+                departamento_id = None
+            else:
                 context['warning_message'] = 'No tienes un municipio asignado. Contacta al administrador.'
+                municipio_id = None # Forzar a no ver nada si no tiene municipio.
             
         # Obtener tipo de programa seleccionado
         tipo_programa = self.request.GET.get('tipo_programa')
         
         # Obtener listas para filtros según permisos
+        context['is_coordinador_or_auxiliar'] = is_coordinador_or_auxiliar
         if user.is_superuser:
             context['departamentos'] = Departamento.objects.all()
-            context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None
-            
-            # Municipios filtrados por departamento si se seleccionó uno
+            context['municipios'] = Municipio.objects.all()
             if departamento_id:
-                context['municipios'] = Municipio.objects.filter(departamento_id=departamento_id)
-            else:
-                context['municipios'] = Municipio.objects.all()
-            context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
-        elif user.groups.filter(name='CoordinadorDepartamental').exists():
-            # Solo municipios de su departamento
-            if user.departamento:
+                context['municipios'] = context['municipios'].filter(departamento_id=departamento_id)
+        elif is_coordinador_or_auxiliar:
+            if hasattr(user, 'departamento') and user.departamento:
                 context['municipios'] = Municipio.objects.filter(departamento=user.departamento)
-                context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
+        
+        context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None
+        context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
         
         # Obtener lista de tipos de programa para el filtro
         context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
@@ -93,10 +91,6 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         if municipio_id:
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
-            )
-        elif not user.is_superuser and not user.groups.filter(name='CoordinadorDepartamental').exists():
-            cuotas_qs = cuotas_qs.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio=user.municipio
             )
             
         # Filtrar por tipo de programa
@@ -178,10 +172,6 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             todas_cuotas_qs = todas_cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
             )
-        elif not user.is_superuser and not user.groups.filter(name='CoordinadorDepartamental').exists():
-            todas_cuotas_qs = todas_cuotas_qs.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio=user.municipio
-            )
             
         # Filtrar por tipo de programa
         if tipo_programa:
@@ -200,8 +190,6 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         if municipio_id:
             deudas_qs = deudas_qs.filter(alumno__grupo_actual__salon__sede__municipio_id=municipio_id)
-        elif not user.is_superuser and not user.groups.filter(name='CoordinadorDepartamental').exists():
-            deudas_qs = deudas_qs.filter(alumno__grupo_actual__salon__sede__municipio=user.municipio)
 
         if tipo_programa:
             deudas_qs = deudas_qs.filter(alumno__tipo_programa=tipo_programa)

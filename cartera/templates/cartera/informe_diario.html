@@ -22,7 +22,7 @@
             </div>
             {% endif %}
             
-            {% if request.user.is_superuser or request.user.groups.all|length > 0 and 'CoordinadorDepartamental' in request.user.groups.all.0.name %}
+            {% if request.user.is_superuser or is_coordinador_or_auxiliar %}
             <div>
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio:</label>
                 <select name="municipio" id="municipio" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
