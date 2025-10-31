@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group
 
 from usuarios.models import Usuario
+from ubicaciones.models import Municipio
 
 class ProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Usuario
@@ -18,9 +19,21 @@ class ProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         grupo_profesor = Group.objects.get(name='Profesor')
         queryset = Usuario.objects.filter(groups=grupo_profesor)
         
-        # Si no es superuser, filtrar por municipio del usuario
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(municipio=self.request.user.municipio)
+        user = self.request.user
+        # Filtrado por rol
+        if user.is_superuser:
+            pass  # Superuser ve todo
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                queryset = queryset.filter(departamento=user.departamento)
+        else:
+            # Otro personal (staff) ve solo su municipio
+            queryset = queryset.filter(municipio=user.municipio)
+
+        # Aplicar filtro de municipio desde el formulario
+        municipio_id = self.request.GET.get('municipio')
+        if municipio_id:
+            queryset = queryset.filter(municipio_id=municipio_id)
             
         return queryset.order_by('first_name', 'last_name')
 
@@ -28,14 +41,23 @@ class ProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['titulo'] = 'Listado de Profesores'
         
+        user = self.request.user
+        # Lógica de contexto por rol
+        if user.is_superuser:
+            context['municipios'] = Municipio.objects.all()
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                context['municipios'] = Municipio.objects.filter(departamento=user.departamento)
+            else:
+                context['municipios'] = Municipio.objects.none()
+        
+        context['municipio_seleccionado'] = self.request.GET.get('municipio', '')
+        context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
+
         # Añadir información de paginación al contexto
         paginator = context['paginator']
         page_obj = context['page_obj']
-        
-        # Obtener el número de página actual
         page_number = page_obj.number
-        
-        # Calcular el rango de páginas a mostrar (para evitar mostrar demasiadas páginas)
         page_range = list(paginator.get_elided_page_range(page_number, on_each_side=1, on_ends=1))
         context['page_range'] = page_range
         

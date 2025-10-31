@@ -66,4 +66,5 @@ class SalonListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             context['ciudades'] = [user.municipio.nombre]
         
         context['titulo'] = 'Lista de Salones'
+        context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
         return context

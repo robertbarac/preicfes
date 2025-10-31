@@ -98,11 +98,18 @@ class UsuarioAdmin(UserAdmin):
             return form
 
     def get_queryset(self, request):
-        """Filtra los usuarios visibles según municipio"""
+        """Filtra los usuarios visibles según rol"""
         qs = super().get_queryset(request)
-        if not request.user.is_superuser:
-            qs = qs.filter(municipio=request.user.municipio)
-        return qs
+        user = request.user
+
+        if user.is_superuser:
+            return qs
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                return qs.filter(departamento=user.departamento)
+            return qs.none()
+        else:
+            return qs.filter(municipio=user.municipio)
 
     def save_model(self, request, obj, form, change):
         """Controla la asignación del municipio al guardar"""
@@ -148,23 +155,36 @@ class FirmaAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Filtra las firmas visibles según permisos"""
         qs = super().get_queryset(request)
-        if not request.user.is_superuser:
-            # Si no es superusuario, solo ve las firmas de usuarios de su municipio
-            qs = qs.filter(usuario__municipio=request.user.municipio)
-        return qs
+        user = request.user
+
+        if user.is_superuser:
+            return qs
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                return qs.filter(usuario__departamento=user.departamento)
+            return qs.none()
+        else:
+            return qs.filter(usuario__municipio=user.municipio)
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """Filtra los usuarios disponibles para asignar firma"""
         if db_field.name == "usuario":
-            if not request.user.is_superuser:
-                # Si no es superusuario, solo puede asignar firmas a usuarios de su municipio
+            user = request.user
+            if user.is_superuser:
+                kwargs["queryset"] = Usuario.objects.filter(is_staff=True)
+            elif user.groups.filter(name='CoordinadorDepartamental').exists():
+                if user.departamento:
+                    kwargs["queryset"] = Usuario.objects.filter(
+                        departamento=user.departamento,
+                        is_staff=True
+                    )
+                else:
+                    kwargs["queryset"] = Usuario.objects.none()
+            else:
                 kwargs["queryset"] = Usuario.objects.filter(
-                    municipio=request.user.municipio,
+                    municipio=user.municipio,
                     is_staff=True
                 )
-            else:
-                # Si es superusuario, solo puede asignar firmas a usuarios staff
-                kwargs["queryset"] = Usuario.objects.filter(is_staff=True)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 

@@ -18,10 +18,16 @@ class ClaseListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def get_queryset(self):
         queryset = Clase.objects.all()
         
-        # Filtrar por municipio según el usuario
-        if not self.request.user.is_superuser:
-            # Si no es superuser, solo ver clases de su municipio
-            queryset = queryset.filter(salon__sede__municipio=self.request.user.municipio)
+        user = self.request.user
+        # Filtrado por rol
+        if user.is_superuser:
+            pass  # Superuser ve todo
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                queryset = queryset.filter(salon__sede__municipio__departamento=user.departamento)
+        else:
+            # Otro personal (staff) ve solo su municipio
+            queryset = queryset.filter(salon__sede__municipio=user.municipio)
         
         # Filtros
         estado = self.request.GET.get('estado')
@@ -87,13 +93,22 @@ class ClaseListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 message_context
             ).replace('\n', '%0A').replace(' ', '%20')
         
-        # Si es superuser, mostrar todas las sedes y municipios
-        if self.request.user.is_superuser:
+        user = self.request.user
+        # Lógica de contexto por rol
+        if user.is_superuser:
             sedes = Sede.objects.all()
             context['ciudades'] = Municipio.objects.all()
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                sedes = Sede.objects.filter(municipio__departamento=user.departamento)
+                context['ciudades'] = Municipio.objects.filter(departamento=user.departamento)
+            else:
+                sedes = Sede.objects.none()
+                context['ciudades'] = Municipio.objects.none()
         else:
-            # Si no es superuser, solo mostrar sedes de su municipio
-            sedes = Sede.objects.filter(municipio=self.request.user.municipio)
+            # Otro personal (staff) ve solo su municipio
+            sedes = Sede.objects.filter(municipio=user.municipio)
+            context['ciudades'] = Municipio.objects.filter(id=user.municipio.id)
         
         context.update({
             'profesores': Usuario.objects.filter(groups__name='Profesor'),
@@ -102,6 +117,7 @@ class ClaseListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             'estados_clase': Clase.ESTADO_CLASE,
             'tipos_programa': dict(Alumno.TIPO_PROGRAMA),
             'tipo_programa_seleccionado': self.request.GET.get('tipo_programa'),
-            'titulo': 'Lista de Clases'
+            'titulo': 'Lista de Clases',
+            'is_coordinador': user.groups.filter(name='CoordinadorDepartamental').exists()
         })
         return context

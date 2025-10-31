@@ -67,6 +67,7 @@ class GrupoListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             context['ciudades'] = [user.municipio.nombre]
         
         context['titulo'] = 'Lista de Grupos'
+        context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
         
         # Añadir tipos de programa al contexto
         context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
