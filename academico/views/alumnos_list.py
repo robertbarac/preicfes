@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from urllib.parse import urlencode
 from ..models import Alumno
-from ubicaciones.models import Municipio, Sede
+from ubicaciones.models import Municipio, Departamento, Sede
 
 class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
     model = Alumno
@@ -30,9 +30,9 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         if user.is_superuser:
             # Superusuario ve todo
             pass
-        elif user.groups.filter(name='CoordinadorDepartamental').exists():
-            # Coordinador ve todo su departamento
-            if user.departamento:
+        elif user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
+            # Coordinador o Auxiliar ven todo su departamento
+            if hasattr(user, 'departamento') and user.departamento:
                 queryset = queryset.filter(municipio__departamento=user.departamento)
         else:
             # Otro personal (staff) ve solo su municipio
@@ -43,6 +43,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         apellido = self.request.GET.get('apellido')
         sede = self.request.GET.get('sede')
         ciudad = self.request.GET.get('ciudad')
+        departamento_id = self.request.GET.get('departamento')
         culminado = self.request.GET.get('culminado')
         estado_deuda = self.request.GET.get('estado_deuda')
         es_becado = self.request.GET.get('es_becado')
@@ -54,8 +55,14 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             queryset = queryset.filter(primer_apellido__icontains=apellido)
         if sede:
             queryset = queryset.filter(grupo_actual__salon__sede__nombre__icontains=sede)
-        # Solo aplicar filtro de ciudad si es superuser
-        if ciudad and self.request.user.is_superuser:
+        # Filtros de ubicación jerárquicos para Superuser
+        if self.request.user.is_superuser:
+            if departamento_id:
+                queryset = queryset.filter(municipio__departamento_id=departamento_id)
+            if ciudad: # El filtro de ciudad puede refinar el de departamento
+                queryset = queryset.filter(municipio__nombre__icontains=ciudad)
+        # Filtro de ciudad para otros roles con permiso
+        elif ciudad and self.request.user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
             queryset = queryset.filter(municipio__nombre__icontains=ciudad)
             
         # Filtrar por estado de culminación
@@ -103,11 +110,14 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         
         # Lógica de contexto por rol
         user = self.request.user
+        context['is_coordinador_or_auxiliar'] = user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
         if user.is_superuser:
             context['sedes'] = Sede.objects.all()
             context['ciudades'] = Municipio.objects.all()
-        elif user.groups.filter(name='CoordinadorDepartamental').exists():
-            if user.departamento:
+            context['departamentos'] = Departamento.objects.all()
+            context['departamento_seleccionado'] = self.request.GET.get('departamento')
+        elif user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
+            if hasattr(user, 'departamento') and user.departamento:
                 context['sedes'] = Sede.objects.filter(municipio__departamento=user.departamento)
                 context['ciudades'] = Municipio.objects.filter(departamento=user.departamento)
             else:

@@ -17,13 +17,17 @@ from ubicaciones.models import Departamento, Municipio
 
 
 class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    def test_func(self):
-        # Solo permitir acceso a superusers y secretarias de cartera
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists()
+
     template_name = 'cartera/grafica_ingresos.html'
 
+    def test_func(self):
+        user = self.request.user
+        # Un usuario puede ver la página si es superuser o si tiene el permiso para ver cuotas.
+        # user.is_superuser or 
+        return user.has_perm('cartera.view_cuota')
+
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_superuser and not request.user.groups.filter(name='SecretariaCartera').exists():
+        if not self.test_func():
             return HttpResponseForbidden("No tienes permisos para ver esta página.")
         return super().dispatch(request, *args, **kwargs)
 
@@ -39,50 +43,48 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         año_cumplimiento = int(self.request.GET.get('año_cumplimiento', año_actual))
         mes_cumplimiento = int(self.request.GET.get('mes_cumplimiento', timezone.now().month))
 
-        # Obtener departamento y municipio seleccionados
         departamento_id = self.request.GET.get('departamento')
         municipio_id = self.request.GET.get('municipio')
-
-        # Si no es superuser, forzar su municipio y departamento asignado
-        if not self.request.user.is_superuser and self.request.user.municipio:
-            departamento_id = self.request.user.municipio.departamento.id
-            municipio_id = self.request.user.municipio.id
-
-        # Obtener tipo de programa seleccionado
         tipo_programa = self.request.GET.get('tipo_programa')
 
-        # Obtener lista de departamentos y municipios para los filtros
-        departamentos = Departamento.objects.all()
-        municipios = Municipio.objects.all()
-        if departamento_id:
-            municipios = municipios.filter(departamento_id=departamento_id)
-        
-        context['departamentos'] = departamentos
-        context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None
-        context['municipios'] = municipios
-        context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
+        # --- Lógica de Filtros por Rol ---
+        user = self.request.user
+        is_coordinador = user.groups.filter(name='CoordinadorDepartamental').exists()
+        is_auxiliar = user.groups.filter(name='Auxiliar').exists()
 
-        # Base queryset para cuotas
         cuotas_qs = Cuota.objects.all()
+        departamentos_qs = Departamento.objects.none()
+        municipios_qs = Municipio.objects.none()
+
+        if user.is_superuser:
+            departamentos_qs = Departamento.objects.all()
+            municipios_qs = Municipio.objects.all()
+            if departamento_id:
+                municipios_qs = municipios_qs.filter(departamento_id=departamento_id)
+
+            if municipio_id:
+                cuotas_qs = cuotas_qs.filter(deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id)
+            elif departamento_id:
+                cuotas_qs = cuotas_qs.filter(deuda__alumno__grupo_actual__salon__sede__municipio__departamento_id=departamento_id)
+
+        elif is_coordinador or is_auxiliar:
+            if hasattr(user, 'departamento') and user.departamento:
+                departamentos_qs = Departamento.objects.filter(id=user.departamento.id)
+                municipios_qs = Municipio.objects.filter(departamento=user.departamento)
+                cuotas_qs = cuotas_qs.filter(deuda__alumno__grupo_actual__salon__sede__municipio__departamento=user.departamento)
+
+                # Si se selecciona un municipio específico, se prioriza ese filtro
+                if municipio_id:
+                    cuotas_qs = cuotas_qs.filter(deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id)
         
-        # Aplicar filtros jerárquicos: municipio tiene prioridad sobre departamento
-        if municipio_id:
-            cuotas_qs = cuotas_qs.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
-            )
-        elif departamento_id:
-            cuotas_qs = cuotas_qs.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio__departamento_id=departamento_id
-            )
-        elif not self.request.user.is_superuser and self.request.user.municipio:
-            # Fallback para usuarios no-superuser sin selección explícita
-            cuotas_qs = cuotas_qs.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
-            )
-            
-        # Filtrar por tipo de programa
         if tipo_programa:
             cuotas_qs = cuotas_qs.filter(deuda__alumno__tipo_programa=tipo_programa)
+
+        context['departamentos'] = departamentos_qs
+        context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None
+        context['municipios'] = municipios_qs
+        context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
+        context['is_coordinador_or_auxiliar'] = is_coordinador or is_auxiliar
 
         # Obtener los años disponibles para la gráfica (basado en cuándo se realizaron los pagos)
         # Primero intentamos obtener años de fecha_pago (para pagos ya realizados)
@@ -154,40 +156,36 @@ class GraficaIngresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         departamento_id = self.request.GET.get('departamento')
         municipio_id = self.request.GET.get('municipio')
 
-        # Si no es superuser, forzar su municipio y departamento asignado
-        if not self.request.user.is_superuser and self.request.user.municipio:
-            departamento_id = self.request.user.municipio.departamento.id
-            municipio_id = self.request.user.municipio.id
-        
-        # Obtener tipo de programa seleccionado
         tipo_programa = self.request.GET.get('tipo_programa')
+
+        # --- Lógica de Filtros por Rol ---
+        user = self.request.user
+        is_coordinador = user.groups.filter(name='CoordinadorDepartamental').exists()
+        is_auxiliar = user.groups.filter(name='Auxiliar').exists()
+
+        cuotas_qs = Cuota.objects.filter(
+            fecha_pago__year=año_seleccionado,
+            monto_abonado__gt=0
+        )
+
+        if user.is_superuser:
+            if municipio_id:
+                cuotas_qs = cuotas_qs.filter(deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id)
+            elif departamento_id:
+                cuotas_qs = cuotas_qs.filter(deuda__alumno__grupo_actual__salon__sede__municipio__departamento_id=departamento_id)
+
+        elif is_coordinador or is_auxiliar:
+            if hasattr(user, 'departamento') and user.departamento:
+                cuotas_qs = cuotas_qs.filter(deuda__alumno__grupo_actual__salon__sede__municipio__departamento=user.departamento)
+                # Si además se especifica un municipio, se añade ese filtro
+                if municipio_id:
+                    cuotas_qs = cuotas_qs.filter(deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id)
+        
+        if tipo_programa:
+            cuotas_qs = cuotas_qs.filter(deuda__alumno__tipo_programa=tipo_programa)
 
         meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
         ingresos = [0] * 12
-
-        # Base queryset para cuotas - usando fecha_pago para mostrar cuándo realmente se recibió el dinero
-        cuotas_qs = Cuota.objects.filter(
-            fecha_pago__year=año_seleccionado,
-            monto_abonado__gt=0  # Asegurarse de que se haya pagado algo
-        )
-        
-        # Aplicar filtros jerárquicos
-        if municipio_id:
-            cuotas_qs = cuotas_qs.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
-            )
-        elif departamento_id:
-            cuotas_qs = cuotas_qs.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio__departamento_id=departamento_id
-            )
-        elif not self.request.user.is_superuser and self.request.user.municipio:
-            cuotas_qs = cuotas_qs.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
-            )
-            
-        # Filtrar por tipo de programa
-        if tipo_programa:
-            cuotas_qs = cuotas_qs.filter(deuda__alumno__tipo_programa=tipo_programa)
 
         # Agrupar cuotas por mes - usando el mes de pago real
         cuotas = cuotas_qs.values('fecha_pago__month').annotate(

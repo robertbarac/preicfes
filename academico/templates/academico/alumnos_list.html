@@ -33,6 +33,18 @@
 
             {% if request.user.is_superuser %}
             <div>
+                <label for="departamento" class="block text-sm font-medium text-gray-700">Departamento</label>
+                <select name="departamento" id="departamento" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    {% for depto in departamentos %}
+                        <option value="{{ depto.id }}" {% if depto.id|stringformat:"s" == departamento_seleccionado %}selected{% endif %}>{{ depto.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            {% if request.user.is_superuser or is_coordinador_or_auxiliar %}
+            <div>
                 <label for="ciudad" class="block text-sm font-medium text-gray-700">Ciudad</label>
                 <select name="ciudad" id="ciudad" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <option value="">Todas</option>
@@ -152,7 +164,7 @@
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identificación</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salón</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sede</th>
-                    {% if request.user.is_superuser %}
+                    {% if request.user.is_superuser or is_coordinador_or_auxiliar %}
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ciudad</th>
                     {% endif %}
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Inscripción</th>
@@ -170,7 +182,7 @@
                     <td class="px-3 py-2 whitespace-nowrap">{{ alumno.identificacion }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ alumno.grupo_actual.salon.numero }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ alumno.grupo_actual.salon.sede.nombre }}</td>
-                    {% if request.user.is_superuser %}
+                    {% if request.user.is_superuser or is_coordinador_or_auxiliar %}
                     <td class="px-3 py-2 whitespace-nowrap">{{ alumno.municipio.nombre }}</td>
                     {% endif %}
                     <td class="px-3 py-2 whitespace-nowrap">{{ alumno.fecha_ingreso|date:"d/m/Y" }}</td>

@@ -30,7 +30,7 @@
                 </select>
             </div>
 
-            <!-- Columna 2: Departamento y Municipio (solo para superuser) -->
+            <!-- Columna 2: Filtros de Ubicación -->
             {% if user.is_superuser %}
             <div>
                 <label for="departamento" class="block text-sm font-medium text-gray-700">Departamento</label>
@@ -41,6 +41,9 @@
                     {% endfor %}
                 </select>
             </div>
+            {% endif %}
+
+            {% if user.is_superuser or is_coordinador_or_auxiliar %}
             <div>
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
                 <select name="municipio" id="municipio" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -129,6 +132,7 @@
                 <span>Meta: ${{ meta_mensual|floatformat:0|intcomma }}</span>
             </div>
             <meter class="w-full h-6"
+                   style="--meter-color: {% if porcentaje_cumplimiento >= 100 %}#22c55e{% elif porcentaje_cumplimiento >= 80 %}#eab308{% else %}#ef4444{% endif %};"
                    min="0" 
                    max="{{ meta_mensual }}" 
                    value="{{ ingresos_mes }}"
@@ -155,28 +159,15 @@
                     border-radius: 9999px;
                 }
                 
-                /* El color de la barra se define aquí */
                 meter::-webkit-meter-optimum-value {
                     border-radius: 9999px;
-                    {% if porcentaje_cumplimiento >= 100 %}
-                        background-color: #22c55e; /* green-500 */
-                    {% elif porcentaje_cumplimiento >= 80 %}
-                        background-color: #eab308; /* yellow-500 */
-                    {% else %}
-                        background-color: #ef4444; /* red-500 */
-                    {% endif %}
+                    background-color: var(--meter-color);
                 }
 
                 /* Para Firefox */
                 meter::-moz-progress-bar {
                     border-radius: 9999px;
-                    {% if porcentaje_cumplimiento >= 100 %}
-                        background-color: #22c55e; /* green-500 */
-                    {% elif porcentaje_cumplimiento >= 80 %}
-                        background-color: #eab308; /* yellow-500 */
-                    {% else %}
-                        background-color: #ef4444; /* red-500 */
-                    {% endif %}
+                    background-color: var(--meter-color);
                 }
             </style>
         </div>

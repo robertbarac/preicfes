@@ -9,7 +9,7 @@ from .deuda_create import DeudaCreateView
 from .deuda_update import DeudaUpdateView
 from .deuda_toggle_edit import toggle_edicion_deuda
 from .generar_informe_pdf import generar_pdf_informe
-from .grafica_ingresos_egresos import GraficaIngresosView
+from .grafica_ingresos import GraficaIngresosView
 from .grafica_egresos import GraficaEgresosView
 from .informe_diario import InformeDiarioView
 from .mantenimiento_cartera import MantenimientoCarteraView
