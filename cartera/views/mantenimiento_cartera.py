@@ -8,7 +8,10 @@ class MantenimientoCarteraView(LoginRequiredMixin, UserPassesTestMixin, Template
     template_name = 'cartera/mantenimiento_cartera.html'
     
     def test_func(self):
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists()
+        return (
+            self.request.user.is_superuser or
+            self.request.user.groups.filter(name__in=['SecretariaCartera', 'CoordinadorDepartamental']).exists()
+        )
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -19,11 +22,18 @@ class MantenimientoCarteraView(LoginRequiredMixin, UserPassesTestMixin, Template
             fecha_vencimiento__lt=timezone.localtime(timezone.now()).date()
         )
         
-        # Filtrar por municipio si no es superuser
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
-            )
+        user = self.request.user
+        # Filtrar por rol
+        if not user.is_superuser:
+            if user.groups.filter(name='CoordinadorDepartamental').exists():
+                if user.departamento:
+                    queryset = queryset.filter(
+                        deuda__alumno__municipio__departamento=user.departamento
+                    )
+            else:
+                queryset = queryset.filter(
+                    deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
+                )
         
         context['cuotas_por_actualizar'] = queryset.count()
         return context
@@ -35,11 +45,18 @@ class MantenimientoCarteraView(LoginRequiredMixin, UserPassesTestMixin, Template
             fecha_vencimiento__lt=timezone.localtime(timezone.now()).date()
         )
         
-        # Filtrar por municipio si no es superuser
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(
-                deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
-            )
+        user = self.request.user
+        # Filtrar por rol
+        if not user.is_superuser:
+            if user.groups.filter(name='CoordinadorDepartamental').exists():
+                if user.departamento:
+                    queryset = queryset.filter(
+                        deuda__alumno__municipio__departamento=user.departamento
+                    )
+            else:
+                queryset = queryset.filter(
+                    deuda__alumno__grupo_actual__salon__sede__municipio=self.request.user.municipio
+                )
         
         # Actualizar estados
         cuotas_actualizadas = queryset.count()

@@ -26,7 +26,7 @@
                        placeholder="Apellido" 
                        class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 
-                {% if request.user.is_superuser %}
+                {% if request.user.is_superuser or is_coordinador %}
                 <select name="municipio" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     <option value="">Todos los municipios</option>
                     {% for municipio in municipios %}

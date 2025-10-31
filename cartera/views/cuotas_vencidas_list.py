@@ -14,8 +14,10 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 20
 
     def test_func(self):
-        # Solo permitir acceso a superusers y secretarias de cartera
-        return self.request.user.is_superuser or self.request.user.groups.filter(name='SecretariaCartera').exists()
+        return (
+            self.request.user.is_superuser or
+            self.request.user.groups.filter(name__in=['SecretariaCartera', 'CoordinadorDepartamental']).exists()
+        )
 
     def get_queryset(self):
 
@@ -25,14 +27,21 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             deuda__alumno__estado='activo'  # Solo alumnos activos
         ).select_related('deuda', 'deuda__alumno', 'deuda__alumno__municipio')
 
-        # Si no es superuser, filtrar por municipio del usuario
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(deuda__alumno__municipio=self.request.user.municipio)
-        else:
-            # Si es superuser y hay un filtro por municipio
+        user = self.request.user
+        # Filtrado por rol
+        if user.is_superuser:
             municipio_id = self.request.GET.get('municipio')
             if municipio_id:
                 queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                queryset = queryset.filter(deuda__alumno__municipio__departamento=user.departamento)
+                municipio_id = self.request.GET.get('municipio')
+                if municipio_id:
+                    queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
+        else:
+            # Otro personal (staff) ve solo su municipio
+            queryset = queryset.filter(deuda__alumno__municipio=user.municipio)
 
         # Aplicar filtros
         dias_filtro = self.request.GET.get('dias_filtro', 'todos')
@@ -112,10 +121,18 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             'orden': self.request.GET.get('orden', 'desc')
         })
         
-        # Solo agregar municipios al contexto si es superuser
-        if self.request.user.is_superuser:
-            from ubicaciones.models import Municipio
+        from ubicaciones.models import Municipio
+        user = self.request.user
+        # Lógica de contexto por rol
+        if user.is_superuser:
             context['municipios'] = Municipio.objects.all().order_by('nombre')
-            context['municipio_seleccionado'] = self.request.GET.get('municipio')
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                context['municipios'] = Municipio.objects.filter(departamento=user.departamento).order_by('nombre')
+            else:
+                context['municipios'] = Municipio.objects.none()
+        
+        context['municipio_seleccionado'] = self.request.GET.get('municipio', '')
+        context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
         
         return context
