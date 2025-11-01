@@ -62,8 +62,8 @@ class UsuarioAdmin(UserAdmin):
     form = UsuarioChangeForm
     
     # Campos a mostrar en el listado
-    list_display = ('username', 'email', 'departamento', 'municipio', 'is_staff')
-    list_filter = ('departamento', 'municipio', 'is_staff', 'is_superuser')
+    list_display = ('username', 'email', 'departamento', 'municipio', 'is_staff', 'is_superuser', 'get_group')
+    list_filter = ('groups', 'departamento', 'municipio', 'is_staff', 'is_superuser')
     
     # Camposets para la edición
     fieldsets = (
@@ -76,6 +76,10 @@ class UsuarioAdmin(UserAdmin):
         ('Fechas importantes', {'fields': ('last_login', 'date_joined')}),
     )
     
+    def get_group(self, obj):
+        return obj.groups.first().name if obj.groups.exists() else 'Sin grupo'
+    get_group.short_description = 'Grupo'
+
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
