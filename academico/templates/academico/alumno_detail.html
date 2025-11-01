@@ -13,7 +13,7 @@
             <button id="tab-info-alumno" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
                 Información del Alumno
             </button>
-            {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:", " %}
+            {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:", " or 'CoordinadorDepartamental' in request.user.groups.all|join:", " or 'Auxiliar' in request.user.groups.all|join:", " %}
             <button id="tab-historial-asistencia" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
                 Historial de Asistencia
             </button>
@@ -21,7 +21,7 @@
                 Historial de Notas
             </button>
             {% endif %}
-            {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+            {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " or 'CoordinadorDepartamental' in request.user.groups.all|join:", " or 'Auxiliar' in request.user.groups.all|join:", " %}
             <button id="tab-estado-deuda" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
                 Estado de Deuda
             </button>
