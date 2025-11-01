@@ -3,8 +3,7 @@ from .views import (
     generar_cuotas_view,
     BecadosListView, GraficaIngresosView, GraficaEgresosView,
     CuotasVencidasListView, DeudaCreateView, DeudaUpdateView, CuotaCreateView, CuotaUpdateView, CuotaDeleteView, ReciboPDFView,
-    PazSalvoListView, PazSalvoPDFView, ProximosPagosListView, InformeDiarioView, generar_pdf_informe,
-    MantenimientoCarteraView, toggle_edicion_deuda,
+    PazSalvoListView, PazSalvoPDFView, ProximosPagosListView, InformeDiarioView, generar_pdf_informe, MantenimientoCarteraView, toggle_edicion_deuda,
     AcuerdoPagoListView, AcuerdoPagoCreateView, AcuerdoPagoUpdateView, generar_pdf_retirados_view
 )
 

@@ -8,21 +8,35 @@
     
     <!-- Barra de búsqueda y filtros -->
     <form method="get" class="mb-6 space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+            <!-- Filtro Departamento (Superuser) -->
             {% if user.is_superuser %}
             <div>
-                <label for="municipio" class="block text-sm font-medium text-gray-700">Filtrar por Municipio</label>
-                <select name="municipio" id="municipio" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                    <option value="">Todos los municipios</option>
-                    {% for municipio in municipios %}
-                    <option value="{{ municipio.id }}" {% if municipio.id|stringformat:'s' == selected_municipio %}selected{% endif %}>
-                        {{ municipio.nombre }}
-                    </option>
+                <label for="departamento" class="block text-sm font-medium text-gray-700">Departamento</label>
+                <select name="departamento" id="departamento" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">Todos</option>
+                    {% for depto in departamentos %}
+                        <option value="{{ depto.id }}" {% if depto.id|stringformat:"s" == departamento_seleccionado %}selected{% endif %}>{{ depto.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
             {% endif %}
-            <div class="md:col-span-2">
+
+            <!-- Filtro Municipio (Superuser, Coordinador, Auxiliar) -->
+            {% if user.is_superuser or is_coordinador_or_auxiliar %}
+            <div>
+                <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
+                <select name="municipio" id="municipio" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">Todos</option>
+                    {% for mun in municipios %}
+                        <option value="{{ mun.id }}" {% if mun.id|stringformat:"s" == municipio_seleccionado %}selected{% endif %}>{{ mun.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Búsqueda por Nombre -->
+            <div class="lg:col-span-2">
                 <label for="search" class="block text-sm font-medium text-gray-700">Buscar por nombre o apellidos</label>
                 <div class="mt-1 flex rounded-md shadow-sm">
                     <input type="text" name="q" id="search" value="{{ search_query }}" 

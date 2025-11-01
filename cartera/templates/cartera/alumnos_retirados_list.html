@@ -4,20 +4,34 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Alumnos Retirados</h1>
-        <a href="{% url 'cartera:generar_pdf_retirados' %}?municipio={{ request.GET.municipio|default:'' }}&mes={{ request.GET.mes|default:'' }}&anio={{ request.GET.anio|default:'' }}&tipo_programa={{ request.GET.tipo_programa|default:'' }}" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+        <a href="{% url 'cartera:generar_pdf_retirados' %}?departamento={{ request.GET.departamento|default:'' }}&municipio={{ request.GET.municipio|default:'' }}&mes={{ request.GET.mes|default:'' }}&anio={{ request.GET.anio|default:'' }}&tipo_programa={{ request.GET.tipo_programa|default:'' }}" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
             Generar PDF
         </a>
     </div>
     <!-- Filtros -->
     <div class="bg-white shadow-md rounded-lg p-4 mb-6">
         <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <!-- Filtro Departamento (Superuser) -->
             {% if user.is_superuser %}
+            <div>
+                <label for="departamento" class="block text-sm font-medium text-gray-700">Departamento</label>
+                <select name="departamento" id="departamento" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    {% for depto in departamentos %}
+                        <option value="{{ depto.id }}" {% if depto.id|stringformat:"s" == departamento_seleccionado %}selected{% endif %}>{{ depto.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Filtro Municipio (Superuser, Coordinador, Auxiliar) -->
+            {% if user.is_superuser or is_coordinador_or_auxiliar %}
             <div>
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
                 <select name="municipio" id="municipio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <option value="">Todos</option>
-                    {% for municipio in municipios %}
-                    <option value="{{ municipio.id }}" {% if municipio_seleccionado == municipio.id|stringformat:'i' %}selected{% endif %}>{{ municipio.nombre }}</option>
+                    {% for mun in municipios %}
+                        <option value="{{ mun.id }}" {% if mun.id|stringformat:"s" == municipio_seleccionado %}selected{% endif %}>{{ mun.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>

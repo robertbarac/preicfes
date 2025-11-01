@@ -19,7 +19,8 @@ from usuarios.models import Firma
 
 class PazSalvoPDFView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
-        return self.request.user.is_superuser or 'SecretariaCartera' in self.request.user.groups.all().values_list('name', flat=True)
+        # Usar un permiso específico en lugar de un nombre de grupo hardcodeado
+        return self.request.user.is_superuser or self.request.user.has_perm('cartera.add_paz_y_salvo')
 
     def handle_no_permission(self):
         return HttpResponseForbidden("No tienes permisos para acceder a esta página.")

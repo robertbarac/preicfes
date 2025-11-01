@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Sum
 from django.utils import timezone
 from academico.models import Alumno, Grupo
-from ubicaciones.models import Municipio
+from ubicaciones.models import Municipio, Departamento
 
 class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Alumno
@@ -12,45 +12,81 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
     paginate_by = 25
 
     def test_func(self):
-        return self.request.user.is_superuser or self.request.user.is_staff
+        return self.request.user.is_superuser or self.request.user.has_perm('cartera.view_cuota')
 
     def get_queryset(self):
-        queryset = Alumno.objects.filter(estado='retirado', grupo_actual__codigo='RETIRADOS')
+        queryset = Alumno.objects.filter(estado='retirado').select_related(
+            'grupo_actual__salon__sede__municipio__departamento', 'deuda'
+        )
+
+        user = self.request.user
+        departamento_id = self.request.GET.get('departamento')
         municipio_id = self.request.GET.get('municipio')
         mes = self.request.GET.get('mes')
         anio = self.request.GET.get('anio')
         tipo_programa = self.request.GET.get('tipo_programa')
-        
-        if municipio_id:
-            queryset = queryset.filter(grupo_actual__salon__sede__municipio_id=municipio_id)
+
+        # Lógica de filtros por rol
+        if user.is_superuser:
+            if departamento_id:
+                queryset = queryset.filter(grupo_actual__salon__sede__municipio__departamento_id=departamento_id)
+            if municipio_id:
+                queryset = queryset.filter(grupo_actual__salon__sede__municipio_id=municipio_id)
+        elif user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
+            if hasattr(user, 'departamento') and user.departamento:
+                queryset = queryset.filter(grupo_actual__salon__sede__municipio__departamento=user.departamento)
+                if municipio_id:
+                    queryset = queryset.filter(grupo_actual__salon__sede__municipio_id=municipio_id)
+            else:
+                queryset = queryset.none()
+        else: # Otros roles de staff
+            if hasattr(user, 'municipio') and user.municipio:
+                queryset = queryset.filter(grupo_actual__salon__sede__municipio=user.municipio)
+            else:
+                queryset = queryset.none()
+
+        # Filtros adicionales
         if mes and anio:
             queryset = queryset.filter(fecha_retiro__month=mes, fecha_retiro__year=anio)
         elif anio:
             queryset = queryset.filter(fecha_retiro__year=anio)
         if tipo_programa:
             queryset = queryset.filter(tipo_programa=tipo_programa)
-            
-        return queryset.select_related('grupo_actual', 'grupo_actual__salon', 'grupo_actual__salon__sede', 'grupo_actual__salon__sede__municipio')
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        alumnos = context['alumnos']
-        context['total_retirados'] = alumnos.count()
-        # Suma de saldo pendiente para todos los alumnos retirados
-        context['total_saldo_pendiente'] = sum([getattr(a.deuda, 'saldo_pendiente', 0) if hasattr(a, 'deuda') and a.deuda and a.deuda.estado == 'emitida' else 0 for a in alumnos])
-        if self.request.user.is_superuser:
-            context['municipios'] = Municipio.objects.all().order_by('nombre')
-        context['mes_actual'] = timezone.localtime(timezone.now()).month
-        context['anio_actual'] = timezone.localtime(timezone.now()).year
-        # Lista de años para el filtro (actual ±2)
-        anio_actual = context['anio_actual']
-        context['anios'] = [anio_actual - 2, anio_actual - 1, anio_actual, anio_actual + 1, anio_actual + 2]
-        context['mes'] = str(self.request.GET.get('mes', '') or '')
-        context['anio'] = str(self.request.GET.get('anio', '') or '')
-        context['municipio_seleccionado'] = str(self.request.GET.get('municipio', '') or '')
-        context['tipo_programa_seleccionado'] = str(self.request.GET.get('tipo_programa', '') or '')
-        
-        # Opciones de tipo_programa para el filtro
+        user = self.request.user
+        departamento_id = self.request.GET.get('departamento')
+
+        # Totales y estadísticas
+        queryset = self.get_queryset() # Usar el queryset ya filtrado para los cálculos
+        context['total_retirados'] = queryset.count()
+        context['total_saldo_pendiente'] = queryset.filter(deuda__estado='emitida').aggregate(Sum('deuda__saldo_pendiente'))['deuda__saldo_pendiente__sum'] or 0
+
+        # Contexto para filtros
+        context['is_coordinador_or_auxiliar'] = user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
+        if user.is_superuser:
+            context['departamentos'] = Departamento.objects.all()
+            municipios_qs = Municipio.objects.all()
+            if departamento_id:
+                municipios_qs = municipios_qs.filter(departamento_id=departamento_id)
+            context['municipios'] = municipios_qs
+        elif context['is_coordinador_or_auxiliar']:
+            if hasattr(user, 'departamento') and user.departamento:
+                context['municipios'] = Municipio.objects.filter(departamento=user.departamento)
+
+        # Años para el filtro
+        anio_actual = timezone.localtime(timezone.now()).year
+        context['anios'] = range(anio_actual - 5, anio_actual + 2)
+
+        # Valores seleccionados para mantener en los filtros
+        context['departamento_seleccionado'] = self.request.GET.get('departamento')
+        context['municipio_seleccionado'] = self.request.GET.get('municipio')
+        context['mes_seleccionado'] = self.request.GET.get('mes')
+        context['anio_seleccionado'] = self.request.GET.get('anio')
+        context['tipo_programa_seleccionado'] = self.request.GET.get('tipo_programa')
         context['tipos_programa'] = Alumno.TIPO_PROGRAMA
         
         return context
