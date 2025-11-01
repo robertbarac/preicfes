@@ -76,23 +76,47 @@ class GrupoAdmin(admin.ModelAdmin):
 
 @admin.register(Clase)
 class ClaseAdmin(admin.ModelAdmin):
-    list_display = ('materia', 'fecha', 'horario', 'salon', 'profesor', 'grupo')
-    list_filter = ('fecha', 'horario', 'salon', 'materia', 'grupo__salon__sede', 'profesor', 'grupo__salon__sede__municipio', 'grupo__codigo')
-    search_fields = ('materia__nombre', 'profesor__username', 'grupo__codigo')
-    
+    list_display = ('materia', 'fecha', 'horario', 'salon', 'profesor', 'grupo', 'estado')
+    list_filter = ('estado', 'fecha', 'horario', 'salon', 'materia', 'grupo__salon__sede', 'profesor', 'grupo__salon__sede__municipio', 'grupo__codigo')
+    search_fields = ('materia__nombre', 'profesor__username', 'grupo__codigo', 'estado')
+
     def get_queryset(self, request):
-        queryset = super().get_queryset(request).select_related('grupo', 'grupo__salon', 'grupo__salon__sede', 'grupo__salon__sede__municipio')
-        # Si no es superuser, filtrar por municipio del usuario
-        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
-            queryset = queryset.filter(grupo__salon__sede__municipio=request.user.municipio)
-        return queryset
+        queryset = super().get_queryset(request).select_related(
+            'grupo__salon__sede__municipio__departamento', 'profesor', 'materia'
+        )
+        user = request.user
+
+        if user.is_superuser:
+            return queryset
+
+        if user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
+            if hasattr(user, 'departamento') and user.departamento:
+                return queryset.filter(grupo__salon__sede__municipio__departamento=user.departamento)
+            else:
+                return queryset.none() # No mostrar nada si no tiene departamento asignado
+
+        if hasattr(user, 'municipio') and user.municipio:
+            return queryset.filter(grupo__salon__sede__municipio=user.municipio)
         
+        return queryset.none() # Por defecto, no mostrar nada si no cumple ninguna condición
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
-            if db_field.name == "grupo":
-                kwargs["queryset"] = Grupo.objects.filter(salon__sede__municipio=request.user.municipio)
-            elif db_field.name == "salon":
-                kwargs["queryset"] = Salon.objects.filter(sede__municipio=request.user.municipio)
+        user = request.user
+        if not user.is_superuser:
+            departamento = getattr(user, 'departamento', None)
+            municipio = getattr(user, 'municipio', None)
+
+            if departamento:
+                if db_field.name == "grupo":
+                    kwargs["queryset"] = Grupo.objects.filter(salon__sede__municipio__departamento=departamento)
+                elif db_field.name == "salon":
+                    kwargs["queryset"] = Salon.objects.filter(sede__municipio__departamento=departamento)
+            elif municipio:
+                if db_field.name == "grupo":
+                    kwargs["queryset"] = Grupo.objects.filter(salon__sede__municipio=municipio)
+                elif db_field.name == "salon":
+                    kwargs["queryset"] = Salon.objects.filter(sede__municipio=municipio)
+
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
