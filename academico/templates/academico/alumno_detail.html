@@ -13,7 +13,7 @@
             <button id="tab-info-alumno" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
                 Información del Alumno
             </button>
-            {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:", " or 'CoordinadorDepartamental' in request.user.groups.all|join:", " or 'Auxiliar' in request.user.groups.all|join:", " %}
+            {% if can_view_academic_history %}
             <button id="tab-historial-asistencia" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
                 Historial de Asistencia
             </button>
@@ -21,7 +21,7 @@
                 Historial de Notas
             </button>
             {% endif %}
-            {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " or 'CoordinadorDepartamental' in request.user.groups.all|join:", " or 'Auxiliar' in request.user.groups.all|join:", " %}
+            {% if can_view_cartera_info %}
             <button id="tab-estado-deuda" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
                 Estado de Deuda
             </button>
@@ -116,18 +116,20 @@
                 
                 {% if alumno.deuda %}
                 <div class="mt-4 flex space-x-2">
-                    {% if request.user.username == 'vvgomez' or request.user.username == 'claudia2019' %}
-                    <!-- Botón para habilitar/deshabilitar edición (solo visible para vvgomez) -->
+                    <!-- Botón para habilitar/deshabilitar edición (solo para managers) -->
+                    {% if is_manager %}
                     <a href="{% url 'cartera:toggle_edicion_deuda' alumno.deuda.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white {% if alumno.deuda.edicion_habilitada %}bg-yellow-600 hover:bg-yellow-700{% else %}bg-blue-600 hover:bg-blue-700{% endif %} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         {% if alumno.deuda.edicion_habilitada %}Deshabilitar Edición{% else %}Habilitar Edición{% endif %}
                     </a>
                     {% endif %}
-                    
-                    <!-- Botón para editar deuda (visible según permisos) -->
-                    {% if request.user.username == 'vvgomez' or request.user.username == 'claudia2019' or alumno.deuda.edicion_habilitada and request.user.is_superuser or alumno.deuda.edicion_habilitada and 'SecretariaCartera' in request.user.groups.all|join:", " %}
-                    <a href="{% url 'cartera:deuda_editar' alumno.deuda.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Editar Deuda
-                    </a>
+
+                    <!-- Botón para editar deuda (visible para managers o si la edición está habilitada) -->
+                    {% if is_manager or alumno.deuda.edicion_habilitada %}
+                        {% if can_change_deuda %}
+                        <a href="{% url 'cartera:deuda_editar' alumno.deuda.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Editar Deuda
+                        </a>
+                        {% endif %}
                     {% endif %}
                 </div>
                 {% endif %}
@@ -179,9 +181,7 @@
                                 <td class="py-2 px-4 border-b text-center">{% if cuota.estado == 'vencida' %}{{ cuota.dias_atraso }}{% elif cuota.estado == 'emitida' %}{{ cuota.dias_restantes }}{% else %}<span class="text-gray-400">NA</span>{% endif %}</td>
                                 <td class="py-2 px-4 border-b text-center">{{ cuota.metodo_pago|default:"No especificado" }}</td>
                                 <td class="py-2 px-4 border-b text-center">
-                                    {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
-                                        <div class="flex space-x-2">
-                                            {% if request.user.username == 'vvgomez' or request.user.username == 'claudia2019' or cuota.monto_abonado == 0 %}
+                                    {% if can_view_cartera_info %}                                           {% if request.user.username == 'vvgomez' or request.user.username == 'claudia2019' or cuota.monto_abonado == 0 %}
                                             <a href="{% url 'cartera:cuota_editar' cuota.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                                 Editar
                                             </a>
@@ -442,7 +442,7 @@
             </div>
         </div>
     </div>
-    {% if request.user.is_superuser or 'SecretariaCartera' in request.user.groups.all|join:", " %}
+    {% if can_add_cuota %}
         {% if not alumno.deuda and not alumno.es_becado %}
         <div class="mt-4">
             <a href="{% url 'cartera:deuda_agregar' alumno.id %}" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
@@ -482,7 +482,7 @@
             Volver a la lista de alumnos
         </a>
     </div>
-    {% if request.user.is_superuser or 'SecretariaAcademica' in request.user.groups.all|join:", " %}
+    {% if can_view_academic_history %}
     <div class="mt-4">
         <a href="{% url 'generar_constancia_preicfes' alumno.id %}" 
         class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"

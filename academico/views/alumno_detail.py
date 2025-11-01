@@ -16,6 +16,20 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         alumno = self.get_object()
+        user = self.request.user
+
+        # Flags de permisos para simplificar la lógica en la plantilla
+        can_view_academic = user.is_superuser or user.groups.filter(name__in=['SecretariaAcademica', 'CoordinadorDepartamental', 'Auxiliar']).exists()
+        can_view_cartera = user.is_superuser or user.groups.filter(name__in=['SecretariaCartera', 'CoordinadorDepartamental', 'Auxiliar']).exists()
+
+        # Flags de permisos específicos para acciones
+        context['can_add_cuota'] = user.has_perm('cartera.add_cuota')
+        context['can_change_deuda'] = user.has_perm('cartera.change_deuda')
+        context['is_manager'] = user.is_superuser or user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
+
+        context['can_view_academic_history'] = can_view_academic
+        context['can_view_cartera_info'] = can_view_cartera
+        
 
         # Obtener estadísticas de asistencia
         asistencias = Asistencia.objects.filter(alumno=alumno)

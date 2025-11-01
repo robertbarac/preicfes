@@ -1,17 +1,12 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.contrib.auth.decorators import user_passes_test
-from django.urls import reverse
+from django.contrib.auth.decorators import permission_required
 from cartera.models import Deuda
 
-def is_vvgomez(user):
-    """Verifica si el usuario es 'vvgomez'"""
-    return user.username == 'vvgomez' or user.username == 'claudia2019'
-
-@user_passes_test(is_vvgomez)
-def toggle_edicion_deuda(request, pk):
+@permission_required('cartera.change_deuda')
+def toggle_edicion_deuda(_request, pk):
     """
     Vista para habilitar o deshabilitar la edición de una deuda.
-    Solo el usuario 'vvgomez' puede realizar esta acción.
+    Requiere el permiso 'cartera.change_deuda'.
     """
     deuda = get_object_or_404(Deuda, pk=pk)
     
