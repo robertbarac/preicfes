@@ -108,12 +108,18 @@ class UsuarioAdmin(UserAdmin):
 
         if user.is_superuser:
             return qs
-        elif user.groups.filter(name='CoordinadorDepartamental').exists():
-            if user.departamento:
-                return qs.filter(departamento=user.departamento)
-            return qs.none()
-        else:
+        
+        # Para Coordinadores y Auxiliares, filtrar por los municipios de su departamento
+        if user.groups.filter(name='CoordinadorDepartamental').exists():
+            if hasattr(user, 'departamento') and user.departamento:
+                return qs.filter(municipio__departamento=user.departamento)
+            return qs.none() # No mostrar nada si no tienen departamento asignado
+        
+        # Para otros roles (ej. Secretaria), filtrar por su municipio
+        if hasattr(user, 'municipio') and user.municipio:
             return qs.filter(municipio=user.municipio)
+        
+        return qs.none() # Por seguridad, no mostrar nada si no encaja en ningún rol
 
     def save_model(self, request, obj, form, change):
         """Controla la asignación del municipio al guardar"""
