@@ -1,12 +1,22 @@
 from django.contrib import admin
+from django.utils import timezone
 from .models import Alumno, Clase, Grupo, Materia, Nota, Asistencia
 from ubicaciones.models import Municipio, Salon
 
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
-    list_display = ('nombres', 'primer_apellido', 'segundo_apellido', 'tipo_programa', 'fecha_nacimiento', 'municipio', 'grupo_actual')  # Incluir segundo_apellido
-    list_filter = ('tipo_programa', 'municipio', 'grupo_actual', 'fecha_nacimiento', 'es_becado')  # Agregar tipo_programa y es_becado
-    search_fields = ('grupo_actual__codigo', 'nombres', 'primer_apellido', 'segundo_apellido', 'identificacion', 'fecha_nacimiento')  # Incluir segundo_apellido
+    list_display = ('nombres', 'primer_apellido', 'get_estado', 'fecha_ingreso', 'fecha_culminacion', 'tipo_programa', 'municipio', 'municipio__departamento', 'grupo_actual', 'estado')
+    list_filter = ('tipo_programa', 'municipio', 'municipio__departamento', 'grupo_actual', 'es_becado', 'fecha_ingreso', 'fecha_culminacion', 'estado')
+    search_fields = ('nombres', 'primer_apellido', 'segundo_apellido', 'identificacion')
+
+    def get_estado(self, obj):
+        hoy = timezone.now().date()
+        if obj.fecha_culminacion >= hoy:
+            return 'Activo'
+        else:
+            return 'Inactivo'
+    get_estado.short_description = 'Estado'
+    get_estado.admin_order_field = 'fecha_culminacion'
     
     def get_queryset(self, request):
         queryset = super().get_queryset(request).select_related('municipio', 'grupo_actual')
