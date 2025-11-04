@@ -3,6 +3,7 @@ from .models import AcuerdoPago, Cuota, Deuda, Egreso, HistorialModificacion, Re
 from ubicaciones.models import Sede
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.db.models import Sum
 
 Usuario = get_user_model()  # Obtener dinámicamente el modelo de usuario
 
@@ -16,11 +17,38 @@ class AcuerdoPagoAdmin(admin.ModelAdmin):
 
 @admin.register(Cuota)
 class CuotaAdmin(admin.ModelAdmin):
-    list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'fecha_pago', 'estado', 'metodo_pago')
-    list_filter = ('estado', 'metodo_pago', 'fecha_vencimiento', 'fecha_pago', 'deuda__alumno__grupo_actual__salon__sede__municipio')
+    list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago', 'get_tipo_programa', 'get_departamento')
+    list_filter = ('estado', 'deuda__alumno__tipo_programa', 'deuda__alumno__municipio__departamento', 'deuda__alumno__municipio', 'deuda__alumno__grupo_actual__salon__sede', 'fecha_vencimiento', 'fecha_pago')
     search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido', 'deuda__alumno__municipio__nombre')
     date_hierarchy = 'fecha_vencimiento'
-    list_editable = ('monto_abonado', 'estado', 'metodo_pago')  
+    list_editable = ('monto_abonado', 'estado', 'metodo_pago')
+
+    def changelist_view(self, request, extra_context=None):
+        # Obtener el queryset original con los filtros aplicados por el admin
+        changelist = self.get_changelist_instance(request)
+        queryset = changelist.get_queryset(request)
+
+        # Filtrar solo cuotas de alumnos activos
+        active_queryset = queryset.filter(deuda__alumno__estado='activo')
+        
+        # Calcular la sumatoria sobre el queryset de activos
+        total = active_queryset.aggregate(total_monto=Sum('monto'))
+        total_monto_str = f"{total.get('total_monto'):,.0f}" if total.get('total_monto') is not None else "0"
+
+        # Preparar el contexto extra
+        extra_context = extra_context or {}
+        extra_context['total_monto_filtrado'] = total_monto_str
+
+        # Llamar al método original con el contexto extra
+        response = super().changelist_view(request, extra_context=extra_context)
+
+        # Modificar el título después de que la respuesta se ha generado
+        if response.context_data and 'title' in response.context_data:
+            response.context_data['title'] = (
+                f"Seleccionar cuota para modificar | Total Monto Activo Filtrado: ${total_monto_str}"
+            )
+
+        return response  
 
     fieldsets = (
         ('Información Básica', {
@@ -32,7 +60,10 @@ class CuotaAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, request):
-        queryset = super().get_queryset(request).select_related('deuda__alumno')
+        queryset = super().get_queryset(request).select_related(
+            'deuda__alumno',
+            'deuda__alumno__municipio__departamento'
+        )
         # Si NO es superuser, filtrar por municipio
         if not request.user.is_superuser and hasattr(request.user, 'municipio') and request.user.municipio:
             queryset = queryset.filter(deuda__alumno__grupo_actual__salon__sede__municipio=request.user.municipio)
@@ -47,6 +78,18 @@ class CuotaAdmin(admin.ModelAdmin):
                 alumno__grupo_actual__salon__sede__municipio=request.user.municipio
             )
         return form
+
+    def get_tipo_programa(self, obj):
+        return obj.deuda.alumno.get_tipo_programa_display()
+    get_tipo_programa.short_description = 'Tipo de Programa'
+    get_tipo_programa.admin_order_field = 'deuda__alumno__tipo_programa'
+
+    def get_departamento(self, obj):
+        if obj.deuda.alumno.municipio:
+            return obj.deuda.alumno.municipio.departamento.nombre
+        return 'N/A'
+    get_departamento.short_description = 'Departamento'
+    get_departamento.admin_order_field = 'deuda__alumno__municipio__departamento'
 
     class Meta:
         permissions = (
