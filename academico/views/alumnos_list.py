@@ -123,51 +123,39 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         # Agregar al contexto
         context['query_string'] = query_string
         
-        # Lógica de contexto por rol
-        user = self.request.user
-        context['is_coordinador_or_auxiliar'] = user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
-        if user.is_superuser:
-            context['sedes'] = Sede.objects.all()
-            context['ciudades'] = Municipio.objects.all()
-            context['departamentos'] = Departamento.objects.all()
-            context['departamento_seleccionado'] = self.request.GET.get('departamento')
-        elif user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
-            if hasattr(user, 'departamento') and user.departamento:
-                context['sedes'] = Sede.objects.filter(municipio__departamento=user.departamento)
-                context['ciudades'] = Municipio.objects.filter(departamento=user.departamento)
-            else:
-                context['sedes'] = Sede.objects.none()
-                context['ciudades'] = Municipio.objects.none()
-        else:
-            # Otro personal (staff) ve solo su municipio
-            context['sedes'] = Sede.objects.filter(municipio=user.municipio)
-            context['ciudades'] = Municipio.objects.filter(id=user.municipio.id)
-            
-        # Añadir tipos de programa al contexto
-        context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
-        context['tipo_programa_seleccionado'] = self.request.GET.get('tipo_programa')
-            
-        # Añadir fecha actual para comparar con fecha_culminacion
-        fecha_actual = timezone.localtime(timezone.now()).date()
-        context['fecha_actual'] = fecha_actual
+        # Importar modelos necesarios
+        from academico.models import Alumno
+        from ubicaciones.models import Departamento, Sede
         
-        # Procesar los alumnos para añadir información adicional
+        # Añadir lista de sedes para los filtros
+        context['sedes'] = Sede.objects.all()
+        
+        # Solo superusuarios tienen acceso a todos los departamentos
+        if self.request.user.is_superuser:
+            context['departamentos'] = Departamento.objects.all()
+        
+        # Determinar si el usuario es coordinador o auxiliar
+        is_coordinador_or_auxiliar = self.request.user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
+        context['is_coordinador_or_auxiliar'] = is_coordinador_or_auxiliar
+        
+        # Obtener el queryset filtrado y contar el total
+        queryset = self.get_queryset()
+        context['total_alumnos'] = queryset.count()
+        
+        # Preparar alumnos con información adicional
         alumnos_con_info = []
-        for alumno in context['alumnos']:
+        for alumno in context['page_obj']:
             # Determinar si el alumno ha culminado
-            culminado = alumno.fecha_culminacion < fecha_actual
-
-            # Obtener estado de la deuda
-            try:
-                deuda = alumno.deuda
-                if deuda.estado == 'pagada':
-                    estado_deuda = 'pagada'
-                else:  # estado 'emitida'
-                    estado_deuda = 'pendiente'
-            except Exception as e:
-                # Si no existe relación con deuda o hay otro error
-                estado_deuda = 'No tiene'
+            fecha_actual = timezone.localtime(timezone.now()).date()
+            culminado = False
+            if hasattr(alumno, 'fecha_culminacion') and alumno.fecha_culminacion and alumno.fecha_culminacion < fecha_actual:
+                culminado = True
                 
+            # Determinar el estado de la deuda
+            estado_deuda = 'no_tiene'
+            if hasattr(alumno, 'deuda') and alumno.deuda:
+                estado_deuda = alumno.deuda.estado
+            
             # Añadir información al alumno
             alumno.culminado = culminado
             alumno.estado_deuda = estado_deuda
@@ -183,4 +171,50 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             alumnos_con_info.append(alumno)
             
         context['alumnos'] = alumnos_con_info
+        
+        # Preparar mensaje para mostrar los filtros activos
+        filtros_activos = []
+        if self.request.GET.get('nombre'):
+            filtros_activos.append(f"Nombre: {self.request.GET.get('nombre')}")
+        if self.request.GET.get('apellido'):
+            filtros_activos.append(f"Apellido: {self.request.GET.get('apellido')}")
+        if self.request.GET.get('sede'):
+            filtros_activos.append(f"Sede: {self.request.GET.get('sede')}")
+        if self.request.GET.get('departamento'):
+            try:
+                depto = Departamento.objects.get(id=self.request.GET.get('departamento'))
+                filtros_activos.append(f"Departamento: {depto.nombre}")
+            except Exception:
+                pass
+        if self.request.GET.get('ciudad'):
+            filtros_activos.append(f"Ciudad: {self.request.GET.get('ciudad')}")
+        if self.request.GET.get('culminado') == 'si':
+            filtros_activos.append("Culminado: Sí")
+        elif self.request.GET.get('culminado') == 'no':
+            filtros_activos.append("Culminado: No")
+        if self.request.GET.get('estado_deuda') == 'pagada':
+            filtros_activos.append("Estado Deuda: Pagada")
+        elif self.request.GET.get('estado_deuda') == 'pendiente':
+            filtros_activos.append("Estado Deuda: Pendiente")
+        elif self.request.GET.get('estado_deuda') == 'no_tiene':
+            filtros_activos.append("Estado Deuda: No tiene")
+        if self.request.GET.get('es_becado') == 'si':
+            filtros_activos.append("Becado: Sí")
+        elif self.request.GET.get('es_becado') == 'no':
+            filtros_activos.append("Becado: No")
+        if self.request.GET.get('tipo_programa'):
+            programas = dict(Alumno.TIPO_PROGRAMA)
+            tipo_programa = self.request.GET.get('tipo_programa')
+            filtros_activos.append(f"Programa: {programas.get(tipo_programa, tipo_programa)}")
+        if self.request.GET.get('estado_alumno') == 'activo':
+            filtros_activos.append("Estado: Activo")
+        elif self.request.GET.get('estado_alumno') == 'retirado':
+            filtros_activos.append("Estado: Retirado")
+        if self.request.GET.get('tiene_cuotas') == 'si':
+            filtros_activos.append("Tiene Cuotas: Sí")
+        elif self.request.GET.get('tiene_cuotas') == 'no':
+            filtros_activos.append("Tiene Cuotas: No")
+            
+        context['filtros_activos'] = filtros_activos
+        
         return context

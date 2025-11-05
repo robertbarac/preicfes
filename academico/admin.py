@@ -5,8 +5,8 @@ from ubicaciones.models import Municipio, Salon
 
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
-    list_display = ('nombres', 'primer_apellido', 'get_estado', 'fecha_ingreso', 'fecha_culminacion', 'tipo_programa', 'municipio', 'municipio__departamento', 'grupo_actual', 'estado')
-    list_filter = ('tipo_programa', 'municipio', 'municipio__departamento', 'grupo_actual', 'es_becado', 'fecha_ingreso', 'fecha_culminacion', 'estado')
+    list_display = ('nombres', 'primer_apellido', 'estado', 'fecha_ingreso', 'fecha_culminacion', 'tipo_programa', 'municipio', 'municipio__departamento', 'grupo_actual')
+    list_filter = ('estado', 'tipo_programa', 'es_becado', 'municipio', 'municipio__departamento', 'fecha_ingreso', 'fecha_culminacion', 'grupo_actual')
     search_fields = ('nombres', 'primer_apellido', 'segundo_apellido', 'identificacion')
 
     def get_estado(self, obj):
