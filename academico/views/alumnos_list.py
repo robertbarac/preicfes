@@ -50,7 +50,6 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         tipo_programa = self.request.GET.get('tipo_programa')
         estado_alumno = self.request.GET.get('estado_alumno')  # Filtro de estado
         tiene_cuotas = self.request.GET.get('tiene_cuotas')    # Filtro de cuotas
-        tiene_deuda = self.request.GET.get('tiene_deuda')      # Nuevo filtro de deuda
 
         if nombre:
             queryset = queryset.filter(nombres__icontains=nombre)
@@ -105,12 +104,6 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             no_deuda = queryset.filter(deuda__isnull=True).distinct()
             deuda_sin_cuotas = queryset.filter(deuda__isnull=False, deuda__cuotas__isnull=True).distinct()
             queryset = no_deuda | deuda_sin_cuotas
-            
-        # Filtrar por si tiene deuda asociada
-        if tiene_deuda == 'si':
-            queryset = queryset.filter(deuda__isnull=False)
-        elif tiene_deuda == 'no':
-            queryset = queryset.filter(deuda__isnull=True)
 
         return queryset.order_by('primer_apellido')
 
@@ -185,11 +178,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             except Exception as e:
                 tiene_cuotas = False
                 
-            # Verificar si tiene deuda asociada
-            tiene_deuda = hasattr(alumno, 'deuda') and alumno.deuda is not None
-                
             alumno.tiene_cuotas = tiene_cuotas
-            alumno.tiene_deuda = tiene_deuda
             # Ya tenemos acceso directo a es_becado desde el modelo
             alumnos_con_info.append(alumno)
             
