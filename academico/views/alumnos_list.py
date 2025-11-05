@@ -48,6 +48,8 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         estado_deuda = self.request.GET.get('estado_deuda')
         es_becado = self.request.GET.get('es_becado')
         tipo_programa = self.request.GET.get('tipo_programa')
+        estado_alumno = self.request.GET.get('estado_alumno')  # Nuevo filtro de estado
+        tiene_cuotas = self.request.GET.get('tiene_cuotas')    # Nuevo filtro de cuotas
 
         if nombre:
             queryset = queryset.filter(nombres__icontains=nombre)
@@ -89,6 +91,19 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         # Filtrar por tipo de programa
         if tipo_programa:
             queryset = queryset.filter(tipo_programa=tipo_programa)
+            
+        # Filtrar por estado del alumno (activo/retirado)
+        if estado_alumno:
+            queryset = queryset.filter(estado=estado_alumno)
+            
+        # Filtrar por si tiene cuotas asociadas
+        if tiene_cuotas == 'si':
+            queryset = queryset.filter(deuda__cuotas__isnull=False).distinct()
+        elif tiene_cuotas == 'no':
+            # Aplicar .distinct() a ambas partes de la operación OR para evitar TypeError
+            no_deuda = queryset.filter(deuda__isnull=True).distinct()
+            deuda_sin_cuotas = queryset.filter(deuda__isnull=False, deuda__cuotas__isnull=True).distinct()
+            queryset = no_deuda | deuda_sin_cuotas
 
         return queryset.order_by('primer_apellido')
 
@@ -156,6 +171,14 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             # Añadir información al alumno
             alumno.culminado = culminado
             alumno.estado_deuda = estado_deuda
+            
+            # Verificar si tiene cuotas asociadas
+            try:
+                tiene_cuotas = alumno.deuda and alumno.deuda.cuotas.exists()
+            except Exception as e:
+                tiene_cuotas = False
+                
+            alumno.tiene_cuotas = tiene_cuotas
             # Ya tenemos acceso directo a es_becado desde el modelo
             alumnos_con_info.append(alumno)
             
