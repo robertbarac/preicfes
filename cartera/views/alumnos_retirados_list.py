@@ -2,7 +2,7 @@ from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Sum
 from django.utils import timezone
-from academico.models import Alumno, Grupo
+from academico.models import Alumno
 from ubicaciones.models import Municipio, Departamento
 
 class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
@@ -15,7 +15,8 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
         return self.request.user.is_superuser or self.request.user.has_perm('cartera.view_cuota')
 
     def get_queryset(self):
-        queryset = Alumno.objects.filter(estado='retirado').select_related(
+        # Aseguramos que todos los alumnos retirados tienen fecha_retiro no nula
+        queryset = Alumno.objects.filter(estado='retirado', fecha_retiro__isnull=False).select_related(
             'grupo_actual__salon__sede__municipio__departamento', 'deuda'
         )
 
@@ -46,10 +47,24 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
                 queryset = queryset.none()
 
         # Filtros adicionales
-        if mes and anio:
-            queryset = queryset.filter(fecha_retiro__month=mes, fecha_retiro__year=anio)
-        elif anio:
-            queryset = queryset.filter(fecha_retiro__year=anio)
+        # Aplicar filtros de fecha de retiro de forma independiente
+        if mes:
+            try:
+                mes_int = int(mes)
+                queryset = queryset.filter(fecha_retiro__month=mes_int)
+            except (ValueError, TypeError):
+                # Si mes no es un entero válido, ignorar el filtro
+                pass
+                
+        if anio:
+            try:
+                anio_int = int(anio)
+                queryset = queryset.filter(fecha_retiro__year=anio_int)
+            except (ValueError, TypeError):
+                # Si año no es un entero válido, ignorar el filtro
+                pass
+            
+        # Filtro por tipo de programa
         if tipo_programa:
             queryset = queryset.filter(tipo_programa=tipo_programa)
 

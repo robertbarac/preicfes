@@ -49,18 +49,18 @@
                 <label for="mes" class="block text-sm font-medium text-gray-700">Mes</label>
                 <select name="mes" id="mes" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <option value="">Todos</option>
-                    <option value="1" {% if mes == '1' %}selected{% endif %}>Enero</option>
-                    <option value="2" {% if mes == '2' %}selected{% endif %}>Febrero</option>
-                    <option value="3" {% if mes == '3' %}selected{% endif %}>Marzo</option>
-                    <option value="4" {% if mes == '4' %}selected{% endif %}>Abril</option>
-                    <option value="5" {% if mes == '5' %}selected{% endif %}>Mayo</option>
-                    <option value="6" {% if mes == '6' %}selected{% endif %}>Junio</option>
-                    <option value="7" {% if mes == '7' %}selected{% endif %}>Julio</option>
-                    <option value="8" {% if mes == '8' %}selected{% endif %}>Agosto</option>
-                    <option value="9" {% if mes == '9' %}selected{% endif %}>Septiembre</option>
-                    <option value="10" {% if mes == '10' %}selected{% endif %}>Octubre</option>
-                    <option value="11" {% if mes == '11' %}selected{% endif %}>Noviembre</option>
-                    <option value="12" {% if mes == '12' %}selected{% endif %}>Diciembre</option>
+                    <option value="1" {% if mes_seleccionado == '1' %}selected{% endif %}>Enero</option>
+                    <option value="2" {% if mes_seleccionado == '2' %}selected{% endif %}>Febrero</option>
+                    <option value="3" {% if mes_seleccionado == '3' %}selected{% endif %}>Marzo</option>
+                    <option value="4" {% if mes_seleccionado == '4' %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes_seleccionado == '5' %}selected{% endif %}>Mayo</option>
+                    <option value="6" {% if mes_seleccionado == '6' %}selected{% endif %}>Junio</option>
+                    <option value="7" {% if mes_seleccionado == '7' %}selected{% endif %}>Julio</option>
+                    <option value="8" {% if mes_seleccionado == '8' %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes_seleccionado == '9' %}selected{% endif %}>Septiembre</option>
+                    <option value="10" {% if mes_seleccionado == '10' %}selected{% endif %}>Octubre</option>
+                    <option value="11" {% if mes_seleccionado == '11' %}selected{% endif %}>Noviembre</option>
+                    <option value="12" {% if mes_seleccionado == '12' %}selected{% endif %}>Diciembre</option>
                 </select>
             </div>
             <div>
@@ -68,7 +68,7 @@
                 <select name="anio" id="anio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <option value="">Todos</option>
                     {% for y in anios %}
-                    <option value="{{ y }}" {% if anio == y|stringformat:'s' %}selected{% endif %}>{{ y }}</option>
+                    <option value="{{ y }}" {% if anio_seleccionado == y|stringformat:'s' %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </select>
             </div>
