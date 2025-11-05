@@ -125,7 +125,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         
         # Importar modelos necesarios
         from academico.models import Alumno
-        from ubicaciones.models import Departamento, Sede
+        from ubicaciones.models import Departamento, Sede, Municipio
         
         # Añadir lista de sedes para los filtros
         context['sedes'] = Sede.objects.all()
@@ -133,6 +133,22 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         # Solo superusuarios tienen acceso a todos los departamentos
         if self.request.user.is_superuser:
             context['departamentos'] = Departamento.objects.all()
+            context['ciudades'] = Municipio.objects.all()
+        elif self.request.user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
+            if hasattr(self.request.user, 'departamento') and self.request.user.departamento:
+                context['ciudades'] = Municipio.objects.filter(departamento=self.request.user.departamento)
+            else:
+                context['ciudades'] = Municipio.objects.none()
+        else:
+            if hasattr(self.request.user, 'municipio') and self.request.user.municipio:
+                context['ciudades'] = Municipio.objects.filter(id=self.request.user.municipio.id)
+            else:
+                context['ciudades'] = Municipio.objects.none()
+                
+        # Agregar tipos de programa y el valor seleccionado
+        context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
+        context['tipo_programa_seleccionado'] = self.request.GET.get('tipo_programa', '')
+        context['departamento_seleccionado'] = self.request.GET.get('departamento', '')
         
         # Determinar si el usuario es coordinador o auxiliar
         is_coordinador_or_auxiliar = self.request.user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
