@@ -101,9 +101,27 @@ class CuotaAdmin(admin.ModelAdmin):
 @admin.register(Deuda)
 class DeudaAdmin(admin.ModelAdmin):
     list_display = ('alumno', 'valor_total', 'saldo_pendiente', 'estado', 'fecha_creacion')
+    list_display_links = ('alumno', 'valor_total')
+    readonly_fields = ('estado', 'saldo_pendiente')
     list_filter = ('estado', 'fecha_creacion')
     search_fields = ('alumno__nombres', 'alumno__primer_apellido')
     date_hierarchy = 'fecha_creacion'
+    
+    def has_change_permission(self, request, obj=None):
+        # Si el objeto existe y es una deuda pagada, no permitir su edición
+        if obj is not None and obj.estado == 'pagada':
+            return False
+        return super().has_change_permission(request, obj)
+    
+    def get_readonly_fields(self, request, obj=None):
+        # Campos de solo lectura base
+        readonly_fields = list(self.readonly_fields)
+        
+        # Si la deuda ya existe, ciertos campos no deberían ser editables
+        if obj is not None:
+            readonly_fields.extend(['alumno', 'valor_total'])
+            
+        return readonly_fields
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request).select_related('alumno', 'alumno__grupo_actual__salon__sede__municipio')

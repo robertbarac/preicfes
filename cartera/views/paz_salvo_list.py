@@ -14,9 +14,17 @@ class PazSalvoListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
+        # Filtrar alumnos que:
+        # 1. No sean becados
+        # 2. Tengan deuda pagada
+        # 3. Tengan saldo pendiente = 0
+        # 4. Tengan al menos una cuota asociada
+        # 5. El total de montos abonados sea igual al valor total de la deuda
         queryset = Alumno.objects.filter(
+            es_becado=False,
             deuda__estado='pagada',
-            deuda__saldo_pendiente=0
+            deuda__saldo_pendiente=0,
+            deuda__cuotas__isnull=False
         ).distinct().select_related(
             'deuda',
             'grupo_actual__salon__sede__municipio__departamento'
@@ -58,8 +66,10 @@ class PazSalvoListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         departamento_id = self.request.GET.get('departamento')
+        municipio_id = self.request.GET.get('municipio')
+        search_query = self.request.GET.get('q', '')
 
-        context['search_query'] = self.request.GET.get('q', '')
+        context['search_query'] = search_query
         context['is_coordinador_or_auxiliar'] = user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
 
         # Lógica de filtros para el contexto
@@ -73,7 +83,10 @@ class PazSalvoListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             if hasattr(user, 'departamento') and user.departamento:
                 context['municipios'] = Municipio.objects.filter(departamento=user.departamento)
         
-        context['departamento_seleccionado'] = self.request.GET.get('departamento')
-        context['municipio_seleccionado'] = self.request.GET.get('municipio')
+        context['departamento_seleccionado'] = departamento_id
+        context['municipio_seleccionado'] = municipio_id
+        
+        # Contar el total de alumnos paz y salvo
+        context['total_alumnos'] = self.get_queryset().count()
         
         return context
