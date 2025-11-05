@@ -76,9 +76,10 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             
         # Filtrar por estado de deuda
         if estado_deuda == 'pagada':
-            queryset = queryset.filter(deuda__estado='pagada')
+            queryset = queryset.filter(deuda__estado='pagada', deuda__saldo_pendiente=0)
         elif estado_deuda == 'pendiente':
-            queryset = queryset.filter(deuda__estado='emitida')
+            # Filtrar deudas con saldo pendiente mayor que 0, sin importar su estado formal
+            queryset = queryset.filter(deuda__saldo_pendiente__gt=0)
         elif estado_deuda == 'no_tiene':
             queryset = queryset.filter(deuda__isnull=True)
             
@@ -170,7 +171,11 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             # Determinar el estado de la deuda
             estado_deuda = 'no_tiene'
             if hasattr(alumno, 'deuda') and alumno.deuda:
-                estado_deuda = alumno.deuda.estado
+                # Si tiene deuda con saldo pendiente > 0, debe mostrarse como 'pendiente' sin importar el estado
+                if alumno.deuda.saldo_pendiente > 0:
+                    estado_deuda = 'pendiente'
+                else:
+                    estado_deuda = alumno.deuda.estado
             
             # Añadir información al alumno
             alumno.culminado = culminado
