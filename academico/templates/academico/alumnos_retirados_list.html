@@ -6,7 +6,19 @@
     <!-- Filtros -->
     <div class="bg-white shadow-md rounded-lg p-4 mb-6">
         <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-            {% if user.is_superuser %}
+            {% if user.is_superuser or is_coordinador_or_auxiliar %}
+            <div>
+                <label for="departamento" class="block text-sm font-medium text-gray-700">Departamento</label>
+                <select name="departamento" id="departamento" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    {% for depto in departamentos %}
+                    <option value="{{ depto.id }}" {% if departamento_seleccionado == depto.id|stringformat:'s' %}selected{% endif %}>{{ depto.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            {% if user.is_superuser or is_coordinador_or_auxiliar %}
             <div>
                 <label for="municipio" class="block text-sm font-medium text-gray-700">Municipio</label>
                 <select name="municipio" id="municipio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
@@ -38,6 +50,7 @@
             <div>
                 <label for="anio" class="block text-sm font-medium text-gray-700">Año</label>
                 <select name="anio" id="anio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
                     {% for year in anios %}
                         <option value="{{ year }}" {% if anio == year|stringformat:'s' %}selected{% endif %}>{{ year }}</option>
                     {% endfor %}
@@ -101,5 +114,71 @@
             </tbody>
         </table>
     </div>
+    
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <div class="mt-6 flex justify-center">
+        <ol class="flex justify-center gap-1 text-xs font-medium">
+            <!-- Botón "Anterior" -->
+            {% if page_obj.has_previous %}
+            <li>
+                <a href="?{{ params }}page={{ page_obj.previous_page_number }}" class="inline-flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-gray-900 rtl:rotate-180">
+                    <span class="sr-only">Anterior</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            </li>
+            {% else %}
+            <li>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed">
+                    <span class="sr-only">Anterior</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+            </li>
+            {% endif %}
+            
+            <!-- Páginas -->
+            {% for i in paginator.page_range %}
+                {% if i == page_obj.number %}
+                <li>
+                    <span class="block h-8 w-8 rounded border-indigo-600 bg-indigo-600 text-center leading-8 text-white">
+                        {{ i }}
+                    </span>
+                </li>
+                {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                <li>
+                    <a href="?{{ params }}page={{ i }}" class="block h-8 w-8 rounded border border-gray-300 bg-white text-center leading-8 text-gray-900">
+                        {{ i }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            <!-- Botón "Siguiente" -->
+            {% if page_obj.has_next %}
+            <li>
+                <a href="?{{ params }}page={{ page_obj.next_page_number }}" class="inline-flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-gray-900 rtl:rotate-180">
+                    <span class="sr-only">Siguiente</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            </li>
+            {% else %}
+            <li>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed">
+                    <span class="sr-only">Siguiente</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+            </li>
+            {% endif %}
+        </ol>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
