@@ -102,6 +102,14 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
         context['mes_seleccionado'] = self.request.GET.get('mes')
         context['anio_seleccionado'] = self.request.GET.get('anio')
         context['tipo_programa_seleccionado'] = self.request.GET.get('tipo_programa')
-        context['tipos_programa'] = Alumno.TIPO_PROGRAMA
+        
+        # Convertir tipos_programa de tupla a dict para usar en el template
+        context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
+        
+        # Preparar string de parámetros para URLs de paginación
+        get_params = self.request.GET.copy()
+        if 'page' in get_params:
+            get_params.pop('page')
+        context['params'] = get_params.urlencode() + '&' if get_params else ''
         
         return context
