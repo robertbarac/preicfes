@@ -90,6 +90,11 @@ class CuotaAdmin(admin.ModelAdmin):
         return 'N/A'
     get_departamento.short_description = 'Departamento'
     get_departamento.admin_order_field = 'deuda__alumno__municipio__departamento'
+    
+    def get_estado_alumno(self, obj):
+        return obj.deuda.alumno.get_estado_display() if hasattr(obj.deuda.alumno, 'get_estado_display') else obj.deuda.alumno.estado
+    get_estado_alumno.short_description = 'Estado del Alumno'
+    get_estado_alumno.admin_order_field = 'deuda__alumno__estado'
 
     class Meta:
         permissions = (
@@ -100,10 +105,9 @@ class CuotaAdmin(admin.ModelAdmin):
 # Registrar otros modelos si es necesario
 @admin.register(Deuda)
 class DeudaAdmin(admin.ModelAdmin):
-    list_display = ('alumno', 'valor_total', 'saldo_pendiente', 'estado', 'fecha_creacion')
-    list_display_links = ('alumno', 'valor_total')
+    list_display = ('alumno', 'valor_total', 'saldo_pendiente', 'estado', 'fecha_creacion', 'get_estado_alumno')
+    list_filter = ('estado', 'fecha_creacion', 'alumno__estado')
     readonly_fields = ('estado', 'saldo_pendiente')
-    list_filter = ('estado', 'fecha_creacion')
     search_fields = ('alumno__nombres', 'alumno__primer_apellido')
     date_hierarchy = 'fecha_creacion'
     
@@ -136,6 +140,11 @@ class DeudaAdmin(admin.ModelAdmin):
             from academico.models import Alumno
             kwargs["queryset"] = Alumno.objects.filter(grupo_actual__salon__sede__municipio=request.user.municipio)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        
+    def get_estado_alumno(self, obj):
+        return obj.alumno.get_estado_display() if hasattr(obj.alumno, 'get_estado_display') else obj.alumno.estado
+    get_estado_alumno.short_description = 'Estado del Alumno'
+    get_estado_alumno.admin_order_field = 'alumno__estado'
 
 
 # @admin.register(Recibo)
