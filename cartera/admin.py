@@ -24,28 +24,51 @@ class CuotaAdmin(admin.ModelAdmin):
     list_editable = ('monto_abonado', 'estado', 'metodo_pago')
 
     def changelist_view(self, request, extra_context=None):
+        from django.db.models import Sum
+        from cartera.models import Deuda
+
         # Obtener el queryset original con los filtros aplicados por el admin
         changelist = self.get_changelist_instance(request)
         queryset = changelist.get_queryset(request)
 
         # Filtrar solo cuotas de alumnos activos
         active_queryset = queryset.filter(deuda__alumno__estado='activo')
-        
-        # Calcular la sumatoria sobre el queryset de activos
-        total = active_queryset.aggregate(total_monto=Sum('monto'))
-        total_monto_str = f"{total.get('total_monto'):,.0f}" if total.get('total_monto') is not None else "0"
+
+        # 1) Total de deudas (como en el informe diario)
+        total_deudas = Deuda.objects.filter(
+            alumno__estado='activo'
+        ).aggregate(total_valor=Sum('valor_total'))
+        total_valor = total_deudas.get('total_valor') or 0
+        total_valor_str = f"{total_valor:,.0f}"
+
+        # 2) Total de cuotas según estado:
+        #    - emitida, vencida, pagada_parcial → sumar 'monto'
+        #    - pagada → sumar 'monto_abonado'
+
+        emitidas_y_vencidas = active_queryset.filter(estado__in=['emitida', 'vencida'])
+        pagadas_y_parciales = active_queryset.filter(estado__in=['pagada_parcial', 'pagada'])
+
+        total_emitidas_vencidas = emitidas_y_vencidas.aggregate(s=Sum('monto'))['s'] or 0
+        total_pagadas_y_parciales = pagadas_y_parciales.aggregate(s=Sum('monto_abonado'))['s'] or 0
+
+        total_cuotas = total_emitidas_vencidas + total_pagadas_y_parciales
+        total_monto_str = f"{total_cuotas:,.0f}"
 
         # Preparar el contexto extra
         extra_context = extra_context or {}
-        extra_context['total_monto_filtrado'] = total_monto_str
+        extra_context['total_valor_deudas'] = total_valor_str
+        extra_context['total_monto_cuotas'] = total_monto_str
 
         # Llamar al método original con el contexto extra
         response = super().changelist_view(request, extra_context=extra_context)
 
         # Modificar el título después de que la respuesta se ha generado
-        if response.context_data and 'title' in response.context_data:
+        from django.http import HttpResponseRedirect
+        if not isinstance(response, HttpResponseRedirect) and hasattr(response, 'context_data') \
+           and response.context_data and 'title' in response.context_data:
             response.context_data['title'] = (
-                f"Seleccionar cuota para modificar | Total Monto Activo Filtrado: ${total_monto_str}"
+                f"Seleccionar cuota para modificar "
+                f"(Valor Deudas: ${total_valor_str} | Montos Cuotas: ${total_monto_str})"
             )
 
         return response  

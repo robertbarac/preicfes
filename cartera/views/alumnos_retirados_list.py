@@ -12,7 +12,22 @@ class AlumnosRetiradosListView(LoginRequiredMixin, UserPassesTestMixin, ListView
     paginate_by = 25
 
     def test_func(self):
-        return self.request.user.is_superuser or self.request.user.has_perm('cartera.view_cuota')
+        user = self.request.user
+        if not user.is_staff:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        grupos_autorizados = [
+            'Cartera',
+            'SecretariaCartera',
+            'Auxiliar',
+            'CoordinadorDepartamental',
+        ]
+
+        return user.groups.filter(name__in=grupos_autorizados).exists()
+
 
     def get_queryset(self):
         # Aseguramos que todos los alumnos retirados tienen fecha_retiro no nula

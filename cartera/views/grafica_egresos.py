@@ -20,8 +20,22 @@ class GraficaEgresosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'cartera/grafica_egresos.html'
 
     def test_func(self):
-        # Permitir acceso a superusers o a quienes tengan el permiso para ver egresos.
-        return self.request.user.is_superuser or self.request.user.has_perm('cartera.view_egreso')
+        user = self.request.user
+        if not user.is_staff:
+            return False
+
+        if user.is_superuser or self.request.user.has_perm('cartera.view_egreso'):
+            return True
+
+        grupos_autorizados = [
+            'Cartera',
+            'SecretariaCartera',
+            'Auxiliar',
+            'CoordinadorDepartamental',
+        ]
+
+        return user.groups.filter(name__in=grupos_autorizados).exists()
+
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():

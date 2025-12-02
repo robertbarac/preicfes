@@ -17,14 +17,18 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         user = self.request.user
         if not user.is_staff:
             return False
-        
-        # Si es staff, denegar solo si pertenece a grupos no autorizados
-        grupos_no_autorizados = ['SecretariaAcademica', 'Profesor']
-        if user.groups.filter(name__in=grupos_no_autorizados).exists():
-            return False
-            
-        # Permitir a superuser y al resto del staff (Cartera, Auxiliar, Coordinador)
-        return True
+
+        if user.is_superuser:
+            return True
+
+        grupos_autorizados = [
+            'Cartera',
+            'SecretariaCartera',
+            'Auxiliar',
+            'CoordinadorDepartamental',
+        ]
+
+        return user.groups.filter(name__in=grupos_autorizados).exists()
 
     def get_queryset(self):
 

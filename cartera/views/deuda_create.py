@@ -16,7 +16,22 @@ class DeudaCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     # Usaremos get_success_url en su lugar
 
     def test_func(self):
-        return self.request.user.is_staff or self.request.user.is_superuser
+        user = self.request.user
+        if not user.is_staff:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        grupos_autorizados = [
+            'Cartera',
+            'SecretariaCartera',
+            'Auxiliar',
+            'CoordinadorDepartamental',
+        ]
+
+        return user.groups.filter(name__in=grupos_autorizados).exists()
+
 
     def handle_no_permission(self):
         return redirect('login')
