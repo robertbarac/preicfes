@@ -46,6 +46,8 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
         queryset = AcuerdoPago.objects.select_related(
             'cuota__deuda__alumno',
             'cuota__deuda__alumno__municipio__departamento'
+        ).filter(
+            cuota__deuda__alumno__estado='activo'
         ).order_by('fecha_prometida_pago')
 
         # Filtrado basado en roles de usuario

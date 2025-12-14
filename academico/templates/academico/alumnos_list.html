@@ -233,7 +233,11 @@
             <tbody class="divide-y divide-gray-200">
                 {% for alumno in page_obj %}
                 <tr onclick="window.location='{% url 'alumno_detail' alumno.id %}';" class="cursor-pointer hover:bg-gray-50 transition duration-200">
-                    <td class="px-3 py-2 whitespace-nowrap">{{ alumno.nombres }} {{ alumno.primer_apellido }} {{ alumno.segundo_apellido }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        <a href="{% url 'alumno_detail' alumno.id %}" onclick="event.stopPropagation()" class="font-medium text-gray-900 hover:text-indigo-600">
+                            {{ alumno.nombres }} {{ alumno.primer_apellido }} {{ alumno.segundo_apellido }}
+                        </a>
+                    </td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ alumno.identificacion }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ alumno.grupo_actual.salon.numero }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ alumno.grupo_actual.salon.sede.nombre }}</td>
