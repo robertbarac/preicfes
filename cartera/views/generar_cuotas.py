@@ -26,7 +26,7 @@ def generar_cuotas_view(request, alumno_id):
         form = GenerarCuotasForm(request.POST)
         if form.is_valid():
             # 1. Extraer datos del formulario
-            frecuencia = form.cleaned_data['frecuencia']
+            frecuencia = alumno.frecuencia_pago
             monto_inicial = form.cleaned_data['monto_cuota_inicial']
             fecha_pago_inicial = form.cleaned_data['fecha_pago_inicial']
             metodo_pago_inicial = form.cleaned_data['metodo_pago_inicial']

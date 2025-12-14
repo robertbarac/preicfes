@@ -47,6 +47,20 @@ class Alumno(models.Model):
         help_text="Marcar si el estudiante tiene beca"
     )
 
+    FRECUENCIA_PAGO = [
+        ('semanal', 'Semanal'),
+        ('quincenal', 'Quincenal'),
+        ('mensual', 'Mensual'),
+    ]
+
+    frecuencia_pago = models.CharField(
+        max_length=20,
+        choices=FRECUENCIA_PAGO,
+        default='mensual',
+        verbose_name="Frecuencia de Pago",
+        help_text="Frecuencia con la que el estudiante realiza los pagos"
+    )
+
     # Fechas de ingreso y culminación
     fecha_ingreso = models.DateField(
         default=date(2025, 1, 1),

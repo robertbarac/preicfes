@@ -77,16 +77,6 @@ class GenerarCuotasForm(forms.Form):
         label="Método de Pago de la Cuota Inicial",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    frecuencia = forms.ChoiceField(
-        choices=[
-            ('semanal', 'Semanal'),
-            ('quincenal', 'Quincenal'),
-            ('mensual', 'Mensual'),
-        ],
-        required=True, 
-        label="Frecuencia de Pago para Cuotas Restantes", 
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
 
 class AcuerdoPagoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
