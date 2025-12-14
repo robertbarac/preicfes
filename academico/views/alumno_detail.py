@@ -33,7 +33,7 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
 
         # Obtener estadísticas de asistencia
         asistencias = Asistencia.objects.filter(alumno=alumno)
-        asistencias_vistas = asistencias.filter(clase__estado='vista')
+        asistencias_vistas = asistencias.order_by('-clase__fecha')
         
         # Obtener cuotas
         try:
