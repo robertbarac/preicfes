@@ -3,13 +3,35 @@ from django.urls import reverse_lazy
 from django.contrib.auth.mixins import UserPassesTestMixin
 from cartera.models import Deuda, Cuota
 from django.shortcuts import get_object_or_404
-from cartera.utils import generar_fechas_pago
+from cartera.utils import generar_fechas_pago, calcular_fecha_inicio_inteligente
 from django.utils import timezone
 from datetime import datetime
+from django import forms
+from django.db import models
+
+class DeudaSmartUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Deuda
+        fields = ['valor_total']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        valor_total = cleaned_data.get('valor_total')
+        
+        # Si la deuda estaba pagada y aumentamos el valor, ya no estará pagada
+        # Cambiamos el estado a 'emitida' ANTES de que corra la validación del modelo (full_clean)
+        # para evitar el ValidationError de Deuda.clean()
+        if valor_total and self.instance.estado == 'pagada':
+            total_abonado = self.instance.cuotas.aggregate(models.Sum('monto_abonado'))['monto_abonado__sum'] or 0
+            if total_abonado < valor_total:
+                self.instance.estado = 'emitida'
+                # El save() del modelo se encargará de persistir esto correctamente
+        
+        return cleaned_data
 
 class DeudaUpdateView(UserPassesTestMixin, UpdateView):
     model = Deuda
-    fields = ['valor_total']
+    form_class = DeudaSmartUpdateForm
     template_name = 'cartera/deuda_form.html'
     
     def test_func(self):
@@ -91,14 +113,20 @@ class DeudaUpdateView(UserPassesTestMixin, UpdateView):
             return # O manejar error
             
         alumno = self.object.alumno
-        fecha_inicio_nuevas = alumno.fecha_culminacion if alumno.fecha_culminacion else timezone.now().date()
+        frecuencia = alumno.frecuencia_pago
+
+        # Determinar nueva fecha de inicio basada en la última cuota existente
+        last_quota = self.object.cuotas.order_by('-fecha_vencimiento').first()
+        
+        if last_quota:
+             # Calcular inteligentemente la siguiente fecha de cobro después de la última
+            fecha_inicio_nuevas = calcular_fecha_inicio_inteligente(last_quota.fecha_vencimiento, frecuencia)
+        else:
+            fecha_inicio_nuevas = alumno.fecha_culminacion if alumno.fecha_culminacion else timezone.now().date()
         
         # Actualizar fecha de culminación del alumno
         alumno.fecha_culminacion = nueva_fecha_culminacion
         alumno.save()
-        
-        # Usar la frecuencia de pago del alumno
-        frecuencia = alumno.frecuencia_pago  # El campo que acabamos de agregar
         
         # Generar las fechas y montos
         cuotas_a_crear = generar_fechas_pago(fecha_inicio_nuevas, nueva_fecha_culminacion, frecuencia, diff)
