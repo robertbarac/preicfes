@@ -8,6 +8,16 @@
         <!-- Filtros -->
         <form method="get" class="flex flex-wrap items-center gap-4">
             <div class="flex items-center space-x-2">
+                <label for="año" class="text-sm font-medium text-gray-700">Año:</label>
+                <select name="año" id="año" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    {% for anio in años %}
+                        <option value="{{ anio }}" {% if anio == año_actual %}selected{% endif %}>
+                            {{ anio }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-center space-x-2">
                 <label for="mes" class="text-sm font-medium text-gray-700">Mes:</label>
                 <select name="mes" id="mes" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     {% for mes in meses %}
@@ -158,7 +168,7 @@
         <nav class="flex items-center justify-between">
             <div class="flex-1 flex justify-between sm:hidden">
                 {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}&mes={{ mes_actual }}&estado={{ estado_actual }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                <a href="?page={{ page_obj.previous_page_number }}&mes={{ mes_actual }}&estado={{ estado_actual }}&año={{ año_actual }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     Anterior
                 </a>
                 {% else %}
@@ -168,7 +178,7 @@
                 {% endif %}
                 
                 {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}&mes={{ mes_actual }}&estado={{ estado_actual }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                <a href="?page={{ page_obj.next_page_number }}&mes={{ mes_actual }}&estado={{ estado_actual }}&año={{ año_actual }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     Siguiente
                 </a>
                 {% else %}
@@ -183,7 +193,7 @@
                     <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                         <!-- Botón Anterior -->
                         {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}&mes={{ mes_actual }}&estado={{ estado_actual }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <a href="?page={{ page_obj.previous_page_number }}&mes={{ mes_actual }}&estado={{ estado_actual }}&año={{ año_actual }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <span class="sr-only">Anterior</span>
                             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
@@ -209,7 +219,7 @@
                                 ...
                             </span>
                             {% else %}
-                            <a href="?page={{ p }}&mes={{ mes_actual }}&estado={{ estado_actual }}" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            <a href="?page={{ p }}&mes={{ mes_actual }}&estado={{ estado_actual }}&año={{ año_actual }}" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
                                 {{ p }}
                             </a>
                             {% endif %}
@@ -217,7 +227,7 @@
                         
                         <!-- Botón Siguiente -->
                         {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}&mes={{ mes_actual }}&estado={{ estado_actual }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <a href="?page={{ page_obj.next_page_number }}&mes={{ mes_actual }}&estado={{ estado_actual }}&año={{ año_actual }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <span class="sr-only">Siguiente</span>
                             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -241,6 +251,9 @@
 
 <!-- Script para auto-submit del formulario cuando cambian los filtros -->
 <script>
+    document.getElementById('año').addEventListener('change', function() {
+        this.form.submit();
+    });
     document.getElementById('mes').addEventListener('change', function() {
         this.form.submit();
     });

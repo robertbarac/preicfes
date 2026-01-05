@@ -27,7 +27,7 @@ class ClasesProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         profesor_id = self.kwargs.get('profesor_id')
         mes = self.request.GET.get('mes', datetime.now().month)
         estado = self.request.GET.get('estado', 'vista')
-        año = datetime.now().year
+        año = self.request.GET.get('año', datetime.now().year)
 
         queryset = Clase.objects.filter(
             profesor_id=profesor_id,
@@ -47,12 +47,13 @@ class ClasesProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         profesor_id = self.kwargs.get('profesor_id')
         mes_actual = int(self.request.GET.get('mes', datetime.now().month))
         estado_actual = self.request.GET.get('estado', 'vista')
+        año_actual = int(self.request.GET.get('año', datetime.now().year))
         
         profesor = get_object_or_404(Usuario, id=profesor_id)
         materias_profesor = (
             Clase.objects.filter(
                 profesor=profesor,
-                fecha__year=datetime.now().year,
+                fecha__year=año_actual,
                 fecha__month=mes_actual,
                 estado=estado_actual
             )
@@ -101,7 +102,14 @@ class ClasesProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             # Calcular el rango de páginas a mostrar
             page_range = list(paginator.get_elided_page_range(page_number, on_each_side=1, on_ends=1))
             context['page_range'] = page_range
-            
+
+        # Obtener años disponibles (al menos el actual y el anterior/siguiente según datos, o rango fijo)
+        # Una estrategia simple: listar años desde 2024 hasta el actual + 1
+        año_actual_real = datetime.now().year
+        años_disponibles = sorted(list(set(
+            [date.year for date in Clase.objects.dates('fecha', 'year')] + [año_actual_real]
+        )), reverse=True)
+
         context.update({
             'profesor': profesor,
             'meses': [
@@ -115,10 +123,11 @@ class ClasesProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             ],
             'mes_actual': mes_actual,
             'estado_actual': estado_actual,
-            'año_actual': datetime.now().year,
+            'año_actual': año_actual,
+            'años': años_disponibles,
             'materias_profesor': materias_profesor,
             'total_valor': total_valor,
-            'titulo': f'Clases {dict(Clase.ESTADO_CLASE).get(estado_actual, "").lower()} de {profesor.get_full_name()} - {month_name[mes_actual]}'
+            'titulo': f'Clases {dict(Clase.ESTADO_CLASE).get(estado_actual, "").lower()} de {profesor.get_full_name()} - {month_name[mes_actual]} {año_actual}'
         })
         
         return context
