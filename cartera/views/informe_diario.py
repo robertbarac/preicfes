@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 
 from cartera.models import Cuota
-from ubicaciones.models import Municipio, Departamento
+from ubicaciones.models import Municipio, Departamento, Sede
 from academico.models import Alumno
 
 
@@ -33,6 +33,9 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         # Obtener municipio seleccionado
         municipio_id = self.request.GET.get('municipio')
+        
+        # Obtener sede seleccionada
+        sede_id = self.request.GET.get('sede')
         
         # Lógica de permisos y filtros de ubicación
         user = self.request.user
@@ -62,6 +65,10 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         # Obtener listas para filtros según permisos
         context['is_coordinador_or_auxiliar'] = is_coordinador_or_auxiliar
+        
+        # Inicializar listas
+        sedes_qs = Sede.objects.all()
+
         if user.is_superuser:
             context['departamentos'] = Departamento.objects.all()
             context['municipios'] = Municipio.objects.all()
@@ -71,8 +78,17 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             if hasattr(user, 'departamento') and user.departamento:
                 context['municipios'] = Municipio.objects.filter(departamento=user.departamento)
         
+        # Filtrar sedes disponibles basado en municipio/departamento
+        if municipio_id:
+            sedes_qs = sedes_qs.filter(municipio_id=municipio_id)
+        elif departamento_id:
+            sedes_qs = sedes_qs.filter(municipio__departamento_id=departamento_id)
+        
+        context['sedes'] = sedes_qs
+
         context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None
         context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
+        context['sede_seleccionada'] = int(sede_id) if sede_id else None
         
         # Obtener lista de tipos de programa para el filtro
         context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
@@ -91,6 +107,12 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         if municipio_id:
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
+            )
+        
+        # Filtrar por sede
+        if sede_id:
+            cuotas_qs = cuotas_qs.filter(
+                deuda__alumno__grupo_actual__salon__sede_id=sede_id
             )
             
         # Filtrar por tipo de programa
@@ -172,6 +194,12 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             todas_cuotas_qs = todas_cuotas_qs.filter(
                 deuda__alumno__grupo_actual__salon__sede__municipio_id=municipio_id
             )
+        
+        # Filtrar por sede
+        if sede_id:
+            todas_cuotas_qs = todas_cuotas_qs.filter(
+                deuda__alumno__grupo_actual__salon__sede_id=sede_id
+            )
             
         # Filtrar por tipo de programa
         if tipo_programa:
@@ -190,6 +218,9 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         if municipio_id:
             deudas_qs = deudas_qs.filter(alumno__grupo_actual__salon__sede__municipio_id=municipio_id)
+
+        if sede_id:
+            deudas_qs = deudas_qs.filter(alumno__grupo_actual__salon__sede_id=sede_id)
 
         if tipo_programa:
             deudas_qs = deudas_qs.filter(alumno__tipo_programa=tipo_programa)

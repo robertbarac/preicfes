@@ -33,6 +33,17 @@
                 </select>
             </div>
             {% endif %}
+
+            <!-- Filtro de Sede -->
+            <div>
+                <label for="sede" class="block text-sm font-medium text-gray-700">Sede:</label>
+                <select name="sede" id="sede" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
+                    <option value="">Todas las sedes</option>
+                    {% for sede in sedes %}
+                        <option value="{{ sede.id }}" {% if sede.id == sede_seleccionada %}selected{% endif %}>{{ sede.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             
             <div>
                 <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa:</label>
