@@ -39,16 +39,15 @@ class DeudaUpdateView(UserPassesTestMixin, UpdateView):
         deuda = self.get_object()
         
         # Si el usuario es 'vvgomez', siempre tiene acceso sin restricciones
-        if self.request.user.username == 'vvgomez' or self.request.user.username == 'claudia2019':
+        if self.request.user.is_superuser:
             return True
         
         # Para otros usuarios, verificar si es superuser o pertenece al grupo SecretariaCartera
         # Y además verificar si la edición está habilitada
-        is_admin = self.request.user.is_superuser
         is_in_group = self.request.user.groups.filter(name='SecretariaCartera').exists()
         
         # Solo permitir acceso si es admin o está en el grupo Y la edición está habilitada
-        return (is_admin or is_in_group) and deuda.edicion_habilitada
+        return is_in_group and deuda.edicion_habilitada
     
     def get_success_url(self):
         return reverse_lazy('alumno_detail', kwargs={'pk': self.object.alumno.id})
