@@ -7,6 +7,24 @@ from urllib.parse import urlencode
 from ..models import Alumno
 from ubicaciones.models import Municipio, Departamento, Sede
 
+def make_accent_insensitive_regex(term):
+    mapping = {
+        'a': '[aáAÁ]', 'e': '[eéEÉ]', 'i': '[iíIÍ]', 'o': '[oóOÓ]', 'u': '[uúUÚ]',
+        'n': '[nñNÑ]', 'A': '[aáAÁ]', 'E': '[eéEÉ]', 'I': '[iíIÍ]', 'O': '[oóOÓ]',
+        'U': '[uúUÚ]', 'N': '[nñNÑ]', 'á': '[aáAÁ]', 'é': '[eéEÉ]', 'í': '[iíIÍ]',
+        'ó': '[oóOÓ]', 'ú': '[uúUÚ]', 'ñ': '[nñNÑ]', 'Á': '[aáAÁ]', 'É': '[eéEÉ]',
+        'Í': '[iíIÍ]', 'Ó': '[oóOÓ]', 'Ú': '[uúUÚ]', 'Ñ': '[nñNÑ]'
+    }
+    regex_str = ''
+    for char in term:
+        if char in mapping:
+            regex_str += mapping[char]
+        elif char.isalnum() or char.isspace():
+            regex_str += char
+        else:
+            regex_str += '\\' + char
+    return regex_str
+
 class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
     model = Alumno
     template_name = 'academico/alumnos_list.html'
@@ -39,8 +57,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             queryset = queryset.filter(municipio=user.municipio)
 
         # Aplicar filtros de búsqueda
-        nombre = self.request.GET.get('nombre')
-        apellido = self.request.GET.get('apellido')
+        buscador = self.request.GET.get('buscador')
         sede = self.request.GET.get('sede')
         ciudad = self.request.GET.get('ciudad')
         departamento_id = self.request.GET.get('departamento')
@@ -51,10 +68,15 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         estado_alumno = self.request.GET.get('estado_alumno')  # Filtro de estado
         tiene_cuotas = self.request.GET.get('tiene_cuotas')    # Filtro de cuotas
 
-        if nombre:
-            queryset = queryset.filter(nombres__icontains=nombre)
-        if apellido:
-            queryset = queryset.filter(primer_apellido__icontains=apellido)
+        if buscador:
+            from django.db.models import Q
+            for term in buscador.split():
+                regex_term = make_accent_insensitive_regex(term)
+                queryset = queryset.filter(
+                    Q(nombres__iregex=regex_term) |
+                    Q(primer_apellido__iregex=regex_term) |
+                    Q(segundo_apellido__iregex=regex_term)
+                )
         if sede:
             queryset = queryset.filter(grupo_actual__salon__sede__nombre__icontains=sede)
         # Filtros de ubicación jerárquicos para Superuser
@@ -195,10 +217,8 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         
         # Preparar mensaje para mostrar los filtros activos
         filtros_activos = []
-        if self.request.GET.get('nombre'):
-            filtros_activos.append(f"Nombre: {self.request.GET.get('nombre')}")
-        if self.request.GET.get('apellido'):
-            filtros_activos.append(f"Apellido: {self.request.GET.get('apellido')}")
+        if self.request.GET.get('buscador'):
+            filtros_activos.append(f"Búsqueda: {self.request.GET.get('buscador')}")
         if self.request.GET.get('sede'):
             filtros_activos.append(f"Sede: {self.request.GET.get('sede')}")
         if self.request.GET.get('departamento'):
