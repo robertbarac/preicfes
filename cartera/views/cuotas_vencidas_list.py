@@ -7,6 +7,25 @@ from django.template.loader import render_to_string
 
 from cartera.models import Cuota
 
+def make_accent_insensitive_regex(term):
+    mapping = {
+        'a': '[aáAÁ]', 'e': '[eéEÉ]', 'i': '[iíIÍ]', 'o': '[oóOÓ]', 'u': '[uúUÚ]',
+        'n': '[nñNÑ]', 'A': '[aáAÁ]', 'E': '[eéEÉ]', 'I': '[iíIÍ]', 'O': '[oóOÓ]',
+        'U': '[uúUÚ]', 'N': '[nñNÑ]', 'á': '[aáAÁ]', 'é': '[eéEÉ]', 'í': '[iíIÍ]',
+        'ó': '[oóOÓ]', 'ú': '[uúUÚ]', 'ñ': '[nñNÑ]', 'Á': '[aáAÁ]', 'É': '[eéEÉ]',
+        'Í': '[iíIÍ]', 'Ó': '[oóOÓ]', 'Ú': '[uúUÚ]', 'Ñ': '[nñNÑ]'
+    }
+    regex_str = ''
+    for char in term:
+        if char in mapping:
+            regex_str += mapping[char]
+        elif char.isalnum() or char.isspace():
+            regex_str += char
+        else:
+            regex_str += '\\' + char
+    return regex_str
+
+
 class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Cuota
     template_name = 'cartera/cuotas_vencidas_list.html'
@@ -39,25 +58,36 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         ).select_related('deuda', 'deuda__alumno', 'deuda__alumno__municipio')
 
         user = self.request.user
-        # Filtrado por rol
+        municipio_id = self.request.GET.get('municipio')
+        departamento_id = self.request.GET.get('departamento')
+        sede_id = self.request.GET.get('sede')
+
+        # Filtrado por rol base y parámetros de ubicación
         if user.is_superuser:
-            municipio_id = self.request.GET.get('municipio')
+            if departamento_id:
+                queryset = queryset.filter(deuda__alumno__municipio__departamento_id=departamento_id)
             if municipio_id:
                 queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
+            if sede_id:
+                queryset = queryset.filter(deuda__alumno__grupo_actual__salon__sede_id=sede_id)
         elif user.groups.filter(name='CoordinadorDepartamental').exists():
             if user.departamento:
                 queryset = queryset.filter(deuda__alumno__municipio__departamento=user.departamento)
-                municipio_id = self.request.GET.get('municipio')
-                if municipio_id:
-                    queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
+            if municipio_id:
+                queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
+            if sede_id:
+                queryset = queryset.filter(deuda__alumno__grupo_actual__salon__sede_id=sede_id)
         else:
             # Otro personal (staff) ve solo su municipio
-            queryset = queryset.filter(deuda__alumno__municipio=user.municipio)
+            if hasattr(user, 'municipio') and user.municipio:
+                queryset = queryset.filter(deuda__alumno__municipio=user.municipio)
+            if sede_id:
+                queryset = queryset.filter(deuda__alumno__grupo_actual__salon__sede_id=sede_id)
 
         # Aplicar filtros
         dias_filtro = self.request.GET.get('dias_filtro', 'todos')
         identificacion = self.request.GET.get('identificacion', '')
-        apellido = self.request.GET.get('apellido', '')
+        buscador = self.request.GET.get('buscador', '')
 
         if dias_filtro != 'todos':
             dias = dias_filtro.split('-')
@@ -76,11 +106,15 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         if identificacion:
             queryset = queryset.filter(deuda__alumno__identificacion__icontains=identificacion)
 
-        if apellido:
-            queryset = queryset.filter(
-                Q(deuda__alumno__primer_apellido__icontains=apellido) |
-                Q(deuda__alumno__segundo_apellido__icontains=apellido)
-            )
+        if buscador:
+            # Separamos las palabras para simular la búsqueda del admin de Django
+            for term in buscador.split():
+                regex_term = make_accent_insensitive_regex(term)
+                queryset = queryset.filter(
+                    Q(deuda__alumno__nombres__iregex=regex_term) |
+                    Q(deuda__alumno__primer_apellido__iregex=regex_term) |
+                    Q(deuda__alumno__segundo_apellido__iregex=regex_term)
+                )
 
         queryset = queryset.annotate(
             dias_atraso=ExpressionWrapper(
@@ -128,22 +162,46 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         context.update({
             'dias_filtro': self.request.GET.get('dias_filtro', 'todos'),
             'identificacion': self.request.GET.get('identificacion', ''),
-            'apellido': self.request.GET.get('apellido', ''),
+            'buscador': self.request.GET.get('buscador', ''),
             'orden': self.request.GET.get('orden', 'desc')
         })
         
-        from ubicaciones.models import Municipio
+        from ubicaciones.models import Municipio, Departamento, Sede
         user = self.request.user
+        
+        departamento_id = self.request.GET.get('departamento')
+        municipio_id = self.request.GET.get('municipio')
+        sede_id = self.request.GET.get('sede')
+
+        sedes_qs = Sede.objects.all().order_by('nombre')
+        
         # Lógica de contexto por rol
         if user.is_superuser:
+            context['departamentos'] = Departamento.objects.all().order_by('nombre')
             context['municipios'] = Municipio.objects.all().order_by('nombre')
+            if departamento_id:
+                context['municipios'] = context['municipios'].filter(departamento_id=departamento_id)
         elif user.groups.filter(name='CoordinadorDepartamental').exists():
             if user.departamento:
                 context['municipios'] = Municipio.objects.filter(departamento=user.departamento).order_by('nombre')
             else:
                 context['municipios'] = Municipio.objects.none()
+        else:
+            if hasattr(user, 'municipio') and user.municipio:
+                sedes_qs = sedes_qs.filter(municipio=user.municipio)
+
+        if municipio_id:
+            sedes_qs = sedes_qs.filter(municipio_id=municipio_id)
+        elif departamento_id:
+            sedes_qs = sedes_qs.filter(municipio__departamento_id=departamento_id)
+        elif user.groups.filter(name='CoordinadorDepartamental').exists() and hasattr(user, 'departamento') and user.departamento:
+            sedes_qs = sedes_qs.filter(municipio__departamento=user.departamento)
+
+        context['sedes'] = sedes_qs
+        context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None
+        context['municipio_seleccionado'] = int(municipio_id) if municipio_id else None
+        context['sede_seleccionada'] = int(sede_id) if sede_id else None
         
-        context['municipio_seleccionado'] = self.request.GET.get('municipio', '')
         context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
         
         return context

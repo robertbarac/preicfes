@@ -5,46 +5,93 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-semibold text-gray-900">Cuotas Vencidas</h1>
+    <div class="mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Cuotas Vencidas</h1>
+        </div>
         
-        <div class="flex flex-col sm:flex-row sm:space-x-4">
-            <form method="GET" class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-                <select name="dias_filtro" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="todos" {% if dias_filtro == 'todos' %}selected{% endif %}>Todos</option>
-                    <option value="1-30" {% if dias_filtro == '1-30' %}selected{% endif %}>1-30 días</option>
-                    <option value="31-60" {% if dias_filtro == '31-60' %}selected{% endif %}>31-60 días</option>
-                    <option value="61-90" {% if dias_filtro == '61-90' %}selected{% endif %}>61-90 días</option>
-                    <option value="90+" {% if dias_filtro == '90+' %}selected{% endif %}>Más de 90 días</option>
-                </select>
-                
-                <input type="text" name="identificacion" value="{{ identificacion }}" 
-                       placeholder="Identificación" 
-                       class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                
-                <input type="text" name="apellido" value="{{ apellido }}" 
-                       placeholder="Apellido" 
-                       class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                
-                {% if request.user.is_superuser or is_coordinador %}
-                <select name="municipio" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="">Todos los municipios</option>
-                    {% for municipio in municipios %}
-                        <option value="{{ municipio.id }}" {% if municipio_seleccionado == municipio.id|stringformat:'s' %}selected{% endif %}>{{ municipio.nombre }}</option>
-                    {% endfor %}
-                </select>
-                {% endif %}
-                
-                <select name="orden" class="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="desc" {% if orden == 'desc' %}selected{% endif %}>Mayor atraso primero</option>
-                    <option value="asc" {% if orden == 'asc' %}selected{% endif %}>Menor atraso primero</option>
-                </select>
-                
-                <button type="submit" 
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Filtrar
-                </button>
-            </form>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wider flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Filtros de Búsqueda
+                </h3>
+            </div>
+            <div class="p-6">
+                <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Días de Atraso</label>
+                        <select name="dias_filtro" class="block w-full rounded-lg border-slate-300 bg-slate-50 text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition duration-150 ease-in-out">
+                            <option value="todos" {% if dias_filtro == 'todos' %}selected{% endif %}>Todos</option>
+                            <option value="1-30" {% if dias_filtro == '1-30' %}selected{% endif %}>1-30 días</option>
+                            <option value="31-60" {% if dias_filtro == '31-60' %}selected{% endif %}>31-60 días</option>
+                            <option value="61-90" {% if dias_filtro == '61-90' %}selected{% endif %}>61-90 días</option>
+                            <option value="90+" {% if dias_filtro == '90+' %}selected{% endif %}>Más de 90 días</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Identificación</label>
+                        <input type="text" name="identificacion" value="{{ identificacion }}" placeholder="Ej: 100..." class="block w-full rounded-lg border-slate-300 bg-slate-50 text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition duration-150 ease-in-out">
+                    </div>
+                    
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Nombres / Apellidos</label>
+                        <input type="text" name="buscador" value="{{ buscador }}" placeholder="Ej: Galvan, Peña..." class="block w-full rounded-lg border-slate-300 bg-slate-50 text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition duration-150 ease-in-out">
+                    </div>
+                    
+                    {% if request.user.is_superuser %}
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Departamento</label>
+                        <select name="departamento" class="block w-full rounded-lg border-slate-300 bg-slate-50 text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition duration-150 ease-in-out">
+                            <option value="">Todos los deptos</option>
+                            {% for departamento in departamentos %}
+                                <option value="{{ departamento.id }}" {% if departamento_seleccionado == departamento.id %}selected{% endif %}>{{ departamento.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    {% if request.user.is_superuser or is_coordinador %}
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Municipio</label>
+                        <select name="municipio" class="block w-full rounded-lg border-slate-300 bg-slate-50 text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition duration-150 ease-in-out">
+                            <option value="">Todos los municipios</option>
+                            {% for municipio in municipios %}
+                                <option value="{{ municipio.id }}" {% if municipio_seleccionado == municipio.id %}selected{% endif %}>{{ municipio.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Sede</label>
+                        <select name="sede" class="block w-full rounded-lg border-slate-300 bg-slate-50 text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition duration-150 ease-in-out">
+                            <option value="">Todas las sedes</option>
+                            {% for sede in sedes %}
+                                <option value="{{ sede.id }}" {% if sede_seleccionada == sede.id %}selected{% endif %}>{{ sede.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Orden</label>
+                        <select name="orden" class="block w-full rounded-lg border-slate-300 bg-slate-50 text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition duration-150 ease-in-out">
+                            <option value="desc" {% if orden == 'desc' %}selected{% endif %}>Mayor atraso</option>
+                            <option value="asc" {% if orden == 'asc' %}selected{% endif %}>Menor atraso</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Botón de Filtrar -->
+                    <div class="col-span-1 md:col-span-2 lg:col-span-4 flex justify-end mt-2">
+                        <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-indigo-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            Aplicar Filtros
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -133,11 +180,11 @@
     <div class="mt-4">
         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
             {% if page_obj.has_previous %}
-            <a href="?page=1{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page=1{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Primero
             </a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page={{ page_obj.previous_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Anterior
             </a>
@@ -149,7 +196,7 @@
                 {{ num }}
             </span>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-            <a href="?page={{ num }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page={{ num }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 {{ num }}
             </a>
@@ -157,11 +204,11 @@
             {% endfor %}
 
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page={{ page_obj.next_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Siguiente
             </a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if apellido %}&apellido={{ apellido }}{% endif %}{% if request.user.is_superuser and municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Último
             </a>
