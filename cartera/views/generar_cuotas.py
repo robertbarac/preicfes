@@ -1,15 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.utils import timezone
 from academico.models import Alumno
 from cartera.models import Deuda, Cuota
 from cartera.forms import GenerarCuotasForm
 from cartera.utils import generar_fechas_pago, calcular_fecha_inicio_inteligente
-from academico.permissions import group_required
 
 @login_required
-@group_required('SecretariaCartera', 'Superusuario')
+@permission_required('cartera.add_cuota', raise_exception=True)
 def generar_cuotas_view(request, alumno_id):
     alumno = get_object_or_404(Alumno, id=alumno_id)
     try:
