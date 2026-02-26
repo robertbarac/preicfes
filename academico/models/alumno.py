@@ -25,6 +25,8 @@ class Alumno(models.Model):
         ('semillero', 'Semillero de Investigación'),
         ('preicfes_kids', 'PreICFES Kids'),
         ('preicfes_virtual', 'PreICFES Virtual'),
+        ('preicfes_vacacional', 'PreICFES Vacacional'),
+        ('bachillerato_por_ciclos', 'Bachillerato por ciclos')
     ]
 
     # Campos obligatorios
@@ -35,7 +37,7 @@ class Alumno(models.Model):
     identificacion = models.CharField(max_length=20, unique=True, null=True, blank=True)
     tipo_identificacion = models.CharField(max_length=2, choices=TIPO_IDENTIFICACION, default='TI')
     tipo_programa = models.CharField(
-        max_length=20, 
+        max_length=30, 
         choices=TIPO_PROGRAMA, 
         default='pre_privado',
         verbose_name="Tipo de Programa",
