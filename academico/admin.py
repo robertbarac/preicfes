@@ -1,13 +1,54 @@
 from django.contrib import admin
+from django import forms
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from .models import Alumno, Clase, Grupo, Materia, Nota, Asistencia
 from ubicaciones.models import Municipio, Salon
 
+class AlumnoAdminForm(forms.ModelForm):
+    class Meta:
+        model = Alumno
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Validación de la identificación: solo números
+        identificacion = cleaned_data.get('identificacion')
+        if identificacion:
+            # Quitamos espacios y validamos que sean solo dígitos
+            if not identificacion.isdigit():
+                raise ValidationError({
+                    'identificacion': 'La identificación no debe tener puntos, espacios ni letras. Solo números (0-9).'
+                })
+        
+        # Validación: al menos un celular de los padres no debe ser nulo, vacío ni 'SIN DATOS'
+        celular_padre = cleaned_data.get('celular_padre')
+        celular_madre = cleaned_data.get('celular_madre')
+        
+        # Un celular es válido si NO es None, NO está vacío al quitar espacios ('') y NO es igual a 'SIN DATOS'
+        padre_valido = False
+        if celular_padre is not None and str(celular_padre).strip() and str(celular_padre).strip().upper() != 'SIN DATOS':
+            padre_valido = True
+            
+        madre_valida = False
+        if celular_madre is not None and str(celular_madre).strip() and str(celular_madre).strip().upper() != 'SIN DATOS':
+            madre_valida = True
+        
+        if not padre_valido and not madre_valida:
+            raise ValidationError(
+                'Debe ingresar el celular del padre o el celular de la madre. Al menos uno es obligatorio y no puede quedar vacío.'
+            )
+            
+        return cleaned_data
+
+
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
-    list_display = ('nombres', 'primer_apellido', 'estado', 'fecha_ingreso', 'fecha_culminacion', 'tipo_programa', 'municipio', 'municipio__departamento', 'grupo_actual')
+    form = AlumnoAdminForm
+    list_display = ('nombres', 'primer_apellido', 'estado', 'fecha_ingreso', 'fecha_culminacion', 'tipo_programa', 'municipio', 'municipio__departamento', 'grupo_actual', 'nombres_padre', 'celular_padre', 'nombres_madre', 'celular_madre')
     list_filter = ('estado', 'tipo_programa', 'es_becado', 'municipio', 'municipio__departamento', 'fecha_ingreso', 'fecha_culminacion', 'grupo_actual')
-    search_fields = ('nombres', 'primer_apellido', 'segundo_apellido', 'identificacion')
+    search_fields = ('nombres', 'primer_apellido', 'segundo_apellido', 'identificacion', 'nombres_padre', 'celular_padre', 'nombres_madre', 'celular_madre')
 
     def get_estado(self, obj):
         hoy = timezone.now().date()

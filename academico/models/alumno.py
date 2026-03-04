@@ -34,7 +34,10 @@ class Alumno(models.Model):
     primer_apellido = models.CharField(max_length=100)
     segundo_apellido = models.CharField(max_length=100, blank=True, null=True)
     fecha_nacimiento = models.DateField(null=True, blank=True, verbose_name="Fecha de Nacimiento")
-    identificacion = models.CharField(max_length=20, default='0000000000')
+    identificacion = models.CharField(
+        max_length=20, 
+        help_text="Identificación del alumno (solo números, NO PUNTOS, NO COMAS, NO ESPACIOS)"
+    )
     tipo_identificacion = models.CharField(max_length=2, choices=TIPO_IDENTIFICACION, default='TI')
     tipo_programa = models.CharField(
         max_length=30, 
@@ -105,8 +108,8 @@ class Alumno(models.Model):
     )
     
     # Relaciones
-    municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT, related_name="alumnos", default=1)
-    grupo_actual = models.ForeignKey(Grupo, on_delete=models.PROTECT, related_name="alumnos_actuales", default=90)
+    municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT, related_name="alumnos")
+    grupo_actual = models.ForeignKey(Grupo, on_delete=models.PROTECT, related_name="alumnos_actuales")
 
     def clean(self):
         super().clean()
