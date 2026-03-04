@@ -75,7 +75,12 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
                 queryset = queryset.filter(
                     Q(nombres__iregex=regex_term) |
                     Q(primer_apellido__iregex=regex_term) |
-                    Q(segundo_apellido__iregex=regex_term)
+                    Q(segundo_apellido__iregex=regex_term) |
+                    Q(identificacion__iregex=regex_term) |
+                    Q(nombres_padre__iregex=regex_term) |
+                    Q(nombres_madre__iregex=regex_term) |
+                    Q(primer_apellido_padre__iregex=regex_term) |
+                    Q(primer_apellido_madre__iregex=regex_term)
                 )
         if sede:
             queryset = queryset.filter(grupo_actual__salon__sede__nombre__icontains=sede)
