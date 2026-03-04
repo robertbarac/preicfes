@@ -34,7 +34,7 @@ class Alumno(models.Model):
     primer_apellido = models.CharField(max_length=100)
     segundo_apellido = models.CharField(max_length=100, blank=True, null=True)
     fecha_nacimiento = models.DateField(null=True, blank=True, verbose_name="Fecha de Nacimiento")
-    identificacion = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    identificacion = models.CharField(max_length=20, default='0000000000')
     tipo_identificacion = models.CharField(max_length=2, choices=TIPO_IDENTIFICACION, default='TI')
     tipo_programa = models.CharField(
         max_length=30, 
@@ -58,7 +58,6 @@ class Alumno(models.Model):
     frecuencia_pago = models.CharField(
         max_length=20,
         choices=FRECUENCIA_PAGO,
-        default='mensual',
         verbose_name="Frecuencia de Pago",
         help_text="Frecuencia con la que el estudiante realiza los pagos"
     )
@@ -75,20 +74,20 @@ class Alumno(models.Model):
         help_text="Fecha en que el alumno culmina su estancia en el preicfes"
     )
     
-    # Campos opcionales (pueden ser null o blank)
-    celular = models.CharField(max_length=15, blank=True, null=True)
+    # Contacto
+    celular = models.CharField(max_length=15, default='SIN DATOS')
 
     # Datos del padre
-    nombres_padre = models.CharField(max_length=100, blank=True, null=True)
-    primer_apellido_padre = models.CharField(max_length=100, blank=True, null=True)
-    segundo_apellido_padre = models.CharField(max_length=100, blank=True, null=True)
-    celular_padre = models.CharField(max_length=15, blank=True, null=True)
+    nombres_padre = models.CharField(max_length=100, default='SIN DATOS')
+    primer_apellido_padre = models.CharField(max_length=100, default='SIN DATOS')
+    segundo_apellido_padre = models.CharField(max_length=100, default='SIN DATOS')
+    celular_padre = models.CharField(max_length=15, default='SIN DATOS')
 
     # Datos de la madre
-    nombres_madre = models.CharField(max_length=100, blank=True, null=True)
-    primer_apellido_madre = models.CharField(max_length=100, blank=True, null=True)
-    segundo_apellido_madre = models.CharField(max_length=100, blank=True, null=True)
-    celular_madre = models.CharField(max_length=15, blank=True, null=True)
+    nombres_madre = models.CharField(max_length=100, default='SIN DATOS')
+    primer_apellido_madre = models.CharField(max_length=100, default='SIN DATOS')
+    segundo_apellido_madre = models.CharField(max_length=100, default='SIN DATOS')
+    celular_madre = models.CharField(max_length=15, default='SIN DATOS')
 
     # Estado del alumno
     estado = models.CharField(
@@ -106,8 +105,8 @@ class Alumno(models.Model):
     )
     
     # Relaciones
-    municipio = models.ForeignKey(Municipio, on_delete=models.SET_NULL, null=True, blank=True, related_name="alumnos")
-    grupo_actual = models.ForeignKey(Grupo, on_delete=models.SET_NULL, null=True, blank=True, related_name="alumnos_actuales")
+    municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT, related_name="alumnos", default=1)
+    grupo_actual = models.ForeignKey(Grupo, on_delete=models.PROTECT, related_name="alumnos_actuales", default=90)
 
     def clean(self):
         super().clean()
@@ -116,4 +115,4 @@ class Alumno(models.Model):
                 raise ValidationError({'grupo_actual': 'El grupo seleccionado no pertenece al municipio del alumno.'})
 
     def __str__(self):
-        return f"{self.nombres} {self.primer_apellido} ({self.identificacion}) - {self.municipio.nombre if self.municipio else 'Sin municipio'}"
+        return f"{self.nombres} {self.primer_apellido} ({self.identificacion}) - {self.municipio.nombre}"
