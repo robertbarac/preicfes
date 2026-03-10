@@ -2,6 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from datetime import date
 from ubicaciones.models import Municipio
+from ventas.models import Vendedor
 from . import Grupo  # Importación relativa del modelo Grupo en la misma app
 
 
@@ -110,6 +111,14 @@ class Alumno(models.Model):
     # Relaciones
     municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT, related_name="alumnos")
     grupo_actual = models.ForeignKey(Grupo, on_delete=models.PROTECT, related_name="alumnos_actuales")
+    vendedor = models.ForeignKey(
+        Vendedor, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="alumnos",
+        verbose_name="Vendedor"
+    )
 
     def clean(self):
         super().clean()
