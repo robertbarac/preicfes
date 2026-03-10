@@ -67,6 +67,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         tipo_programa = self.request.GET.get('tipo_programa')
         estado_alumno = self.request.GET.get('estado_alumno')  # Filtro de estado
         tiene_cuotas = self.request.GET.get('tiene_cuotas')    # Filtro de cuotas
+        vendedor_id = self.request.GET.get('vendedor')
 
         if buscador:
             from django.db.models import Q
@@ -128,10 +129,13 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         if tiene_cuotas == 'si':
             queryset = queryset.filter(deuda__cuotas__isnull=False).distinct()
         elif tiene_cuotas == 'no':
-            # Aplicar .distinct() a ambas partes de la operación OR para evitar TypeError
             no_deuda = queryset.filter(deuda__isnull=True).distinct()
             deuda_sin_cuotas = queryset.filter(deuda__isnull=False, deuda__cuotas__isnull=True).distinct()
             queryset = no_deuda | deuda_sin_cuotas
+
+        # Filtrar por vendedor
+        if vendedor_id:
+            queryset = queryset.filter(vendedor_id=vendedor_id)
 
         return queryset.order_by('primer_apellido')
 
@@ -154,9 +158,11 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         # Importar modelos necesarios
         from academico.models import Alumno
         from ubicaciones.models import Departamento, Sede, Municipio
+        from ventas.models import Vendedor
         
         # Añadir lista de sedes para los filtros
         context['sedes'] = Sede.objects.all()
+        context['vendedores'] = Vendedor.objects.all()
         
         # Solo superusuarios tienen acceso a todos los departamentos
         if self.request.user.is_superuser:
@@ -260,6 +266,13 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             filtros_activos.append("Tiene Cuotas: Sí")
         elif self.request.GET.get('tiene_cuotas') == 'no':
             filtros_activos.append("Tiene Cuotas: No")
+            
+        if self.request.GET.get('vendedor'):
+            try:
+                vend = Vendedor.objects.get(id=self.request.GET.get('vendedor'))
+                filtros_activos.append(f"Vendedor: {vend.nombres} {vend.apellidos}")
+            except Exception:
+                pass
             
         context['filtros_activos'] = filtros_activos
         
