@@ -46,7 +46,7 @@ class AlumnoAdminForm(forms.ModelForm):
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
     form = AlumnoAdminForm
-    list_display = ('nombres', 'primer_apellido', 'estado', 'fecha_ingreso', 'fecha_culminacion', 'tipo_programa', 'municipio', 'municipio__departamento', 'grupo_actual', 'nombres_padre', 'celular_padre', 'nombres_madre', 'celular_madre')
+    list_display = ('nombres', 'primer_apellido', 'estado', 'fecha_ingreso', 'fecha_culminacion', 'tipo_programa', 'municipio', 'get_departamento', 'grupo_actual', 'nombres_padre', 'celular_padre', 'nombres_madre', 'celular_madre')
     list_filter = ('estado', 'tipo_programa', 'es_becado', 'municipio', 'municipio__departamento', 'fecha_ingreso', 'fecha_culminacion', 'grupo_actual')
     search_fields = ('nombres', 'primer_apellido', 'segundo_apellido', 'identificacion', 'nombres_padre', 'celular_padre', 'nombres_madre', 'celular_madre')
 
@@ -58,6 +58,11 @@ class AlumnoAdmin(admin.ModelAdmin):
             return 'Inactivo'
     get_estado.short_description = 'Estado'
     get_estado.admin_order_field = 'fecha_culminacion'
+    
+    def get_departamento(self, obj):
+        return obj.municipio.departamento if obj.municipio and obj.municipio.departamento else None
+    get_departamento.short_description = 'Departamento'
+    get_departamento.admin_order_field = 'municipio__departamento'
     
     def get_queryset(self, request):
         queryset = super().get_queryset(request).select_related('municipio', 'grupo_actual')
