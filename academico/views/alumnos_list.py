@@ -192,6 +192,13 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         queryset = self.get_queryset()
         context['total_alumnos'] = queryset.count()
         
+        # Generar paginación elidida (acortada)
+        page_obj = context.get('page_obj')
+        if page_obj:
+            context['page_range'] = page_obj.paginator.get_elided_page_range(
+                page_obj.number, on_each_side=2, on_ends=1
+            )
+        
         # Preparar alumnos con información adicional
         alumnos_con_info = []
         for alumno in context['page_obj']:
