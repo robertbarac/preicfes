@@ -171,9 +171,13 @@
             {% endif %}
 
             <!-- Números de página -->
-            {% for num in page_obj.paginator.page_range %}
+            {% for num in page_range %}
             <li>
-                {% if page_obj.number == num %}
+                {% if num == page_obj.paginator.ELLIPSIS %}
+                <span class="block size-8 rounded-sm border border-transparent bg-transparent text-center leading-8 text-gray-500 font-bold">
+                    {{ num }}
+                </span>
+                {% elif page_obj.number == num %}
                 <span class="block size-8 rounded-sm border-blue-600 bg-blue-600 text-center leading-8 text-white">
                     {{ num }}
                 </span>
