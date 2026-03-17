@@ -222,6 +222,14 @@
                       Saldos (Admin)
                     </a>
                     {% endif %}
+                    {% if request.user.is_superuser or request.user.username == 'vvgomez' or request.user.username == 'claudia2019' %}
+                    <a
+                      href="{% url 'cartera:limbo_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-400 font-bold hover:bg-gray-700 hover:text-gray-300"
+                    >
+                      🔒 Limbo
+                    </a>
+                    {% endif %}
                   </div>
                 </div>
                 {% endif %}
@@ -328,6 +336,9 @@
                 <a href="{% url 'cartera:alumnos_retirados_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Alumnos Retirados</a>
                 {% if request.user.is_superuser %}
                 <a href="{% url 'cartera:saldos_list' %}" class="block py-2 px-4 text-green-400 font-bold hover:bg-gray-700 rounded-md">Saldos (Admin)</a>
+                {% endif %}
+                {% if request.user.is_superuser or request.user.username == 'vvgomez' or request.user.username == 'claudia2019' %}
+                <a href="{% url 'cartera:limbo_list' %}" class="block py-2 px-4 text-gray-400 font-bold hover:bg-gray-700 rounded-md">🔒 Limbo</a>
                 {% endif %}
               </div>
             {% endif %}

@@ -15,6 +15,7 @@ class Alumno(models.Model):
     ESTADO_ALUMNO = [
         ('activo', 'Activo'),
         ('retirado', 'Retirado'),
+        ('limbo', 'Limbo'),
     ]
     
     TIPO_PROGRAMA = [
