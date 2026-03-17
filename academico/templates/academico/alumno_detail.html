@@ -155,6 +155,9 @@
                             <th class="py-2 px-4 border-b">Acciones</th>
                             <th class="py-2 px-4 border-b">WhatsApp</th>
                             <th class="py-2 px-4 border-b">Acuerdos</th>
+                            {% if request.user.is_staff or request.user.is_superuser %}
+                            <th class="py-2 px-4 border-b text-gray-400">Editado por</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -271,6 +274,18 @@
                                         <button data-cuota-id="{{ cuota.id }}" class="ver-acuerdos-btn inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 mt-1">Ver Acuerdos ({{ cuota.acuerdos.count }})</button>
                                     {% endif %}
                                 </td>
+                                {% if request.user.is_staff or request.user.is_superuser %}
+                                <td class="py-2 px-4 border-b text-center">
+                                    {% if cuota.editado_por %}
+                                        <span class="text-xs font-medium text-gray-700">{{ cuota.editado_por }}</span>
+                                        {% if cuota.fecha_edicion %}
+                                        <div class="text-xs text-gray-400">{{ cuota.fecha_edicion|date:"d/m/Y H:i" }}</div>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-xs text-gray-300">—</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
                             </tr>
                         {% empty %}
                             <tr>

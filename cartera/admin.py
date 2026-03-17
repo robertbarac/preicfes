@@ -17,9 +17,9 @@ class AcuerdoPagoAdmin(admin.ModelAdmin):
 
 @admin.register(Cuota)
 class CuotaAdmin(admin.ModelAdmin):
-    list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago', 'get_tipo_programa', 'get_departamento')
-    list_filter = ('estado', 'deuda__alumno__tipo_programa', 'deuda__alumno__municipio__departamento', 'deuda__alumno__municipio', 'deuda__alumno__grupo_actual__salon__sede', 'fecha_vencimiento', 'fecha_pago')
-    search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido', 'deuda__alumno__municipio__nombre')
+    list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago', 'editado_por', 'fecha_edicion', 'get_tipo_programa', 'get_departamento')
+    list_filter = ('estado', 'editado_por', 'deuda__alumno__tipo_programa', 'deuda__alumno__municipio__departamento', 'deuda__alumno__municipio', 'deuda__alumno__grupo_actual__salon__sede', 'fecha_vencimiento', 'fecha_pago')
+    search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido', 'deuda__alumno__municipio__nombre', 'editado_por')
     date_hierarchy = 'fecha_vencimiento'
     list_editable = ('monto_abonado', 'estado', 'metodo_pago')
 
@@ -80,7 +80,12 @@ class CuotaAdmin(admin.ModelAdmin):
         ('Estado y Método de Pago', {
             'fields': ('estado', 'metodo_pago')
         }),
+        ('Auditoría', {
+            'fields': ('editado_por', 'fecha_edicion'),
+            'classes': ('collapse',),
+        }),
     )
+    readonly_fields = ('editado_por', 'fecha_edicion')
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request).select_related(
