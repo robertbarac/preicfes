@@ -5,7 +5,8 @@ from .views import (
     CuotasVencidasListView, DeudaCreateView, DeudaUpdateView, CuotaCreateView, CuotaUpdateView, CuotaDeleteView, ReciboPDFView,
     PazSalvoListView, PazSalvoPDFView, ProximosPagosListView, InformeDiarioView, generar_pdf_informe, MantenimientoCarteraView, toggle_edicion_deuda,
     AcuerdoPagoListView, AcuerdoPagoCreateView, AcuerdoPagoUpdateView, generar_pdf_retirados_view,
-    SaldosListView
+    SaldosListView,
+    LimboListView
 )
 
 app_name = 'cartera'
@@ -16,6 +17,7 @@ urlpatterns = [
     # path('abonos-hechos/', AbonosHechosListView.as_view(), name='abonos_hechos'),
     # path('cartera/', CarteraListView.as_view(), name='cartera'),
     path('saldos/', SaldosListView.as_view(), name='saldos_list'),
+    path('limbo/', LimboListView.as_view(), name='limbo_list'),
     path('grafica/', GraficaIngresosView.as_view(), name='grafica'),
     path('grafica-egresos/', GraficaEgresosView.as_view(), name='grafica_egresos'),
     path('mantenimiento/', MantenimientoCarteraView.as_view(), name='mantenimiento'),

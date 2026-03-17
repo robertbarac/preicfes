@@ -42,6 +42,9 @@ class CuotaUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         # 1. OBTENER DATOS DEL FORMULARIO Y ESTADO ORIGINAL
         # Obtenemos la instancia con los datos nuevos del form, pero sin guardar aún.
         cuota_actual = form.save(commit=False)
+        # Registrar quién editó y cuándo
+        cuota_actual.editado_por = self.request.user.username
+        cuota_actual.fecha_edicion = timezone.localtime(timezone.now())
         # Obtenemos la cuota original de la BD para comparar.
         cuota_original = Cuota.objects.get(pk=cuota_actual.pk)
 

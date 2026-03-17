@@ -11,6 +11,7 @@ urlpatterns = [
     path('alumnos/', AlumnosListView.as_view(), name='alumnos_list'),
     path('alumnos/<int:pk>/', AlumnoDetailView.as_view(), name='alumno_detail'),
     path('alumnos/<int:pk>/retirar/', views.retirar_alumno, name='retirar_alumno'),
+    path('alumnos/<int:pk>/limbo/', views.mandar_limbo, name='mandar_limbo'),
     path('retirados/', views.AlumnosRetiradosListView.as_view(), name='alumnos-retirados-list'),
     path('alumnos/agregar/', AlumnoCreateView.as_view(), name='alumno_agregar'),
     path('alumnos/<int:pk>/editar/', AlumnoUpdateView.as_view(), name='alumno_editar'),

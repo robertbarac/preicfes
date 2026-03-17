@@ -28,6 +28,21 @@ class Cuota(models.Model):
     estado = models.CharField(max_length=20, choices=ESTADO_CUOTA, default='emitida', help_text="Estado actual de la cuota.")
     metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO, blank=True, null=True, help_text="Método de pago utilizado.")
 
+    # Auditoría de ediciones
+    editado_por = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        verbose_name="Editado por",
+        help_text="Username del usuario que realizó la última edición."
+    )
+    fecha_edicion = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Fecha de edición",
+        help_text="Fecha y hora de la última edición."
+    )
+
     def clean(self):
         """Validaciones personalizadas para el modelo Cuota."""
         super().clean()
