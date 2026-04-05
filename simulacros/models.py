@@ -1,0 +1,66 @@
+from django.db import models
+from django.conf import settings
+
+class Simulacro(models.Model):
+    nombre = models.CharField(max_length=255, unique=True, verbose_name="Nombre del Simulacro")
+    soluciones_s1 = models.CharField(max_length=150, verbose_name="Soluciones Sesión 1 (120 ítems)")
+    soluciones_s2 = models.CharField(max_length=150, verbose_name="Soluciones Sesión 2 (134 ítems)")
+    puntos_corte_s1 = models.JSONField(verbose_name="Puntos de Corte Sesión 1", default=dict)
+    puntos_corte_s2 = models.JSONField(verbose_name="Puntos de Corte Sesión 2", default=dict)
+    
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Simulacro"
+        verbose_name_plural = "Simulacros"
+
+    def __str__(self):
+        return self.nombre
+
+
+class ResultadoSimulacro(models.Model):
+    alumno = models.ForeignKey(
+        'academico.Alumno', 
+        on_delete=models.CASCADE, 
+        related_name="resultados_simulacros",
+        verbose_name="Alumno"
+    )
+    simulacro = models.ForeignKey(
+        Simulacro, 
+        on_delete=models.CASCADE, 
+        related_name="resultados",
+        verbose_name="Simulacro"
+    )
+    respuestas_s1 = models.CharField(
+        max_length=150, null=True, blank=True, verbose_name="Respuestas extraídas S1"
+    )
+    respuestas_s2 = models.CharField(
+        max_length=150, null=True, blank=True, verbose_name="Respuestas extraídas S2"
+    )
+    puntaje_global = models.FloatField(default=0.0, verbose_name="Puntaje Global")
+    fecha_realizacion = models.DateField(verbose_name="Fecha de realización", null=True, blank=True)
+    registrador = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="simulacros_registrados",
+        verbose_name="Registrador"
+    )
+    fecha_calificacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Resultado de Simulacro"
+        verbose_name_plural = "Resultados de Simulacros"
+        unique_together = ('alumno', 'simulacro')
+
+    def __str__(self):
+        return f"{self.alumno} - {self.simulacro}"
+
+    @property
+    def estado(self):
+        # Si tiene almacenada la data de ambas sesiones, se considera calificado.
+        # Caso contrario está incompleto.
+        if self.respuestas_s1 and self.respuestas_s2:
+            return "Calificado"
+        return "Incompleto"

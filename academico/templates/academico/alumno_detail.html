@@ -20,6 +20,9 @@
             <button id="tab-historial-notas" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
                 Historial de Notas
             </button>
+            <button id="tab-simulacros" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
+                Simulacros
+            </button>
             {% endif %}
             {% if can_view_cartera_info %}
             <button id="tab-estado-deuda" class="tab-button py-2 px-4 text-lg font-semibold text-gray-600 hover:text-blue-500 focus:outline-none border-b-2 border-transparent hover:border-blue-500 transition duration-300">
@@ -459,6 +462,75 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Pestaña Simulacros -->
+        {% if can_view_academic_history %}
+        <div id="content-simulacros" class="tab-content hidden">
+            <div class="space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">Simulacros Realizados</h3>
+                    
+                    <!-- Botón para Registrar Nuevo Simulacro (se vinculará luego a tu vista create) -->
+                    <a href="#" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                        + Subir Hoja de Respuestas
+                    </a>
+                </div>
+                
+                <div class="overflow-x-auto shadow-md rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Simulacro</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Realización</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Puntaje Global</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Registrado por</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Reporte</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for resultado in resultados_simulacros %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ resultado.simulacro.nombre }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">{{ resultado.fecha_realizacion|date:"d/m/Y"|default:"-" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-lg font-bold">
+                                {% if resultado.estado == 'Calificado' %}
+                                    {{ resultado.puntaje_global|floatformat:"0" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if resultado.estado == 'Calificado' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ resultado.estado }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                {{ resultado.registrador.get_full_name|default:resultado.registrador.username|default:"Sistema" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center font-medium">
+                                {% if resultado.estado == 'Calificado' %}
+                                <!-- URL Pendiente -->
+                                <a href="#" target="_blank" class="text-indigo-600 hover:text-indigo-900 border border-indigo-600 rounded px-2 py-1">PDF Resultado</a>
+                                {% else %}
+                                <span class="text-gray-400 text-sm">Pendiente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                El estudiante aún no tiene registros de simulacros.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
     {% if can_add_cuota %}
         {% if not alumno.deuda and not alumno.es_becado %}

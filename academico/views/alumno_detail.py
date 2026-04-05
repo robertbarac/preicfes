@@ -140,7 +140,10 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
             'inasistencias_justificadas': {
                 inasistencia.clase.id: inasistencia
                 for inasistencia in Inasistencia.objects.filter(alumno=alumno)
-            }
+            },
+            
+            # Resultados de Simulacros
+            'resultados_simulacros': alumno.resultados_simulacros.select_related('simulacro', 'registrador').order_by('-fecha_realizacion'),
         })
         
         return context
