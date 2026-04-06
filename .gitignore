@@ -177,3 +177,6 @@ cython_debug/
 # Carpeta de documentos del proyecto
 documentos/
 contexto.txt
+
+# Prototipos de OpenCV
+cv_prototypes/
