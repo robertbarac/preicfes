@@ -38,6 +38,11 @@ class ResultadoSimulacro(models.Model):
         max_length=150, null=True, blank=True, verbose_name="Respuestas extraídas S2"
     )
     puntaje_global = models.FloatField(default=0.0, verbose_name="Puntaje Global")
+    puntaje_matematicas = models.FloatField(default=0.0, verbose_name="Matemáticas")
+    puntaje_lectura = models.FloatField(default=0.0, verbose_name="Lectura Crítica")
+    puntaje_sociales = models.FloatField(default=0.0, verbose_name="Sociales y Ciudadanas")
+    puntaje_naturales = models.FloatField(default=0.0, verbose_name="Ciencias Naturales")
+    puntaje_ingles = models.FloatField(default=0.0, verbose_name="Inglés")
     fecha_realizacion = models.DateField(verbose_name="Fecha de realización", null=True, blank=True)
     registrador = models.ForeignKey(
         settings.AUTH_USER_MODEL,
