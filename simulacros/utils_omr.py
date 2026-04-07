@@ -51,7 +51,7 @@ def encontrar_ovalos(img_warped):
     if not candidatos:
         return imgThresh, img_debug, ovalos_validos
 
-    # Filtro de mediana ±35%  (comprobado: da los ~480 óvalos reales)
+    # Filtro de mediana ±35%
     anchos = [cand['w'] for cand in candidatos]
     altos = [cand['h'] for cand in candidatos]
     mediana_w = np.median(anchos)
@@ -74,7 +74,6 @@ def agrupar_y_evaluar_ovalos(burbujas_contours, imgThresh):
     """
     1. Agrupa burbujas por columnas y luego por filas.
     2. Dinámica: cada fila puede tener 4 u 8 opciones.
-    3. Filas de 1 elemento = números impresos (34, 44, 54...) → se descartan.
     """
     if not burbujas_contours:
         return []
@@ -102,12 +101,18 @@ def agrupar_y_evaluar_ovalos(burbujas_contours, imgThresh):
     columnas.append(col_actual)
 
     respuestas = []
-    letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
 
     for columna in columnas:
         columna = sorted(columna, key=lambda b: b['cY'])
         tolerancia_y = columna[0]['h'] * 0.70
-
+        
+        # Encontrar las coordenadas X esperadas de las opciones A, B, C, D
+        cXs = [b['cX'] for b in columna]
+        min_x = min(cXs)
+        max_x = max(cXs)
+        # Asumiendo 4 opciones, el espaciado promedio es:
+        espaciado = (max_x - min_x) / 3 if max_x > min_x else 1
+        
         filas = []
         fila_actual = [columna[0]]
         for b in columna[1:]:
@@ -118,26 +123,46 @@ def agrupar_y_evaluar_ovalos(burbujas_contours, imgThresh):
                 fila_actual = [b]
         filas.append(fila_actual)
 
-        for fila in filas:
-            fila = sorted(fila, key=lambda b: b['cX'])
+        # Encontrar los centros X ideales para A, B, C, D basándonos en filas de 4 elementos
+        filas_completas = [f for f in filas if len(f) == 4]
+        if filas_completas:
+            for f in filas_completas:
+                f.sort(key=lambda b: b['cX'])
+            centros_esperados = [
+                np.median([f[0]['cX'] for f in filas_completas]),
+                np.median([f[1]['cX'] for f in filas_completas]),
+                np.median([f[2]['cX'] for f in filas_completas]),
+                np.median([f[3]['cX'] for f in filas_completas])
+            ]
+        else:
+            # Fallback en caso de que ninguna fila esté completa
+            cXs = [b['cX'] for b in columna]
+            min_x, max_x = min(cXs), max(cXs)
+            sp = (max_x - min_x) / 3 if max_x > min_x else 1
+            centros_esperados = [min_x, min_x + sp, min_x + 2*sp, max_x]
 
-            # FIX 1: Filas con solo 1 elemento = número impreso (34, 44, 54...)
-            # Una pregunta SIEMPRE tiene mínimo 2 opciones (A y B)
+        for fila in filas:
             if len(fila) < 2:
                 continue
-
-            # Contar píxeles de tinta por óvalo
-            pixel_ratios = []
+                
+            opciones_detectadas = []
             for b in fila:
+                # Asignar a A, B, C, o D buscando el centro esperado más cercano
+                distancias = [abs(b['cX'] - cx) for cx in centros_esperados]
+                idx_opcion = distancias.index(min(distancias))
+                
+                # Evaluar llenado del óvalo
                 x, y, w, h = b['x'], b['y'], b['w'], b['h']
                 roi = imgThresh[y:y + h, x:x + w]
                 total = w * h
-                pixel_ratios.append(cv2.countNonZero(roi) / total if total > 0 else 0)
+                ratio = cv2.countNonZero(roi) / total if total > 0 else 0
+                opciones_detectadas.append((idx_opcion, ratio))
+            
+            # Umbral dinámico: vacío ~23%, marcado >= 40% (ajustado para el escáner)
+            umbral_marcado = 0.40
+            marcados = [idx for idx, ratio in opciones_detectadas if ratio >= umbral_marcado]
 
-            # Umbral dinámico: vacío ≈ 45%, marcado ≈ 65%+
-            umbral_marcado = 0.65
-            marcados = [i for i, r in enumerate(pixel_ratios) if r >= umbral_marcado]
-
+            letras = ['A', 'B', 'C', 'D']
             if len(marcados) == 0:
                 respuestas.append('Z')
             elif len(marcados) > 1:

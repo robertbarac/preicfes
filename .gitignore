@@ -178,5 +178,8 @@ cython_debug/
 documentos/
 contexto.txt
 
-# Prototipos de OpenCV
+# Prototipos y tests de OpenCV
 cv_prototypes/
+simulacros/respuesta_sesion1.py
+respuesta_sesion1.py
+imagenes_muestra
