@@ -19,8 +19,8 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
         user = self.request.user
 
         # Flags de permisos para simplificar la lógica en la plantilla
-        can_view_academic = user.is_superuser or user.groups.filter(name__in=['SecretariaAcademica', 'CoordinadorDepartamental', 'Auxiliar']).exists()
-        can_view_cartera = user.is_superuser or user.groups.filter(name__in=['SecretariaCartera', 'CoordinadorDepartamental', 'Auxiliar']).exists()
+        can_view_academic = user.is_superuser or user.groups.filter(name__in=['SecretariaAcademica', 'CoordinadorDepartamental', 'Auxiliar', 'ObservadorColegio']).exists()
+        can_view_cartera = user.is_superuser or user.groups.filter(name__in=['SecretariaCartera', 'CoordinadorDepartamental', 'Auxiliar', 'ObservadorColegio']).exists()
 
         # Flags de permisos específicos para acciones
         context['can_add_cuota'] = user.has_perm('cartera.add_cuota')
