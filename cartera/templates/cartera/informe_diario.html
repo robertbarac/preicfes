@@ -34,6 +34,7 @@
             </div>
             {% endif %}
 
+            {% if not request.user.is_observador %}
             <!-- Filtro de Sede -->
             <div>
                 <label for="sede" class="block text-sm font-medium text-gray-700">Sede:</label>
@@ -44,6 +45,7 @@
                     {% endfor %}
                 </select>
             </div>
+            {% endif %}
             
             <div>
                 <label for="tipo_programa" class="block text-sm font-medium text-gray-700">Tipo de Programa:</label>
@@ -78,6 +80,7 @@
                 <p class="font-medium">Total Recaudado: <span class="font-normal">${{ total_recaudado|floatformat:0|intcomma }}</span></p>
             </div>
             
+            {% if not request.user.is_observador %}
             <div>
                 <form method="post" action="{% url 'cartera:generar_informe_pdf' %}" id="pdfForm" target="_blank">
                     {% csrf_token %}
@@ -95,17 +98,16 @@
                     
                     <div class="mb-4">
                         <label for="efectivo_sedes" class="block font-medium">Efectivo en sedes:</label>
-                        <input type="number" id="efectivo_sedes" name="efectivo_sedes" 
-                               class="w-full px-3 py-2 border rounded-md" required>
+                        <input type="number" id="efectivo_sedes" name="efectivo_sedes" class="w-full px-3 py-2 border rounded-md" required>
                     </div>
                     
-                    <a href="javascript:void(0);" 
-                       onclick="document.getElementById('pdfForm').submit()"
-                       class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block text-center">
+                    <a href="javascript:void(0);" onclick="document.getElementById('pdfForm').submit()"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block text-center">
                         Generar PDF
                     </a>
                 </form>
             </div>
+            {% endif %}
         </div>
     </div>
     

@@ -11,6 +11,8 @@ from cartera.models import Cuota
 class ProximosPagosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def test_func(self):
         user = self.request.user
+        if getattr(user, 'is_observador', False):
+            return True
         if not user.is_staff:
             return False
 
@@ -49,9 +51,13 @@ class ProximosPagosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 municipio_id = self.request.GET.get('municipio')
                 if municipio_id:
                     queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
+        elif getattr(user, 'is_observador', False):
+            if hasattr(user, 'sede') and user.sede:
+                queryset = queryset.filter(deuda__alumno__grupo_actual__salon__sede=user.sede)
         else:
             # Otro personal (staff) ve solo su municipio
-            queryset = queryset.filter(deuda__alumno__municipio=user.municipio)
+            if hasattr(user, 'municipio') and user.municipio:
+                queryset = queryset.filter(deuda__alumno__municipio=user.municipio)
 
         # Aplicar filtros
         dias_filtro = self.request.GET.get('dias_filtro', 'todos')

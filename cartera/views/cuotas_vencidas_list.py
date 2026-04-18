@@ -34,6 +34,8 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
     def test_func(self):
         user = self.request.user
+        if getattr(user, 'is_observador', False):
+            return True
         if not user.is_staff:
             return False
 
@@ -77,6 +79,9 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 queryset = queryset.filter(deuda__alumno__municipio_id=municipio_id)
             if sede_id:
                 queryset = queryset.filter(deuda__alumno__grupo_actual__salon__sede_id=sede_id)
+        elif getattr(user, 'is_observador', False):
+            if hasattr(user, 'sede') and user.sede:
+                queryset = queryset.filter(deuda__alumno__grupo_actual__salon__sede=user.sede)
         else:
             # Otro personal (staff) ve solo su municipio
             if hasattr(user, 'municipio') and user.municipio:
@@ -196,6 +201,8 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             sedes_qs = sedes_qs.filter(municipio__departamento_id=departamento_id)
         elif user.groups.filter(name='CoordinadorDepartamental').exists() and hasattr(user, 'departamento') and user.departamento:
             sedes_qs = sedes_qs.filter(municipio__departamento=user.departamento)
+        elif getattr(user, 'is_observador', False) and hasattr(user, 'sede') and user.sede:
+            sedes_qs = sedes_qs.filter(id=user.sede.id)
 
         context['sedes'] = sedes_qs
         context['departamento_seleccionado'] = int(departamento_id) if departamento_id else None

@@ -13,6 +13,7 @@
                 <label for="{{ filter_form.estado.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ filter_form.estado.label }}</label>
                 {{ filter_form.estado }}
             </div>
+            {% if not request.user.is_observador %}
             <div>
                 <label for="{{ filter_form.departamento.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ filter_form.departamento.label }}</label>
                 {{ filter_form.departamento }}
@@ -21,6 +22,7 @@
                 <label for="{{ filter_form.municipio.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ filter_form.municipio.label }}</label>
                 {{ filter_form.municipio }}
             </div>
+            {% endif %}
             <div>
                 <label for="{{ filter_form.dias_restantes.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ filter_form.dias_restantes.label }}</label>
                 {{ filter_form.dias_restantes }}

@@ -33,7 +33,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
     login_url = 'login'
 
     def test_func(self):
-        return self.request.user.is_staff
+        return self.request.user.is_staff or getattr(self.request.user, 'is_observador', False)
     
     def handle_no_permission(self):
         if self.request.user.groups.filter(name='Profesor').exists():
@@ -52,9 +52,18 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             # Coordinador o Auxiliar ven todo su departamento
             if hasattr(user, 'departamento') and user.departamento:
                 queryset = queryset.filter(municipio__departamento=user.departamento)
+        elif getattr(user, 'is_observador', False):
+            # Observador de colegio ve solo su sede
+            if hasattr(user, 'sede') and user.sede:
+                queryset = queryset.filter(grupo_actual__salon__sede=user.sede)
+            else:
+                queryset = queryset.none()
         else:
             # Otro personal (staff) ve solo su municipio
-            queryset = queryset.filter(municipio=user.municipio)
+            if hasattr(user, 'municipio') and user.municipio:
+                queryset = queryset.filter(municipio=user.municipio)
+            else:
+                queryset = queryset.none()
 
         # Aplicar filtros de búsqueda
         buscador = self.request.GET.get('buscador')

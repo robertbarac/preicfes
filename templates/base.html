@@ -43,7 +43,7 @@
             <div class="hidden md:block mx-auto">
               <!-- mx-auto para centrar -->
               <div class="flex items-baseline space-x-2">
-                {% if user.is_staff %}
+                {% if user.is_staff or user.is_observador %}
                 <div class="relative dropdown" x-data="{ open: false }">
                   <button
                     @click="open = !open"
@@ -79,6 +79,7 @@
                     >
                       Alumnos
                     </a>
+                    {% if user.is_staff %}
                     <a
                       href="{% url 'alumnos-retirados-list' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -121,6 +122,7 @@
                     >
                       Becados
                     </a>
+                    {% endif %}
                   </div>
                 </div>
                 {% else %}
@@ -130,7 +132,7 @@
                   >Mis Clases</a
                 >
                 {% endif %} 
-                {% if perms.cartera.view_cuota %}
+                {% if perms.cartera.view_cuota or user.is_observador %}
                 <div class="relative dropdown" x-data="{ open: false }">
                   <button
                     @click="open = !open"
@@ -160,12 +162,14 @@
                     x-transition:enter-start="transform opacity-0 scale-95"
                     x-transition:enter-end="transform opacity-100 scale-100"
                   >
+                    {% if not user.is_observador %}
                     <a
                       href="{% url 'cartera:mantenimiento' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
                       Actualizar Estados
                     </a>
+                    {% endif %}
                     <a
                       href="{% url 'cartera:cuotas_vencidas' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -184,6 +188,7 @@
                     >
                       Acuerdos de Pago
                     </a>
+                    {% if not user.is_observador %}
                     <a
                       href="{% url 'cartera:grafica' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -196,12 +201,14 @@
                     >
                       Gráficas de Egresos
                     </a>
+                    {% endif %}
                     <a
                       href="{% url 'cartera:informe_diario' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
                       Informe del día
                     </a>
+                    {% if not user.is_observador %}
                     <a
                       href="{% url 'cartera:paz_salvo' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -214,6 +221,7 @@
                     >
                       Alumnos Retirados
                     </a>
+                    {% endif %}
                     {% if request.user.is_superuser %}
                     <a
                       href="{% url 'cartera:saldos_list' %}"
@@ -307,33 +315,41 @@
       <div id="mobile-menu" class="hidden md:hidden bg-gray-800 pb-3 pt-2">
         {% if user.is_authenticated %}
           <div class="space-y-1 px-4">
-            {% if user.is_staff %}
+            {% if user.is_staff or user.is_observador %}
               <!-- Sección Académico -->
               <div class="py-2 border-b border-gray-700">
                 <div class="text-white font-medium mb-2">Académico</div>
                 <a href="{% url 'alumnos_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Alumnos</a>
+                {% if user.is_staff %}
                 <a href="{% url 'alumnos-retirados-list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Alumnos Retirados</a>
                 <a href="{% url 'salon_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Salones</a>
                 <a href="{% url 'grupo_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Grupos</a>
                 <a href="{% url 'clase_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Clases</a>
                 <a href="{% url 'profesor_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Profesores</a>
                 <a href="{% url 'cartera:becados_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Becados</a>
+                {% endif %}
               </div>
             {% endif %}
 
-            {% if perms.cartera.view_cuota %}
+            {% if perms.cartera.view_cuota or user.is_observador %}
               <!-- Sección Cartera -->
               <div class="py-2 border-b border-gray-700">
                 <div class="text-white font-medium mb-2">Cartera</div>
+                {% if not user.is_observador %}
                 <a href="{% url 'cartera:mantenimiento' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Mantenimiento</a>
+                {% endif %}
                 <a href="{% url 'cartera:proximos_pagos' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Próximos Pagos</a>
                 <a href="{% url 'cartera:acuerdo_pago_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Acuerdos de Pago</a>
                 <a href="{% url 'cartera:cuotas_vencidas' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Cuotas Vencidas</a>
+                {% if not user.is_observador %}
                 <a href="{% url 'cartera:grafica' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Gráficas de Ingresos</a>
                 <a href="{% url 'cartera:grafica_egresos' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Gráficas de Egresos</a>
+                {% endif %}
                 <a href="{% url 'cartera:informe_diario' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Informe del día</a>
+                {% if not user.is_observador %}
                 <a href="{% url 'cartera:paz_salvo' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Certificado Paz y Salvo</a>
                 <a href="{% url 'cartera:alumnos_retirados_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Alumnos Retirados</a>
+                {% endif %}
                 {% if request.user.is_superuser %}
                 <a href="{% url 'cartera:saldos_list' %}" class="block py-2 px-4 text-green-400 font-bold hover:bg-gray-700 rounded-md">Saldos (Admin)</a>
                 {% endif %}

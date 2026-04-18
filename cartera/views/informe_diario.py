@@ -14,6 +14,8 @@ from academico.models import Alumno
 class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def test_func(self):
         # Permitir acceso a superusers o a quienes tengan el permiso para ver el informe diario.
+        if getattr(self.request.user, 'is_observador', False):
+            return True
         return self.request.user.is_superuser or self.request.user.has_perm('cartera.view_cuota')
     template_name = 'cartera/informe_diario.html'
 
@@ -51,6 +53,17 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             else:
                 context['warning_message'] = 'No tienes un departamento asignado. Contacta al administrador.'
                 departamento_id = None # Forzar a no ver nada si no tiene depto.
+        elif getattr(user, 'is_observador', False):
+            # ObservadorColegio ve solo su sede
+            if hasattr(user, 'sede') and user.sede:
+                sede_id = user.sede.id
+                municipio_id = None
+                departamento_id = None
+            else:
+                context['warning_message'] = 'No tienes una sede asignada. Contacta al administrador.'
+                sede_id = None
+                municipio_id = None
+                departamento_id = None
         else:
             # Otros roles (ej. Secretaria) ven solo su municipio.
             if hasattr(user, 'municipio') and user.municipio:

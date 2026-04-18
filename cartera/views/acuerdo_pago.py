@@ -14,6 +14,8 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
 
     def test_func(self):
         user = self.request.user
+        if getattr(user, 'is_observador', False):
+            return True
         if not user.is_staff:
             return False
 
@@ -57,6 +59,8 @@ class AcuerdoPagoListView(LoginRequiredMixin, ListView):
                 queryset = queryset.filter(cuota__deuda__alumno__municipio__departamento=user.departamento)
             elif user.groups.filter(name='SecretariaCartera').exists() and user.municipio:
                 queryset = queryset.filter(cuota__deuda__alumno__municipio=user.municipio)
+            elif getattr(user, 'is_observador', False) and hasattr(user, 'sede') and user.sede:
+                queryset = queryset.filter(cuota__deuda__alumno__grupo_actual__salon__sede=user.sede)
             else:
                 # Si no es superusuario y no tiene rol con ubicación, no muestra nada
                 return queryset.none()

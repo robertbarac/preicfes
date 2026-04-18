@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.exceptions import ValidationError
-from ubicaciones.models import Municipio, Departamento
+from ubicaciones.models import Municipio, Departamento, Sede
 import re
 from django.conf import settings
 import os
@@ -23,6 +23,17 @@ class Usuario(AbstractUser):
         blank=True, 
         null=True
     )
+    sede = models.ForeignKey(
+        Sede, 
+        on_delete=models.SET_NULL, 
+        related_name='usuarios', 
+        blank=True, 
+        null=True
+    )
+
+    @property
+    def is_observador(self):
+        return self.groups.filter(name='ObservadorColegio').exists()
 
     def __str__(self):
         return f"{self.username} ({self.telefono})"
