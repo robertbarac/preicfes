@@ -105,14 +105,7 @@ def agrupar_y_evaluar_ovalos(burbujas_contours, imgThresh):
     for columna in columnas:
         columna = sorted(columna, key=lambda b: b['cY'])
         tolerancia_y = columna[0]['h'] * 0.70
-        
-        # Encontrar las coordenadas X esperadas de las opciones A, B, C, D
-        cXs = [b['cX'] for b in columna]
-        min_x = min(cXs)
-        max_x = max(cXs)
-        # Asumiendo 4 opciones, el espaciado promedio es:
-        espaciado = (max_x - min_x) / 3 if max_x > min_x else 1
-        
+
         filas = []
         fila_actual = [columna[0]]
         for b in columna[1:]:
@@ -123,7 +116,7 @@ def agrupar_y_evaluar_ovalos(burbujas_contours, imgThresh):
                 fila_actual = [b]
         filas.append(fila_actual)
 
-        # Encontrar los centros X ideales para A, B, C, D basándonos en filas de 4 elementos
+        # Encontrar los centros X ideales basándonos en filas de 4 elementos
         filas_completas = [f for f in filas if len(f) == 4]
         if filas_completas:
             for f in filas_completas:
@@ -144,20 +137,20 @@ def agrupar_y_evaluar_ovalos(burbujas_contours, imgThresh):
         for fila in filas:
             if len(fila) < 2:
                 continue
-                
+
             opciones_detectadas = []
             for b in fila:
                 # Asignar a A, B, C, o D buscando el centro esperado más cercano
                 distancias = [abs(b['cX'] - cx) for cx in centros_esperados]
                 idx_opcion = distancias.index(min(distancias))
-                
+
                 # Evaluar llenado del óvalo
                 x, y, w, h = b['x'], b['y'], b['w'], b['h']
                 roi = imgThresh[y:y + h, x:x + w]
                 total = w * h
                 ratio = cv2.countNonZero(roi) / total if total > 0 else 0
                 opciones_detectadas.append((idx_opcion, ratio))
-            
+
             # Umbral dinámico: vacío ~23%, marcado >= 40% (ajustado para el escáner)
             umbral_marcado = 0.40
             marcados = [idx for idx, ratio in opciones_detectadas if ratio >= umbral_marcado]

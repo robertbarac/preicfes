@@ -1,0 +1,337 @@
+#!/usr/bin/env python3
+"""
+procesar_simulacro.py — Pipeline OMR por tiras verticales.
+
+Uso:
+    python3 procesar_simulacro.py S1 imagenes_muestra/SCAN0008_page-0031.jpg
+    python3 procesar_simulacro.py S2 imagenes_muestra/SCAN0008_page-0032.jpg
+"""
+import cv2
+import numpy as np
+import os
+import sys
+
+# ================================================================
+# CONSTANTES DE CORTE — Ajustar si los recortes no caen bien
+# Imagen estándar: 1275 x 1650 px
+# ================================================================
+
+# === CONFIGURACIÓN S1 ===
+# Ajustes exactos por columna (X_INI: donde empiezan los círculos, X_FIN: donde terminan)
+# Y_INI: Dónde empiezan verticalmente (debajo de los textos), Y_FIN: Dónde terminan en el fondo
+S1_CONF = {
+    # Columna 1 (Preguntas 1-30)
+    'c1_y_ini': 270, 'c1_y_fin': 1430,
+    'c1_x_ini': 140, 'c1_x_fin': 350,
+    
+    # Columna 2 (Preguntas 31-60)
+    'c2_y_ini': 270, 'c2_y_fin': 1430,
+    'c2_x_ini': 430, 'c2_x_fin': 630,
+    
+    # Columna 3 (Preguntas 61-90)
+    'c3_y_ini': 270, 'c3_y_fin': 1420,
+    'c3_x_ini': 720, 'c3_x_fin': 920,
+    
+    # Columna 4 (Preguntas 91-120)
+    'c4_y_ini': 270, 'c4_y_fin': 1420,
+    'c4_x_ini': 1010, 'c4_x_fin': 1230
+}
+
+# === CONFIGURACIÓN S2 ===
+# Control ABSOLUTO por tira. 
+# y_ini: dónde empieza el corte (header), y_fin: dónde termina el corte (footer)
+# x_ini: margen izquierdo, x_fin: margen derecho
+S2_CONF = {
+    # Tira 1 (P1-48, 4 opciones)
+    'c1_y_ini': 240, 'c1_y_fin': 1580,
+    'c1_x_ini': 120, 'c1_x_fin': 320,
+    
+    # Tira 2a (P49-79, 4 opciones)
+    'c2a_y_ini': 240, 'c2a_y_fin': 1236,
+    'c2a_x_ini': 370, 'c2a_x_fin': 560,
+    
+    # Tira 2b (P80-96, 8 opciones) -> Su propio header para saltar textos intermedios
+    'c2b_y_ini': 1220, 'c2b_y_fin': 1520,
+    'c2b_x_ini': 385,  'c2b_x_fin': 760, 
+    
+    # Tira 3 (P97-134, 8 opciones)
+    'c3_y_ini': 220, 'c3_y_fin': 1550,
+    'c3_x_ini': 830, 'c3_x_fin': 1200, 
+}
+
+# Umbral de relleno para considerar un círculo como marcado
+# Al evaluar solo el "adentro" del círculo, un valor más bajo detecta marcas tenues
+UMBRAL_MARCADO = 0.25
+
+# ================================================================
+
+
+def deskew(img):
+    """
+    Corrige inclinación leve (~1-5°) usando la línea dominante de la imagen.
+    Si la hoja está muy torcida, esto es el primer escudo contra el error.
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    lines = cv2.HoughLines(edges, 1, np.pi / 180, 200)
+    if lines is None:
+        return img
+    angles = []
+    for rho, theta in lines[:, 0]:
+        angle = (theta * 180 / np.pi) - 90
+        if abs(angle) < 10:
+            angles.append(angle)
+    if not angles:
+        return img
+    median_angle = float(np.median(angles))
+    if abs(median_angle) < 0.3:
+        return img
+    h, w = img.shape[:2]
+    M = cv2.getRotationMatrix2D((w // 2, h // 2), median_angle, 1.0)
+    return cv2.warpAffine(img, M, (w, h),
+                          flags=cv2.INTER_CUBIC,
+                          borderMode=cv2.BORDER_REPLICATE)
+
+
+def hacer_tiras(img, modo):
+    """
+    Divide la imagen en tiras que contienen SOLO los círculos de respuesta.
+    Usamos coordenadas absolutas específicas para cada columna.
+    """
+    H, W = img.shape[:2]
+
+    if modo == 'S1':
+        conf = S1_CONF
+
+        def recortar_s1(x_ini, x_fin, y_ini, y_fin):
+            return img[y_ini:y_fin, x_ini:x_fin]
+
+        return [
+            (recortar_s1(conf['c1_x_ini'], conf['c1_x_fin'], conf['c1_y_ini'], conf['c1_y_fin']),  4, 'S1_C1_P1-30'),
+            (recortar_s1(conf['c2_x_ini'], conf['c2_x_fin'], conf['c2_y_ini'], conf['c2_y_fin']),  4, 'S1_C2_P31-60'),
+            (recortar_s1(conf['c3_x_ini'], conf['c3_x_fin'], conf['c3_y_ini'], conf['c3_y_fin']),  4, 'S1_C3_P61-90'),
+            (recortar_s1(conf['c4_x_ini'], conf['c4_x_fin'], conf['c4_y_ini'], conf['c4_y_fin']),  4, 'S1_C4_P91-120'),
+        ]
+
+    elif modo == 'S2':
+        conf = S2_CONF
+        
+        def recortar_s2(x_ini, x_fin, y_ini, y_fin):
+            return img[y_ini:y_fin, x_ini:x_fin]
+
+        return [
+            (recortar_s2(conf['c1_x_ini'], conf['c1_x_fin'], conf['c1_y_ini'], conf['c1_y_fin']),       4, 'S2_C1_P1-48'),
+            (recortar_s2(conf['c2a_x_ini'], conf['c2a_x_fin'], conf['c2a_y_ini'], conf['c2a_y_fin']),   4, 'S2_C2a_P49-79'),
+            (recortar_s2(conf['c2b_x_ini'], conf['c2b_x_fin'], conf['c2b_y_ini'], conf['c2b_y_fin']),   8, 'S2_C2b_P80-96'),
+            (recortar_s2(conf['c3_x_ini'], conf['c3_x_fin'], conf['c3_y_ini'], conf['c3_y_fin']),       8, 'S2_C3_P97-134'),
+        ]
+
+    raise ValueError(f"Modo desconocido: '{modo}'. Usa 'S1' o 'S2'.")
+
+
+def encontrar_circulos_en_tira(tira, n_opciones=4):
+    """
+    Detecta contornos de círculos en una tira ya recortada.
+    Retorna: (imgThresh, lista_de_contornos, imagen_debug)
+    """
+    gray = cv2.cvtColor(tira, cv2.COLOR_BGR2GRAY)
+    imgThresh = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV, 51, 10
+    )
+    contours, _ = cv2.findContours(imgThresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Para círculos, el aspect ratio debe estar cerca de 1.0
+    ar_min = 0.75
+    ar_max = 1.35
+
+    candidatos = []
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        if h == 0:
+            continue
+        ar   = w / float(h)
+        area = w * h
+        # Filtramos por proporciones de círculo y un área razonable
+        if ar_min < ar < ar_max and 40 < area < 4500:
+            candidatos.append({'c': c, 'w': w, 'h': h, 'x': x, 'y': y})
+
+    img_debug = tira.copy()
+    if not candidatos:
+        return imgThresh, [], img_debug
+
+    mw = np.median([c['w'] for c in candidatos])
+    mh = np.median([c['h'] for c in candidatos])
+    
+    # Tolerancia para tamaños de círculos
+    max_w_factor = 1.5
+    max_h_factor = 1.5
+
+    validos = []
+    for c in candidatos:
+        if (mw * 0.65 < c['w'] < mw * max_w_factor) and (mh * 0.65 < c['h'] < mh * max_h_factor):
+            validos.append(c['c'])
+            cv2.rectangle(img_debug,
+                          (c['x'], c['y']),
+                          (c['x'] + c['w'], c['y'] + c['h']),
+                          (0, 200, 0), 2)
+
+    return imgThresh, validos, img_debug
+
+
+def evaluar_tira(contours, imgThresh, n_opciones):
+    """
+    Dado el conjunto de círculos detectados en UNA tira vertical de una sola
+    columna de preguntas, determina la letra marcada en cada fila.
+    """
+    LETRAS = {4: ['A', 'B', 'C', 'D'], 8: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']}
+    letras = LETRAS[n_opciones]
+
+    if not contours:
+        return []
+
+    burbujas = []
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        burbujas.append({'x': x, 'y': y, 'w': w, 'h': h,
+                         'cX': x + w // 2, 'cY': y + h // 2})
+
+    # Agrupar en filas por coordenada Y
+    burbujas = sorted(burbujas, key=lambda b: b['cY'])
+    tol_y = burbujas[0]['h'] * 0.70
+    filas, fila = [], [burbujas[0]]
+    for b in burbujas[1:]:
+        if abs(b['cY'] - fila[-1]['cY']) < tol_y:
+            fila.append(b)
+        else:
+            filas.append(fila)
+            fila = [b]
+    filas.append(fila)
+
+    # Centros X esperados para cada opción
+    filas_ok = [f for f in filas if len(f) == n_opciones]
+    if filas_ok:
+        for f in filas_ok:
+            f.sort(key=lambda b: b['cX'])
+        centros = [np.median([f[i]['cX'] for f in filas_ok]) for i in range(n_opciones)]
+    else:
+        xs = [b['cX'] for b in burbujas]
+        mn, mx = min(xs), max(xs)
+        sp = (mx - mn) / (n_opciones - 1) if mx > mn else 1
+        centros = [mn + sp * i for i in range(n_opciones)]
+
+    # Evaluar cada fila
+    respuestas = []
+    for fila in filas:
+        if len(fila) < 2:
+            continue
+        opciones = []
+        for b in fila:
+            idx = min(range(n_opciones), key=lambda i: abs(b['cX'] - centros[i]))
+            
+            # Recortamos el borde (15%) para evaluar SOLO el interior del círculo
+            # Esto evita que la línea negra del propio círculo sume píxeles oscuros
+            m_x = int(b['w'] * 0.15)
+            m_y = int(b['h'] * 0.15)
+            roi = imgThresh[b['y']+m_y : b['y']+b['h']-m_y, b['x']+m_x : b['x']+b['w']-m_x]
+            
+            if roi.size > 0:
+                ratio = cv2.countNonZero(roi) / roi.size
+            else:
+                ratio = 0
+            opciones.append((idx, ratio))
+
+        # Ordenar opciones de la más oscura a la más clara
+        opciones.sort(key=lambda x: x[1], reverse=True)
+        mejor_idx, mejor_ratio = opciones[0]
+        segundo_ratio = opciones[1][1] if len(opciones) > 1 else 0
+
+        # Criterio de marcado:
+        # 1. La opción más oscura debe superar el UMBRAL_MARCADO mínimo.
+        # 2. Debe ser significativamente más oscura que la segunda opción (+10%).
+        if mejor_ratio >= UMBRAL_MARCADO:
+            if (mejor_ratio > segundo_ratio + 0.10):
+                respuestas.append(letras[mejor_idx] if mejor_idx < len(letras) else '?')
+            else:
+                # Si hay dos muy parecidas de oscuras, es una doble marca
+                respuestas.append('Z')
+        else:
+            # Si ninguna supera el umbral, está en blanco
+            respuestas.append('Z')
+
+    return respuestas
+
+
+def procesar_imagen(image_path, modo, debug=False):
+    img = cv2.imread(image_path)
+    if img is None:
+        raise ValueError(f"No se pudo cargar la imagen: {image_path}")
+
+    if debug:
+        print(f"  Imagen cargada: {img.shape[1]}x{img.shape[0]}px")
+    img = deskew(img)
+
+    tiras = hacer_tiras(img, modo)
+
+    if debug:
+        debug_dir = os.path.join("simulacros", "cv_prototypes", "tiras")
+        os.makedirs(debug_dir, exist_ok=True)
+        base = os.path.basename(image_path).replace('.jpg', '').replace('.png', '')
+
+    secuencia = []
+    for num, (tira_img, n_opciones, etiqueta) in enumerate(tiras, start=1):
+        imgThresh, circulos, debug_img = encontrar_circulos_en_tira(tira_img, n_opciones)
+        respuestas = evaluar_tira(circulos, imgThresh, n_opciones)
+        secuencia.extend(respuestas)
+
+        if debug:
+            # Guardar el recorte limpio (para verificar que los cortes son correctos)
+            nombre_corte = f"{base}_corte{num}.jpg"
+            cv2.imwrite(os.path.join(debug_dir, nombre_corte), tira_img)
+
+            # Guardar el recorte con los círculos detectados marcados en verde
+            nombre_deteccion = f"{base}_corte{num}_deteccion.jpg"
+            cv2.imwrite(os.path.join(debug_dir, nombre_deteccion), debug_img)
+
+            print(f"  [{etiqueta}] {len(circulos)} círculos → {len(respuestas)} respuestas: {''.join(respuestas)}")
+            print(f"    Guardado: {nombre_corte}  |  {nombre_deteccion}")
+
+    return secuencia
+
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Uso: python3 procesar_simulacro.py <S1|S2> <imagen.jpg>")
+        sys.exit(1)
+
+    modo   = sys.argv[1].upper()
+    imagen = sys.argv[2]
+
+    if modo not in ('S1', 'S2'):
+        print("Error: modo debe ser S1 o S2")
+        sys.exit(1)
+
+    TOTAL = {'S1': 120, 'S2': 134}
+
+    print(f"\n{'='*60}")
+    print(f"  MODO: {modo}  |  Imagen: {imagen}")
+    print(f"{'='*60}")
+
+    try:
+        seq = procesar_imagen(imagen, modo, debug=True)
+        total_esperado = TOTAL[modo]
+        print(f"\n{'='*60}")
+        print(f"SECUENCIA FINAL ({len(seq)} / {total_esperado} esperadas):")
+        print(''.join(seq))
+        print('='*60)
+        if len(seq) != total_esperado:
+            print(f"\n⚠️  Diferencia de {abs(len(seq) - total_esperado)} preguntas.")
+            print("   → Ajusta HEADER_PX, COL_X1, COL_X2, MARGIN_LEFT o MARGIN_RIGHT")
+            print("     y vuelve a correr hasta que el conteo sea correcto.")
+        else:
+            print("\n✅ Conteo exacto. Revisa la secuencia para verificar precisión.")
+        print(f"\nDebug de tiras en: cv_prototypes/tiras/")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()

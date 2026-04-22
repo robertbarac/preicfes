@@ -29,17 +29,21 @@ def probar_imagen(image_path):
     out_dir = "cv_prototypes"
     os.makedirs(out_dir, exist_ok=True)
 
+    # Imagen grande solo de detección de óvalos (para diagnóstico)
+    cv2.imwrite(os.path.join(out_dir, "debug_ovalos.jpg"), img_debug_ovalos)
+
     thresh_color = cv2.cvtColor(imgThresh, cv2.COLOR_GRAY2BGR)
-    heightImg, widthImg = img.shape[:2]
 
     imageArray = (
         [img, imgGray, imgGray],
         [imgContours, img_debug_ovalos, thresh_color]
     )
-    stackedImages = utils_omr.stackImages(imageArray, 0.4)
+    stackedImages = utils_omr.stackImages(imageArray, 0.6)  # 0.6 → más legible
     out_path = os.path.join(out_dir, "debug_reciente.jpg")
     cv2.imwrite(out_path, stackedImages)
     print(f"=> Debug visual guardado en: '{out_path}'")
+    print(f"=> Óvalos (imagen grande): 'cv_prototypes/debug_ovalos.jpg'")
+
 
     if "--headless" not in sys.argv:
         cv2.imshow("OMR Debug", stackedImages)

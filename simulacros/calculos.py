@@ -1,30 +1,40 @@
 import math
 
-def calificar(respuesta_estudiante, solucion, cortes):
+def calificar(respuesta_estudiante, solucion, cortes, componentes):
     """
-    Función base (legado del usuario) para extraer la lista de cantidad de buenas
-    con respecto a cortes definidos.
+    Califica las respuestas del estudiante y devuelve un diccionario con las buenas y totales por componente.
     """
     if len(respuesta_estudiante) != len(solucion):
-        return []
-
-    contador = 0
-    lista_conteo = []
-    cortes = set(cortes) 
+        return {comp: {'buenas': 0, 'totales': 0} for comp in componentes}
+    
+    if len(cortes) != len(componentes) - 1:
+        raise ValueError("La cantidad de cortes no coincide con la cantidad de componentes.")
+    
+    resultados = {comp: {'buenas': 0, 'totales': 0} for comp in componentes}
+    
+    contador_buenas = 0
+    contador_totales = 0
+    indice_corte = 0
+    cortes = sorted(cortes)
 
     for i in range(len(respuesta_estudiante)):
-        estudiante_respuesta = respuesta_estudiante[i]
-        respuesta_correcta = solucion[i]
+        contador_totales += 1
+        if respuesta_estudiante[i] == solucion[i]:
+            contador_buenas += 1
         
-        if estudiante_respuesta == respuesta_correcta:
-            contador += 1
-        
-        if (i + 1) in cortes:
-            lista_conteo.append(contador)
-            contador = 0
+        if indice_corte < len(cortes) and (i + 1) == cortes[indice_corte]:
+            comp_actual = componentes[indice_corte]
+            resultados[comp_actual]['buenas'] = contador_buenas
+            resultados[comp_actual]['totales'] = contador_totales
+            contador_buenas = 0
+            contador_totales = 0
+            indice_corte += 1
     
-    lista_conteo.append(contador)
-    return lista_conteo
+    comp_actual = componentes[-1]
+    resultados[comp_actual]['buenas'] = contador_buenas
+    resultados[comp_actual]['totales'] = contador_totales
+    
+    return resultados
 
 
 def calcular_puntaje_icfes(puntajes_componentes):
@@ -54,8 +64,8 @@ def calcular_puntaje_icfes(puntajes_componentes):
     
     for comp, datos in puntajes_componentes.items():
         if datos['totales'] > 0:
-            # Fórmula: buenas / totales * 100, redondeadas hacia arriba.
-            puntaje = math.ceil((datos['buenas'] / datos['totales']) * 100)
+            # Fórmula: buenas / totales * 100, redondeado al entero más próximo
+            puntaje = round((datos['buenas'] / datos['totales']) * 100)
         else:
             puntaje = 0
         
@@ -65,7 +75,8 @@ def calcular_puntaje_icfes(puntajes_componentes):
         peso = pesos.get(comp, 1)
         suma_ponderada += puntaje * peso
         
-    puntaje_global = math.ceil(suma_ponderada / total_pesos)
+    # El global se divide entre 13, se multiplica por 5 (para base 500) y se redondea al entero más próximo
+    puntaje_global = round((suma_ponderada / total_pesos) * 5)
     resultados['global'] = puntaje_global
     
     return resultados

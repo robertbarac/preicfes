@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}Calificar Simulacro - {{ grupo.codigo }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 relative">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-80 z-50 flex flex-col items-center justify-center rounded-lg">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+        <h2 class="text-xl font-bold text-gray-800">Procesando imágenes OMR...</h2>
+        <p class="text-gray-600">Esto puede tomar un tiempo. Por favor no cierres la ventana.</p>
+    </div>
+
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Calificar Simulacro: {{ grupo.codigo }}</h1>
+        <a href="{% url 'grupo_detalle' grupo.id %}" class="text-blue-600 hover:text-blue-800 font-semibold">&larr; Volver al grupo</a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" id="calificarForm" class="bg-white rounded-lg shadow-md p-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">Seleccione los Alumnos que presentaron el simulacro:</label>
+                <div class="border rounded-lg max-h-60 overflow-y-auto p-4 bg-gray-50">
+                    <div class="mb-2 border-b pb-2">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="selectAll" class="form-checkbox h-5 w-5 text-blue-600" onchange="toggleAll(this)">
+                            <span class="ml-2 font-bold text-gray-800">Seleccionar Todos</span>
+                        </label>
+                    </div>
+                    {% for alumno in alumnos %}
+                    <div class="mb-2">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="alumnos_seleccionados" value="{{ alumno.id }}" class="form-checkbox h-4 w-4 text-blue-600 alumno-checkbox" onchange="validateForm()">
+                            <span class="ml-2 text-gray-700">{{ alumno.primer_apellido }} {{ alumno.segundo_apellido }} {{ alumno.nombres }}</span>
+                        </label>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-sm">No hay alumnos en este grupo.</p>
+                    {% endfor %}
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Alumnos seleccionados: <span id="countAlumnos" class="font-bold">0</span></p>
+            </div>
+            
+            <div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2" for="imagenes">Subir Imágenes de Respuestas (Pares):</label>
+                    <input type="file" id="imagenes" name="imagenes" multiple accept="image/*" class="w-full border p-2 rounded-lg" onchange="validateForm()">
+                    <p class="text-sm text-gray-500 mt-2">Asegúrese de subir 2 imágenes por alumno seleccionado (S1 y S2 en orden alfabético).</p>
+                    <p class="text-sm mt-1">Imágenes seleccionadas: <span id="countImagenes" class="font-bold text-red-600">0</span></p>
+                    <p id="validationMsg" class="text-sm text-red-600 mt-1 font-semibold hidden">La cantidad de imágenes debe ser el doble de los alumnos seleccionados.</p>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2" for="simulacro">Tipo de Simulacro:</label>
+                    <select name="simulacro" id="simulacro" class="w-full border p-2 rounded-lg bg-gray-100" required disabled>
+                        <option value="">Seleccione un simulacro...</option>
+                        {% for sim in simulacros %}
+                        <option value="{{ sim.id }}">{{ sim.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2" for="fecha_realizacion">Fecha de Realización:</label>
+                    <input type="date" id="fecha_realizacion" name="fecha_realizacion" class="w-full border p-2 rounded-lg bg-gray-100" required disabled>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex justify-end">
+            <button type="submit" id="btnSubmit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg opacity-50 cursor-not-allowed transition" disabled>
+                Procesar y Calificar
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleAll(source) {
+        checkboxes = document.querySelectorAll('.alumno-checkbox');
+        for(var i=0, n=checkboxes.length;i<n;i++) {
+            checkboxes[i].checked = source.checked;
+        }
+        validateForm();
+    }
+
+    function validateForm() {
+        const alumnosSelected = document.querySelectorAll('.alumno-checkbox:checked').length;
+        const imagesCount = document.getElementById('imagenes').files.length;
+        
+        document.getElementById('countAlumnos').innerText = alumnosSelected;
+        const countImgSpan = document.getElementById('countImagenes');
+        countImgSpan.innerText = imagesCount;
+        
+        const validMatch = (imagesCount > 0 && alumnosSelected > 0 && imagesCount === alumnosSelected * 2);
+        
+        const simSelect = document.getElementById('simulacro');
+        const dateInput = document.getElementById('fecha_realizacion');
+        const submitBtn = document.getElementById('btnSubmit');
+        const valMsg = document.getElementById('validationMsg');
+        
+        if (validMatch) {
+            countImgSpan.classList.remove('text-red-600');
+            countImgSpan.classList.add('text-green-600');
+            valMsg.classList.add('hidden');
+            
+            simSelect.disabled = false;
+            simSelect.classList.remove('bg-gray-100');
+            dateInput.disabled = false;
+            dateInput.classList.remove('bg-gray-100');
+            
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            countImgSpan.classList.remove('text-green-600');
+            countImgSpan.classList.add('text-red-600');
+            
+            if (imagesCount > 0 || alumnosSelected > 0) {
+                valMsg.classList.remove('hidden');
+            } else {
+                valMsg.classList.add('hidden');
+            }
+            
+            simSelect.disabled = true;
+            simSelect.classList.add('bg-gray-100');
+            dateInput.disabled = true;
+            dateInput.classList.add('bg-gray-100');
+            
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+    
+    document.getElementById('calificarForm').addEventListener('submit', function(e) {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        document.getElementById('btnSubmit').disabled = true;
+        document.getElementById('btnSubmit').innerText = 'Procesando...';
+    });
+</script>
+{% endblock %}

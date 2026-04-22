@@ -116,6 +116,12 @@
                       Cronograma
                     </a>
                     <a
+                      href="{% url 'simulacros:resultados_simulacros' %}"
+                      class="block px-4 py-2 text-sm text-blue-400 font-bold hover:bg-gray-700 hover:text-blue-300"
+                    >
+                      Resultados Simulacros
+                    </a>
+                    <a
                       href="{% url 'cartera:becados_list' %}"
                       class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
@@ -317,6 +323,7 @@
                 <a href="{% url 'grupo_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Grupos</a>
                 <a href="{% url 'clase_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Clases</a>
                 <a href="{% url 'profesor_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Profesores</a>
+                <a href="{% url 'simulacros:resultados_simulacros' %}" class="block py-2 px-4 text-blue-400 font-bold hover:bg-gray-700 rounded-md">Resultados Simulacros</a>
                 <a href="{% url 'cartera:becados_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Becados</a>
               </div>
             {% endif %}
