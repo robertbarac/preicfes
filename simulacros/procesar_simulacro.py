@@ -47,7 +47,7 @@ S2_CONF = {
     'c1_x_ini': 120, 'c1_x_fin': 320,
     
     # Tira 2a (P49-79, 4 opciones)
-    'c2a_y_ini': 190, 'c2a_y_fin': 1220,
+    'c2a_y_ini': 195, 'c2a_y_fin': 1220,
     'c2a_x_ini': 370, 'c2a_x_fin': 560,
     
     # Tira 2b (P80-96, 8 opciones) -> Su propio header para saltar textos intermedios
