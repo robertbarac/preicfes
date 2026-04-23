@@ -43,11 +43,11 @@ S1_CONF = {
 # x_ini: margen izquierdo, x_fin: margen derecho
 S2_CONF = {
     # Tira 1 (P1-48, 4 opciones)
-    'c1_y_ini': 240, 'c1_y_fin': 1580,
+    'c1_y_ini': 190, 'c1_y_fin': 1580,
     'c1_x_ini': 120, 'c1_x_fin': 320,
     
     # Tira 2a (P49-79, 4 opciones)
-    'c2a_y_ini': 240, 'c2a_y_fin': 1236,
+    'c2a_y_ini': 190, 'c2a_y_fin': 1220,
     'c2a_x_ini': 370, 'c2a_x_fin': 560,
     
     # Tira 2b (P80-96, 8 opciones) -> Su propio header para saltar textos intermedios
@@ -65,32 +65,131 @@ UMBRAL_MARCADO = 0.25
 
 # ================================================================
 
+# Tamaño de salida estándar al que se normalizará SIEMPRE la hoja
+NORM_W = 1275
+NORM_H = 1650
 
-def deskew(img):
+
+def _ordenar_esquinas(pts):
     """
-    Corrige inclinación leve (~1-5°) usando la línea dominante de la imagen.
-    Si la hoja está muy torcida, esto es el primer escudo contra el error.
+    Dado un array (4,2) de puntos, retorna [top-left, top-right, bottom-right, bottom-left].
     """
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    pts = pts.reshape(4, 2).astype(np.float32)
+    s   = pts.sum(axis=1)
+    d   = np.diff(pts, axis=1)
+    return np.array([
+        pts[np.argmin(s)],   # top-left     (menor x+y)
+        pts[np.argmin(d)],   # top-right    (menor x-y)
+        pts[np.argmax(s)],   # bottom-right (mayor x+y)
+        pts[np.argmax(d)],   # bottom-left  (mayor x-y)
+    ], dtype=np.float32)
+
+
+def normalizar_hoja(img, debug_dir=None, base=None):
+    """
+    Detecta los 4 vértices de la hoja escaneada y aplica warpPerspective
+    para producir SIEMPRE una imagen de NORM_W × NORM_H píxeles.
+
+    Si no puede detectar la hoja (fondo sin contraste, imagen muy ruidosa),
+    cae en un simple recorte centrado con deskew para no romper el flujo.
+
+    Parámetros de debug opcionales:
+      debug_dir — carpeta donde guardar imagen diagnóstica
+      base      — prefijo del nombre de archivo
+    """
+    h_img, w_img = img.shape[:2]
+
+    # 1. Convertir a escala de grises y suavizar
+    gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blur  = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # 2. Umbralización adaptativa para separar hoja del fondo
+    #    El fondo del escáner suele ser negro/gris oscuro; la hoja es blanca.
+    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # 3. Operaciones morfológicas para cerrar pequeños huecos
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
+    closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+
+    # 4. Encontrar contornos y quedarnos con el más grande (la hoja)
+    contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return _fallback_deskew(img)
+
+    hoja_cnt = max(contours, key=cv2.contourArea)
+
+    # La hoja debe ocupar al menos el 40 % de la imagen
+    if cv2.contourArea(hoja_cnt) < 0.40 * w_img * h_img:
+        return _fallback_deskew(img)
+
+    # 5. Aproximar a polígono cuadrilátero
+    peri  = cv2.arcLength(hoja_cnt, True)
+    approx = cv2.approxPolyDP(hoja_cnt, 0.02 * peri, True)
+
+    if len(approx) == 4:
+        esquinas = _ordenar_esquinas(approx)
+    else:
+        # Si no sale exactamente 4 puntos, usamos el bounding rect
+        x, y, w, h = cv2.boundingRect(hoja_cnt)
+        esquinas = np.array([
+            [x,     y    ],
+            [x + w, y    ],
+            [x + w, y + h],
+            [x,     y + h],
+        ], dtype=np.float32)
+
+    # 6. Destino: los 4 vértices del tamaño estándar
+    dst = np.array([
+        [0,      0     ],
+        [NORM_W, 0     ],
+        [NORM_W, NORM_H],
+        [0,      NORM_H],
+    ], dtype=np.float32)
+
+    # 7. Perspectiva y warp
+    M   = cv2.getPerspectiveTransform(esquinas, dst)
+    out = cv2.warpPerspective(img, M, (NORM_W, NORM_H),
+                              flags=cv2.INTER_CUBIC,
+                              borderMode=cv2.BORDER_REPLICATE)
+
+    # 8. Debug opcional: guardar imagen con esquinas marcadas
+    if debug_dir and base:
+        diag = img.copy()
+        for pt in esquinas.astype(int):
+            cv2.circle(diag, tuple(pt), 12, (0, 0, 255), -1)
+        cv2.polylines(diag, [esquinas.astype(int)], True, (0, 255, 0), 3)
+        cv2.imwrite(os.path.join(debug_dir, f"{base}_normalizacion.jpg"), diag)
+
+    return out
+
+
+def _fallback_deskew(img):
+    """
+    Fallback: corrección de ángulo leve con HoughLines cuando no se detecta
+    el contorno de la hoja. Devuelve la imagen lo más centrada posible en NORM_W×NORM_H.
+    """
+    gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
     lines = cv2.HoughLines(edges, 1, np.pi / 180, 200)
-    if lines is None:
-        return img
-    angles = []
-    for rho, theta in lines[:, 0]:
-        angle = (theta * 180 / np.pi) - 90
-        if abs(angle) < 10:
-            angles.append(angle)
-    if not angles:
-        return img
-    median_angle = float(np.median(angles))
-    if abs(median_angle) < 0.3:
-        return img
+    angle = 0.0
+    if lines is not None:
+        angles = []
+        for rho, theta in lines[:, 0]:
+            a = (theta * 180 / np.pi) - 90
+            if abs(a) < 10:
+                angles.append(a)
+        if angles:
+            angle = float(np.median(angles))
+
     h, w = img.shape[:2]
-    M = cv2.getRotationMatrix2D((w // 2, h // 2), median_angle, 1.0)
-    return cv2.warpAffine(img, M, (w, h),
-                          flags=cv2.INTER_CUBIC,
-                          borderMode=cv2.BORDER_REPLICATE)
+    if abs(angle) >= 0.3:
+        M   = cv2.getRotationMatrix2D((w // 2, h // 2), angle, 1.0)
+        img = cv2.warpAffine(img, M, (w, h),
+                             flags=cv2.INTER_CUBIC,
+                             borderMode=cv2.BORDER_REPLICATE)
+
+    # Redimensionar al tamaño estándar para que las coordenadas sigan funcionando
+    return cv2.resize(img, (NORM_W, NORM_H), interpolation=cv2.INTER_AREA)
 
 
 def hacer_tiras(img, modo):
@@ -269,14 +368,20 @@ def procesar_imagen(image_path, modo, debug=False):
 
     if debug:
         print(f"  Imagen cargada: {img.shape[1]}x{img.shape[0]}px")
-    img = deskew(img)
-
-    tiras = hacer_tiras(img, modo)
-
-    if debug:
-        debug_dir = os.path.join("simulacros", "cv_prototypes", "tiras")
+        # Relativo al archivo .py, sin importar desde dónde se corra
+        debug_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cv_prototypes", "tiras")
         os.makedirs(debug_dir, exist_ok=True)
         base = os.path.basename(image_path).replace('.jpg', '').replace('.png', '')
+    else:
+        debug_dir = None
+        base = None
+
+    # Normalizar perspectiva: detecta la hoja y la estira a NORM_W × NORM_H siempre
+    img = normalizar_hoja(img, debug_dir=debug_dir, base=base)
+    if debug:
+        print(f"  Hoja normalizada a {img.shape[1]}x{img.shape[0]}px")
+
+    tiras = hacer_tiras(img, modo)
 
     secuencia = []
     for num, (tira_img, n_opciones, etiqueta) in enumerate(tiras, start=1):
@@ -331,7 +436,7 @@ if __name__ == "__main__":
             print("     y vuelve a correr hasta que el conteo sea correcto.")
         else:
             print("\n✅ Conteo exacto. Revisa la secuencia para verificar precisión.")
-        print(f"\nDebug de tiras en: cv_prototypes/tiras/")
+        print(f"\nDebug de tiras en: {os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cv_prototypes', 'tiras')}/")
     except Exception as e:
         import traceback
         traceback.print_exc()

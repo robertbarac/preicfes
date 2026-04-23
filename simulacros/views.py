@@ -56,14 +56,16 @@ class GrupoCalificarSimulacroView(LoginRequiredMixin, View):
             messages.error(request, f"La cantidad de imágenes ({len(archivos)}) no coincide con el doble de alumnos seleccionados ({len(alumnos_ids) * 2}).")
             return redirect('simulacros:grupo_calificar_simulacro', grupo_id=grupo.id)
             
-        # Ordenar archivos por nombre
+        # Ordenar archivos por nombre (convención de nombrado del escáner)
         archivos_ordenados = sorted(archivos, key=lambda x: x.name)
         
-        # Mantener el orden alfabético de alumnos
-        alumnos_seleccionados = Alumno.objects.filter(id__in=alumnos_ids).order_by('primer_apellido', 'segundo_apellido')
+        # Respetar el orden en que el usuario arrastró los alumnos en el formulario
+        # (ese orden ya corresponde al orden del PDF escaneado)
+        alumnos_map = {str(a.id): a for a in Alumno.objects.filter(id__in=alumnos_ids)}
+        alumnos_seleccionados = [alumnos_map[aid] for aid in alumnos_ids if aid in alumnos_map]
         
-        componentes_s1 = ['matematicas', 'lectura', 'sociales', 'naturales']
-        componentes_s2 = ['matematicas', 'naturales', 'sociales', 'ingles']
+        componentes_s1 = simulacro.get_componentes_s1()
+        componentes_s2 = simulacro.get_componentes_s2()
         
         with tempfile.TemporaryDirectory() as tmpdirname:
             for idx, alumno in enumerate(alumnos_seleccionados):

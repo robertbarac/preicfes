@@ -1,13 +1,40 @@
 from django.db import models
 from django.conf import settings
 
+# Orden de componentes por defecto (válido para simulacros actuales)
+_DEFAULT_COMPONENTES_S1 = ["matematicas", "lectura", "sociales", "naturales"]
+_DEFAULT_COMPONENTES_S2 = ["sociales", "matematicas", "naturales", "ingles"]
+
+# Valores válidos para cada campo
+COMPONENTES_VALIDOS = {"matematicas", "lectura", "sociales", "naturales", "ingles"}
+
+
 class Simulacro(models.Model):
     nombre = models.CharField(max_length=255, unique=True, verbose_name="Nombre del Simulacro")
     soluciones_s1 = models.CharField(max_length=150, verbose_name="Soluciones Sesión 1 (120 ítems)")
     soluciones_s2 = models.CharField(max_length=150, verbose_name="Soluciones Sesión 2 (134 ítems)")
     puntos_corte_s1 = models.JSONField(verbose_name="Puntos de Corte Sesión 1", default=dict)
     puntos_corte_s2 = models.JSONField(verbose_name="Puntos de Corte Sesión 2", default=dict)
-    
+
+    componentes_s1 = models.JSONField(
+        verbose_name="Orden de componentes Sesión 1",
+        default=list,
+        help_text=(
+            'Lista ordenada de componentes para S1. Ejemplo: '
+            '["matematicas", "lectura", "sociales", "naturales"]. '
+            f'Valores válidos: {sorted(COMPONENTES_VALIDOS)}.'
+        ),
+    )
+    componentes_s2 = models.JSONField(
+        verbose_name="Orden de componentes Sesión 2",
+        default=list,
+        help_text=(
+            'Lista ordenada de componentes para S2. Ejemplo: '
+            '["sociales", "matematicas", "naturales", "ingles"]. '
+            f'Valores válidos: {sorted(COMPONENTES_VALIDOS)}.'
+        ),
+    )
+
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -16,6 +43,14 @@ class Simulacro(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def get_componentes_s1(self) -> list:
+        """Retorna el orden de componentes S1, usando el default si está vacío."""
+        return self.componentes_s1 if self.componentes_s1 else _DEFAULT_COMPONENTES_S1
+
+    def get_componentes_s2(self) -> list:
+        """Retorna el orden de componentes S2, usando el default si está vacío."""
+        return self.componentes_s2 if self.componentes_s2 else _DEFAULT_COMPONENTES_S2
 
 
 class ResultadoSimulacro(models.Model):
