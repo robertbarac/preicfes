@@ -16,11 +16,13 @@ from .procesar_simulacro import procesar_imagen
 from .calculos import calificar, calcular_puntaje_icfes
 
 # ReportLab imports
-from reportlab.lib.pagesizes import A5
+from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image as RLImage
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image as RLImage, KeepTogether
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
+
+from .recomendaciones import generar_reporte_completo
 from django.conf import settings
 
 class GrupoCalificarSimulacroView(LoginRequiredMixin, View):
@@ -210,95 +212,212 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="{filename}"'
         
-        # Use A5 portrait
-        doc = SimpleDocTemplate(response, pagesize=A5, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+        # Use A4 portrait (more space for recommendations)
+        doc = SimpleDocTemplate(response, pagesize=A4, rightMargin=35, leftMargin=35, topMargin=30, bottomMargin=30)
         elements = []
         styles = getSampleStyleSheet()
         
-        # Paleta de colores
-        ocean_blue = colors.HexColor('#006699')
-        gold = colors.HexColor('#FFD700')
-        black = colors.HexColor('#000000')
+        # ── Paleta de colores ──────────────────────────────────────────────
+        ocean_blue  = colors.HexColor('#006699')
+        gold        = colors.HexColor('#FFD700')
+        black       = colors.HexColor('#000000')
+        red_critico = colors.HexColor('#C0392B')
+        green_ok    = colors.HexColor('#27AE60')
+        gray_light  = colors.HexColor('#F4F6F8')
+        gray_mid    = colors.HexColor('#7F8C8D')
         
+        # ── Estilos de texto ───────────────────────────────────────────────
         title_style = ParagraphStyle(
-            name='TitleStyle',
-            parent=styles['Heading1'],
-            textColor=ocean_blue,
-            alignment=1, # center
-            spaceAfter=15,
-            fontSize=16
+            name='TitleStyle', parent=styles['Heading1'],
+            textColor=ocean_blue, alignment=1, spaceAfter=4, fontSize=16
         )
-        
         name_style = ParagraphStyle(
-            name='NameStyle',
-            parent=styles['Heading2'],
-            textColor=black,
-            alignment=1,
-            spaceAfter=10,
-            fontSize=14
+            name='NameStyle', parent=styles['Heading2'],
+            textColor=black, alignment=1, spaceAfter=4, fontSize=14
         )
-        
         global_style = ParagraphStyle(
-            name='GlobalStyle',
-            parent=styles['Heading1'],
-            textColor=ocean_blue,
-            alignment=1,
-            spaceAfter=20,
-            fontSize=36,
-            leading=40
+            name='GlobalStyle', parent=styles['Heading1'],
+            textColor=ocean_blue, alignment=1, spaceAfter=6, fontSize=40, leading=44
+        )
+        section_style = ParagraphStyle(
+            name='SectionStyle', parent=styles['Heading2'],
+            textColor=ocean_blue, spaceAfter=4, spaceBefore=10, fontSize=11,
+            borderPad=3, fontName='Helvetica-Bold'
+        )
+        area_header_style = ParagraphStyle(
+            name='AreaHeader', parent=styles['Normal'],
+            fontSize=10, fontName='Helvetica-Bold',
+            spaceAfter=2, spaceBefore=6
+        )
+        bullet_style = ParagraphStyle(
+            name='BulletStyle', parent=styles['Normal'],
+            fontSize=9, leftIndent=12, spaceAfter=1, leading=13
+        )
+        label_style = ParagraphStyle(
+            name='LabelStyle', parent=styles['Normal'],
+            fontSize=9, fontName='Helvetica-Bold',
+            spaceAfter=1, spaceBefore=3
+        )
+        normal_small = ParagraphStyle(
+            name='NormalSmall', parent=styles['Normal'],
+            fontSize=9, spaceAfter=2, leading=13
         )
         
         logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo.png')
         
         for i, res in enumerate(qs):
-            # Agregar Logo si existe
+            # ── Cabecera ───────────────────────────────────────────────────
             if os.path.exists(logo_path):
-                img = RLImage(logo_path, width=1.5*inch, height=1.5*inch)
+                img = RLImage(logo_path, width=1.2*inch, height=1.2*inch)
                 elements.append(img)
             
-            elements.append(Spacer(1, 0.1*inch))
+            elements.append(Spacer(1, 0.08*inch))
             elements.append(Paragraph("Resultados de Simulacro", title_style))
-            elements.append(Paragraph(f"{sim_nombre}", ParagraphStyle(name='Sub', parent=styles['Normal'], alignment=1, spaceAfter=20)))
+            elements.append(Paragraph(
+                f"{sim_nombre}",
+                ParagraphStyle(name='Sub', parent=styles['Normal'], alignment=1, spaceAfter=6, fontSize=10)
+            ))
             
-            # Datos del alumno
             nombre_completo = f"{res.alumno.primer_apellido} {res.alumno.segundo_apellido} {res.alumno.nombres}"
             elements.append(Paragraph(nombre_completo, name_style))
-            elements.append(Paragraph(f"<b>Grupo:</b> {res.alumno.grupo_actual.codigo if res.alumno.grupo_actual else 'N/A'} | <b>Fecha:</b> {res.fecha_realizacion.strftime('%Y-%m-%d') if res.fecha_realizacion else 'N/A'}", ParagraphStyle(name='Cent', parent=styles['Normal'], alignment=1)))
+            elements.append(Paragraph(
+                f"<b>Grupo:</b> {res.alumno.grupo_actual.codigo if res.alumno.grupo_actual else 'N/A'} "
+                f"&nbsp;|&nbsp; <b>Fecha:</b> {res.fecha_realizacion.strftime('%d/%m/%Y') if res.fecha_realizacion else 'N/A'}",
+                ParagraphStyle(name='Cent', parent=styles['Normal'], alignment=1, fontSize=9)
+            ))
             
-            elements.append(Spacer(1, 0.3*inch))
+            elements.append(Spacer(1, 0.15*inch))
             
-            # Puntaje Global
-            elements.append(Paragraph("PUNTAJE GLOBAL", ParagraphStyle(name='GTitle', parent=styles['Normal'], alignment=1, textColor=colors.gray, fontName="Helvetica-Bold")))
+            # ── Puntaje Global ─────────────────────────────────────────────
+            elements.append(Paragraph(
+                "PUNTAJE GLOBAL",
+                ParagraphStyle(name='GTitle', parent=styles['Normal'], alignment=1,
+                               textColor=gray_mid, fontName='Helvetica-Bold', fontSize=9)
+            ))
             elements.append(Paragraph(str(int(res.puntaje_global)), global_style))
             
-            elements.append(Spacer(1, 0.3*inch))
+            elements.append(Spacer(1, 0.1*inch))
             
-            # Tabla de componentes
+            # ── Tabla de componentes ───────────────────────────────────────
+            puntajes_res = {
+                'matematicas': res.puntaje_matematicas,
+                'lectura':     res.puntaje_lectura,
+                'sociales':    res.puntaje_sociales,
+                'naturales':   res.puntaje_naturales,
+                'ingles':      res.puntaje_ingles,
+                'global':      res.puntaje_global,
+            }
+            
             data = [
                 ['Componente', 'Puntaje'],
-                ['Matemáticas', str(int(res.puntaje_matematicas))],
-                ['Lectura Crítica', str(int(res.puntaje_lectura))],
-                ['Sociales y Ciudadanas', str(int(res.puntaje_sociales))],
-                ['Ciencias Naturales', str(int(res.puntaje_naturales))],
-                ['Inglés', str(int(res.puntaje_ingles))]
+                ['Matemáticas',            str(int(res.puntaje_matematicas))],
+                ['Lectura Crítica',         str(int(res.puntaje_lectura))],
+                ['Sociales y Ciudadanas',   str(int(res.puntaje_sociales))],
+                ['Ciencias Naturales',      str(int(res.puntaje_naturales))],
+                ['Inglés',                  str(int(res.puntaje_ingles))],
             ]
             
-            table = Table(data, colWidths=[3*inch, 1.5*inch])
+            table = Table(data, colWidths=[3.8*inch, 1.2*inch])
             table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), ocean_blue),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('ALIGN', (0, 1), (0, -1), 'LEFT'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('TEXTCOLOR', (0, 1), (-1, -1), black),
-                ('GRID', (0, 0), (-1, -1), 1, gold),
-                ('PADDING', (0, 1), (-1, -1), 8),
+                ('BACKGROUND',   (0, 0), (-1, 0),  ocean_blue),
+                ('TEXTCOLOR',    (0, 0), (-1, 0),  colors.whitesmoke),
+                ('ALIGN',        (0, 0), (-1, -1), 'CENTER'),
+                ('ALIGN',        (0, 1), (0, -1),  'LEFT'),
+                ('FONTNAME',     (0, 0), (-1, 0),  'Helvetica-Bold'),
+                ('FONTSIZE',     (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING',(0, 0), (-1, 0),  8),
+                ('BACKGROUND',   (0, 1), (-1, -1), colors.white),
+                ('TEXTCOLOR',    (0, 1), (-1, -1), black),
+                ('GRID',         (0, 0), (-1, -1), 0.5, gold),
+                ('ROWBACKGROUNDS',(0, 1), (-1, -1), [colors.white, gray_light]),
+                ('PADDING',      (0, 1), (-1, -1), 6),
             ]))
-            
             elements.append(table)
+            
+            # ── Sección de Análisis y Recomendaciones ──────────────────────
+            reporte = generar_reporte_completo(puntajes_res)
+            
+            elements.append(Spacer(1, 0.18*inch))
+            
+            # — Análisis general —
+            elements.append(Paragraph("📊 Análisis general", section_style))
+            elements.append(Paragraph(reporte['analisis_global'], normal_small))
+            
+            elements.append(Spacer(1, 0.1*inch))
+            
+            # — Análisis por área —
+            elements.append(Paragraph("📚 Análisis y recomendaciones por área", section_style))
+            
+            for area_data in reporte['areas']:
+                # Color del encabezado según criticidad
+                if area_data['es_critica']:
+                    header_color = red_critico
+                elif area_data['es_fortaleza']:
+                    header_color = green_ok
+                else:
+                    header_color = ocean_blue
+                
+                area_header_colored = ParagraphStyle(
+                    name=f'AH_{area_data["area"]}',
+                    parent=area_header_style,
+                    textColor=header_color
+                )
+                
+                nivel_tag = ""
+                if area_data['es_critica']:
+                    nivel_tag = " 🔴"
+                elif area_data['es_fortaleza']:
+                    nivel_tag = " 🟢"
+                
+                header_text = (
+                    f"{area_data['emoji']} {area_data['nombre']} – {int(area_data['puntaje'])}"
+                    f"{nivel_tag}"
+                )
+                
+                area_block = []
+                area_block.append(Paragraph(header_text, area_header_colored))
+                area_block.append(Paragraph(
+                    f"Nivel: <b>{area_data['nivel']}</b>",
+                    ParagraphStyle(name=f'Niv_{area_data["area"]}', parent=normal_small,
+                                   textColor=header_color)
+                ))
+                
+                if area_data['fortalezas']:
+                    area_block.append(Paragraph(
+                        "Fortalezas:" if not area_data['es_critica'] else "Aspectos base:",
+                        label_style
+                    ))
+                    for f in area_data['fortalezas']:
+                        area_block.append(Paragraph(f"• {f}", bullet_style))
+                
+                if area_data['es_critica'] and not area_data['fortalezas']:
+                    area_block.append(Paragraph("Debilidades:", label_style))
+                    area_block.append(Paragraph(
+                        "• Bajo desempeño en este componente – requiere refuerzo prioritario.",
+                        bullet_style
+                    ))
+                
+                area_block.append(Paragraph("Recomendaciones:", label_style))
+                for r in area_data['recomendaciones']:
+                    area_block.append(Paragraph(f"• {r}", bullet_style))
+                
+                elements.append(KeepTogether(area_block))
+            
+            # — Recomendaciones generales —
+            elements.append(Spacer(1, 0.1*inch))
+            
+            rec_gen_block = []
+            rec_gen_block.append(Paragraph("🎯 Recomendaciones generales", section_style))
+            for rec in reporte['recomendaciones_generales']:
+                rec_gen_block.append(Paragraph(f"• {rec}", bullet_style))
+            
+            # — Plan de distribución de tiempo —
+            if reporte['plan_tiempo']:
+                rec_gen_block.append(Paragraph("Plan de estudio sugerido:", label_style))
+                for p in reporte['plan_tiempo']:
+                    rec_gen_block.append(Paragraph(f"  → {p}", bullet_style))
+            
+            elements.append(KeepTogether(rec_gen_block))
             
             # Salto de página para el siguiente alumno
             if i < len(qs) - 1:
