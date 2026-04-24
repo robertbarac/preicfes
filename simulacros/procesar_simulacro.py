@@ -43,7 +43,7 @@ S1_CONF = {
 # x_ini: margen izquierdo, x_fin: margen derecho
 S2_CONF = {
     # Tira 1 (P1-48, 4 opciones)
-    'c1_y_ini': 190, 'c1_y_fin': 1580,
+    'c1_y_ini': 195, 'c1_y_fin': 1580,
     'c1_x_ini': 120, 'c1_x_fin': 320,
     
     # Tira 2a (P49-79, 4 opciones)

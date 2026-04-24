@@ -5,17 +5,29 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Resultados de Simulacros</h1>
-        <form action="{% url 'simulacros:descargar_resultados_pdf' %}" method="get" class="inline" target="_blank">
-            <!-- Pass the same current filters to the PDF export -->
-            <input type="hidden" name="sede" value="{{ request.GET.sede }}">
-            <input type="hidden" name="grupo" value="{{ request.GET.grupo }}">
-            <input type="hidden" name="simulacro" value="{{ request.GET.simulacro }}">
-            <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
-            <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
-                Generar PDF Estilizado
-            </button>
-        </form>
+        <div class="space-x-2">
+            <form action="{% url 'simulacros:descargar_resultados_pdf' %}" method="get" class="inline" target="_blank">
+                <!-- Pass the same current filters to the PDF export -->
+                <input type="hidden" name="sede" value="{{ request.GET.sede }}">
+                <input type="hidden" name="grupo" value="{{ request.GET.grupo }}">
+                <input type="hidden" name="simulacro" value="{{ request.GET.simulacro }}">
+                <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+                <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
+                    Generar Reportes Individuales
+                </button>
+            </form>
+            <form action="{% url 'simulacros:descargar_informe_directivo' %}" method="get" class="inline" target="_blank">
+                <input type="hidden" name="sede" value="{{ request.GET.sede }}">
+                <input type="hidden" name="grupo" value="{{ request.GET.grupo }}">
+                <input type="hidden" name="simulacro" value="{{ request.GET.simulacro }}">
+                <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+                <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow">
+                    Generar Informe Directivo
+                </button>
+            </form>
+        </div>
     </div>
 
     {% if messages %}
