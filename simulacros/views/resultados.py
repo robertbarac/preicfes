@@ -41,7 +41,7 @@ class ResultadosSimulacroListView(LoginRequiredMixin, PermisosResultadosMixin, L
         fecha_fin = self.request.GET.get('fecha_fin')
         
         if sede_id:
-            qs = qs.filter(alumno__sede_id=sede_id)
+            qs = qs.filter(alumno__grupo_actual__salon__sede_id=sede_id)
         if grupo_id:
             qs = qs.filter(alumno__grupo_actual_id=grupo_id)
         if simulacro_id:

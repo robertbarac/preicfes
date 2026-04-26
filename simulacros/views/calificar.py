@@ -16,7 +16,7 @@ from academico.models import Grupo, Alumno
 from ubicaciones.models import Sede
 from ..models import Simulacro, ResultadoSimulacro
 from ..procesar_simulacro import procesar_imagen
-from ..calculos import calificar, calcular_puntaje_icfes
+from ..calculos import calificar, calcular_puntaje_icfes, modificar_puntajes
 
 class GrupoCalificarSimulacroView(LoginRequiredMixin, View):
     def get(self, request, grupo_id):
@@ -105,6 +105,9 @@ class GrupoCalificarSimulacroView(LoginRequiredMixin, View):
                             
                     puntajes = calcular_puntaje_icfes(consolidados)
                     
+                    # Calcular puntajes modificados
+                    puntajes_modificados = modificar_puntajes(puntajes, simulacro.umbral)
+                    
                     # Guardar en BD
                     ResultadoSimulacro.objects.update_or_create(
                         alumno=alumno,
@@ -118,6 +121,12 @@ class GrupoCalificarSimulacroView(LoginRequiredMixin, View):
                             'puntaje_sociales': puntajes.get('sociales', 0),
                             'puntaje_naturales': puntajes.get('naturales', 0),
                             'puntaje_ingles': puntajes.get('ingles', 0),
+                            'puntaje_global_modificado': puntajes_modificados['global'],
+                            'puntaje_matematicas_modificado': puntajes_modificados.get('matematicas', 0),
+                            'puntaje_lectura_modificado': puntajes_modificados.get('lectura', 0),
+                            'puntaje_sociales_modificado': puntajes_modificados.get('sociales', 0),
+                            'puntaje_naturales_modificado': puntajes_modificados.get('naturales', 0),
+                            'puntaje_ingles_modificado': puntajes_modificados.get('ingles', 0),
                             'fecha_realizacion': fecha_realizacion,
                             'registrador': request.user
                         }

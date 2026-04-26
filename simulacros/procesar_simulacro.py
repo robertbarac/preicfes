@@ -33,7 +33,7 @@ S1_CONF = {
     'c3_x_ini': 720, 'c3_x_fin': 920,
     
     # Columna 4 (Preguntas 91-120)
-    'c4_y_ini': 270, 'c4_y_fin': 1420,
+    'c4_y_ini': 270, 'c4_y_fin': 1430,
     'c4_x_ini': 1010, 'c4_x_fin': 1230
 }
 
@@ -43,11 +43,11 @@ S1_CONF = {
 # x_ini: margen izquierdo, x_fin: margen derecho
 S2_CONF = {
     # Tira 1 (P1-48, 4 opciones)
-    'c1_y_ini': 195, 'c1_y_fin': 1580,
+    'c1_y_ini': 200, 'c1_y_fin': 1580,
     'c1_x_ini': 120, 'c1_x_fin': 320,
     
     # Tira 2a (P49-79, 4 opciones)
-    'c2a_y_ini': 195, 'c2a_y_fin': 1220,
+    'c2a_y_ini': 200, 'c2a_y_fin': 1220,
     'c2a_x_ini': 370, 'c2a_x_fin': 560,
     
     # Tira 2b (P80-96, 8 opciones) -> Su propio header para saltar textos intermedios

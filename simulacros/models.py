@@ -15,6 +15,11 @@ class Simulacro(models.Model):
     soluciones_s2 = models.CharField(max_length=150, verbose_name="Soluciones Sesión 2 (134 ítems)")
     puntos_corte_s1 = models.JSONField(verbose_name="Puntos de Corte Sesión 1", default=dict)
     puntos_corte_s2 = models.JSONField(verbose_name="Puntos de Corte Sesión 2", default=dict)
+    umbral = models.IntegerField(
+        default=200, 
+        verbose_name="Umbral de Puntaje Mínimo", 
+        help_text="Puntaje global mínimo aceptable. Los puntajes menores se ajustarán dinámicamente."
+    )
 
     componentes_s1 = models.JSONField(
         verbose_name="Orden de componentes Sesión 1",
@@ -78,6 +83,14 @@ class ResultadoSimulacro(models.Model):
     puntaje_sociales = models.FloatField(default=0.0, verbose_name="Sociales y Ciudadanas")
     puntaje_naturales = models.FloatField(default=0.0, verbose_name="Ciencias Naturales")
     puntaje_ingles = models.FloatField(default=0.0, verbose_name="Inglés")
+    
+    puntaje_global_modificado = models.FloatField(default=0.0, verbose_name="Puntaje Global Modificado")
+    puntaje_matematicas_modificado = models.FloatField(default=0.0, verbose_name="Matemáticas Modificado")
+    puntaje_lectura_modificado = models.FloatField(default=0.0, verbose_name="Lectura Crítica Modificado")
+    puntaje_sociales_modificado = models.FloatField(default=0.0, verbose_name="Sociales y Ciudadanas Modificado")
+    puntaje_naturales_modificado = models.FloatField(default=0.0, verbose_name="Ciencias Naturales Modificado")
+    puntaje_ingles_modificado = models.FloatField(default=0.0, verbose_name="Inglés Modificado")
+
     fecha_realizacion = models.DateField(verbose_name="Fecha de realización", null=True, blank=True)
     registrador = models.ForeignKey(
         settings.AUTH_USER_MODEL,

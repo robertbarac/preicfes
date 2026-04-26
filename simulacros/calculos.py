@@ -80,3 +80,61 @@ def calcular_puntaje_icfes(puntajes_componentes):
     resultados['global'] = puntaje_global
     
     return resultados
+
+def modificar_puntajes(puntajes_reales, umbral):
+    """
+    Si el puntaje global real está por debajo del umbral,
+    se ajustan los puntajes dinámica y proporcionalmente para que el global quede
+    al menos en el umbral, y los componentes se ajusten en consecuencia.
+    """
+    pg_real = puntajes_reales.get('global', 0)
+    
+    if pg_real >= umbral:
+        return puntajes_reales.copy()
+        
+    import random
+    
+    # Diferencia que falta para llegar al umbral
+    diff = umbral - pg_real
+    
+    # Le sumamos un "boost" que lo pone en el umbral + un número aleatorio pequeño para variar
+    boost = diff + random.randint(0, 15)
+    
+    factor = (pg_real + boost) / pg_real if pg_real > 0 else 0
+    
+    if pg_real == 0:
+        nuevo_global = umbral + random.randint(0, 15)
+        # Componentes base proporcionales
+        base_comp = round(nuevo_global / 5)
+        return {
+            'global': nuevo_global,
+            'matematicas': min(100, base_comp),
+            'lectura': min(100, base_comp),
+            'sociales': min(100, base_comp),
+            'naturales': min(100, base_comp),
+            'ingles': min(100, base_comp),
+        }
+        
+    modificados = {}
+    suma_ponderada = 0
+    pesos = {'naturales': 3, 'sociales': 3, 'lectura': 3, 'matematicas': 3, 'ingles': 1}
+    total_pesos = sum(pesos.values())
+
+    for comp, valor in puntajes_reales.items():
+        if comp == 'global':
+            continue
+        nuevo_valor = min(100, round(valor * factor))
+        modificados[comp] = nuevo_valor
+        
+        peso = pesos.get(comp, 1)
+        suma_ponderada += nuevo_valor * peso
+        
+    nuevo_global = round((suma_ponderada / total_pesos) * 5)
+    
+    # Asegurarnos de que el global recalculado sí pasa el umbral
+    if nuevo_global < umbral:
+        nuevo_global = umbral + random.randint(0, 5)
+        
+    modificados['global'] = min(500, nuevo_global)
+    return modificados
+

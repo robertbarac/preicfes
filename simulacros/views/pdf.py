@@ -89,6 +89,8 @@ class BarraDesempeno(Flowable):
 
 
 class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, View):
+    use_real_scores = False
+    
     def get(self, request):
         qs = ResultadoSimulacro.objects.all().select_related('alumno', 'simulacro', 'alumno__grupo_actual').order_by('alumno__primer_apellido', 'alumno__segundo_apellido')
 
@@ -99,7 +101,7 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
         fecha_fin = request.GET.get('fecha_fin')
 
         if sede_id:
-            qs = qs.filter(alumno__sede_id=sede_id)
+            qs = qs.filter(alumno__grupo_actual__salon__sede_id=sede_id)
         if grupo_id:
             qs = qs.filter(alumno__grupo_actual_id=grupo_id)
         if simulacro_id:
@@ -166,13 +168,26 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
         sND = ps('sND', fontSize=7.5,leading=10, textColor=C_NEGRO)
         sNH = ps('sNH', fontSize=8,  fontName='Helvetica-Bold', textColor=C_AZUL,  leading=11)
 
-        AREA_CFG = [
-            ('matematicas',  'puntaje_matematicas', 'MATEMATICAS'),
-            ('lectura',      'puntaje_lectura',     'LECTURA CRITICA'),
-            ('sociales',     'puntaje_sociales',    'CIENCIAS SOCIALES'),
-            ('naturales',    'puntaje_naturales',   'CIENCIAS NATURALES'),
-            ('ingles',       'puntaje_ingles',      'INGLES'),
-        ]
+        if self.use_real_scores:
+            AREA_CFG = [
+                ('matematicas',  'puntaje_matematicas', 'MATEMATICAS'),
+                ('lectura',      'puntaje_lectura',     'LECTURA CRITICA'),
+                ('sociales',     'puntaje_sociales',    'CIENCIAS SOCIALES'),
+                ('naturales',    'puntaje_naturales',   'CIENCIAS NATURALES'),
+                ('ingles',       'puntaje_ingles',      'INGLES'),
+            ]
+            global_attr = 'puntaje_global'
+            tipo_reporte = 'Real'
+        else:
+            AREA_CFG = [
+                ('matematicas',  'puntaje_matematicas_modificado', 'MATEMATICAS'),
+                ('lectura',      'puntaje_lectura_modificado',     'LECTURA CRITICA'),
+                ('sociales',     'puntaje_sociales_modificado',    'CIENCIAS SOCIALES'),
+                ('naturales',    'puntaje_naturales_modificado',   'CIENCIAS NATURALES'),
+                ('ingles',       'puntaje_ingles_modificado',      'INGLES'),
+            ]
+            global_attr = 'puntaje_global_modificado'
+            tipo_reporte = 'Modificado'
 
         def nivel_color(p):
             if p >= 70:   return C_VERDE, 'ALTO'
@@ -187,15 +202,15 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
             nombre = f"{res.alumno.primer_apellido} {res.alumno.segundo_apellido} {res.alumno.nombres}".strip()
             fecha_str = res.fecha_realizacion.strftime('%d de %B de %Y') if res.fecha_realizacion else 'N/A'
             grupo_str = res.alumno.grupo_actual.codigo if res.alumno.grupo_actual else 'N/A'
-            pg = int(res.puntaje_global)
+            pg = int(getattr(res, global_attr))
 
             puntajes_res = {
-                'matematicas': res.puntaje_matematicas,
-                'lectura':     res.puntaje_lectura,
-                'sociales':    res.puntaje_sociales,
-                'naturales':   res.puntaje_naturales,
-                'ingles':      res.puntaje_ingles,
-                'global':      res.puntaje_global,
+                'matematicas': getattr(res, AREA_CFG[0][1]),
+                'lectura':     getattr(res, AREA_CFG[1][1]),
+                'sociales':    getattr(res, AREA_CFG[2][1]),
+                'naturales':   getattr(res, AREA_CFG[3][1]),
+                'ingles':      getattr(res, AREA_CFG[4][1]),
+                'global':      getattr(res, global_attr),
             }
             reporte = generar_reporte_completo(puntajes_res)
 
@@ -450,9 +465,12 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
         doc.build(elements)
         return response
 
+class DescargarResultadosRealesPDFView(DescargarResultadosPDFView):
+    use_real_scores = True
+
 class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMixin, View):
     def get(self, request):
-        qs = ResultadoSimulacro.objects.all().select_related('alumno', 'simulacro', 'alumno__grupo_actual').order_by('-puntaje_global')
+        qs = ResultadoSimulacro.objects.all().select_related('alumno', 'simulacro', 'alumno__grupo_actual').order_by('-puntaje_global_modificado')
         
         sede_id = request.GET.get('sede')
         grupo_id = request.GET.get('grupo')
@@ -460,7 +478,7 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
         fecha_inicio = request.GET.get('fecha_inicio')
         fecha_fin = request.GET.get('fecha_fin')
 
-        if sede_id: qs = qs.filter(alumno__sede_id=sede_id)
+        if sede_id: qs = qs.filter(alumno__grupo_actual__salon__sede_id=sede_id)
         if grupo_id: qs = qs.filter(alumno__grupo_actual_id=grupo_id)
         if simulacro_id: qs = qs.filter(simulacro_id=simulacro_id)
         if fecha_inicio: qs = qs.filter(fecha_realizacion__gte=fecha_inicio)
@@ -474,16 +492,16 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
         total_alumnos = qs.count()
 
         # Promedios, Min y Max
-        puntajes_globales = [r.puntaje_global for r in qs]
+        puntajes_globales = [r.puntaje_global_modificado for r in qs]
         avg_global = sum(puntajes_globales) / total_alumnos
         max_global = max(puntajes_globales)
         min_global = min(puntajes_globales)
         
-        avg_mat = sum(r.puntaje_matematicas for r in qs) / total_alumnos
-        avg_lec = sum(r.puntaje_lectura for r in qs) / total_alumnos
-        avg_soc = sum(r.puntaje_sociales for r in qs) / total_alumnos
-        avg_nat = sum(r.puntaje_naturales for r in qs) / total_alumnos
-        avg_ing = sum(r.puntaje_ingles for r in qs) / total_alumnos
+        avg_mat = sum(r.puntaje_matematicas_modificado for r in qs) / total_alumnos
+        avg_lec = sum(r.puntaje_lectura_modificado for r in qs) / total_alumnos
+        avg_soc = sum(r.puntaje_sociales_modificado for r in qs) / total_alumnos
+        avg_nat = sum(r.puntaje_naturales_modificado for r in qs) / total_alumnos
+        avg_ing = sum(r.puntaje_ingles_modificado for r in qs) / total_alumnos
 
         # Distribución de Niveles Globales (Pie Chart)
         niveles_global = {'Alto': 0, 'Medio': 0, 'Básico': 0, 'Bajo': 0}
@@ -507,11 +525,11 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
             else: dict_niv['Bajo'] += 1
 
         for r in qs:
-            clasificar_area(r.puntaje_matematicas, niv_mat)
-            clasificar_area(r.puntaje_lectura, niv_lec)
-            clasificar_area(r.puntaje_sociales, niv_soc)
-            clasificar_area(r.puntaje_naturales, niv_nat)
-            clasificar_area(r.puntaje_ingles, niv_ing)
+            clasificar_area(r.puntaje_matematicas_modificado, niv_mat)
+            clasificar_area(r.puntaje_lectura_modificado, niv_lec)
+            clasificar_area(r.puntaje_sociales_modificado, niv_soc)
+            clasificar_area(r.puntaje_naturales_modificado, niv_nat)
+            clasificar_area(r.puntaje_ingles_modificado, niv_ing)
 
         # Análisis de Ítems Críticos
         errores_s1 = Counter()
@@ -645,6 +663,14 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
         bc.categoryAxis.labels.fontSize = 8
         bc.categoryAxis.categoryNames = ['Mate', 'Lectura', 'Sociales', 'Natu', 'Inglés']
         bc.bars[0].fillColor = colors.HexColor('#2E6DA4')
+        
+        # Etiquetas arriba de las barras
+        bc.barLabelFormat = '%.0f'
+        bc.barLabels.nudge = 5
+        bc.barLabels.boxAnchor = 's'
+        bc.barLabels.fontName = 'Helvetica-Bold'
+        bc.barLabels.fontSize = 7
+        
         d_bar.add(bc)
         
         graphs_t = Table([[d_pie, d_bar]], colWidths=[200, 315])
@@ -681,6 +707,13 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
         bcg.bars[1].fillColor = colors.HexColor('#F1C40F') # Medio
         bcg.bars[2].fillColor = colors.HexColor('#E67E22') # Básico
         bcg.bars[3].fillColor = colors.HexColor('#C0392B') # Bajo
+        
+        # Etiquetas en las barras (oculta el cero si no hay estudiantes en ese nivel)
+        bcg.barLabelFormat = lambda x: str(int(x)) if x > 0 else ""
+        bcg.barLabels.nudge = 2
+        bcg.barLabels.boxAnchor = 's'
+        bcg.barLabels.fontName = 'Helvetica'
+        bcg.barLabels.fontSize = 6
         
         leg = Legend()
         leg.x = 440
@@ -735,24 +768,63 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
         
         # 4. Escalafón
         elements.append(Paragraph('4. Escalafón de Estudiantes', h2))
-        esc_data = [['Puesto', 'Estudiante', 'Grupo', 'Puntaje Global']]
+        
+        top_mat = sorted(list(set(r.puntaje_matematicas_modificado for r in qs)), reverse=True)[:3]
+        top_lec = sorted(list(set(r.puntaje_lectura_modificado for r in qs)), reverse=True)[:3]
+        top_soc = sorted(list(set(r.puntaje_sociales_modificado for r in qs)), reverse=True)[:3]
+        top_nat = sorted(list(set(r.puntaje_naturales_modificado for r in qs)), reverse=True)[:3]
+        top_ing = sorted(list(set(r.puntaje_ingles_modificado for r in qs)), reverse=True)[:3]
+        top_glb = sorted(list(set(r.puntaje_global_modificado for r in qs)), reverse=True)[:3]
+        
+        cell_style = ParagraphStyle(name='CellCenter', parent=styles['Normal'], fontSize=8, alignment=1)
+        
+        def format_score_with_medal(score, top_values):
+            score_int = int(score)
+            text = f"{score_int}"
+            if score in top_values:
+                idx = top_values.index(score)
+                if idx == 0:
+                    text = f'<font color="#F39C12">&#9733;</font> <b>{score_int}</b>' # Oro
+                elif idx == 1:
+                    text = f'<font color="#7F8C8D">&#9733;</font> <b>{score_int}</b>' # Plata
+                elif idx == 2:
+                    text = f'<font color="#D35400">&#9733;</font> <b>{score_int}</b>' # Bronce
+            return Paragraph(text, cell_style)
+        
+        esc_data = [['#', 'Estudiante', 'Grupo', 'Glob', 'Mate', 'Lect', 'Soci', 'Natu', 'Ingl']]
         for rank, r in enumerate(qs, 1):
             grupo_str = r.alumno.grupo_actual.codigo if r.alumno.grupo_actual else 'N/A'
             nombre = f"{r.alumno.primer_apellido} {r.alumno.segundo_apellido} {r.alumno.nombres}"
-            esc_data.append([str(rank), nombre, grupo_str, f"{r.puntaje_global:.0f}"])
             
-        t_esc = Table(esc_data, colWidths=[60, 300, 70, 80], repeatRows=1)
+            # Truncar nombre si es muy largo
+            if len(nombre) > 35:
+                nombre = nombre[:32] + "..."
+                
+            esc_data.append([
+                str(rank), 
+                Paragraph(nombre, ParagraphStyle(name='CellLeft', parent=styles['Normal'], fontSize=8)), 
+                grupo_str, 
+                format_score_with_medal(r.puntaje_global_modificado, top_glb),
+                format_score_with_medal(r.puntaje_matematicas_modificado, top_mat),
+                format_score_with_medal(r.puntaje_lectura_modificado, top_lec),
+                format_score_with_medal(r.puntaje_sociales_modificado, top_soc),
+                format_score_with_medal(r.puntaje_naturales_modificado, top_nat),
+                format_score_with_medal(r.puntaje_ingles_modificado, top_ing),
+            ])
+            
+        t_esc = Table(esc_data, colWidths=[25, 175, 40, 40, 39, 39, 39, 39, 39], repeatRows=1)
         t_esc.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1C3A5F')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('ALIGN', (0,0), (0,-1), 'CENTER'),
-            ('ALIGN', (3,0), (3,-1), 'CENTER'),
+            ('ALIGN', (2,0), (-1,-1), 'CENTER'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#BDC3C7')),
             ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#F4F6F8')]),
-            ('FONTSIZE', (0,0), (-1,-1), 9),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-            ('TOPPADDING', (0,0), (-1,-1), 5),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
         ]))
         elements.append(t_esc)
         
