@@ -791,9 +791,8 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
                     text = f'<font color="#D35400">&#9733;</font> <b>{score_int}</b>' # Bronce
             return Paragraph(text, cell_style)
         
-        esc_data = [['#', 'Estudiante', 'Grupo', 'Glob', 'Mate', 'Lect', 'Soci', 'Natu', 'Ingl']]
+        esc_data = [['#', 'Estudiante', 'Glob', 'Mate', 'Lect', 'Soci', 'Natu', 'Ingl']]
         for rank, r in enumerate(qs, 1):
-            grupo_str = r.alumno.grupo_actual.codigo if r.alumno.grupo_actual else 'N/A'
             nombre = f"{r.alumno.primer_apellido} {r.alumno.segundo_apellido} {r.alumno.nombres}"
             
             # Truncar nombre si es muy largo
@@ -803,7 +802,6 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
             esc_data.append([
                 str(rank), 
                 Paragraph(nombre, ParagraphStyle(name='CellLeft', parent=styles['Normal'], fontSize=8)), 
-                grupo_str, 
                 format_score_with_medal(r.puntaje_global_modificado, top_glb),
                 format_score_with_medal(r.puntaje_matematicas_modificado, top_mat),
                 format_score_with_medal(r.puntaje_lectura_modificado, top_lec),
@@ -812,7 +810,7 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
                 format_score_with_medal(r.puntaje_ingles_modificado, top_ing),
             ])
             
-        t_esc = Table(esc_data, colWidths=[25, 175, 40, 40, 39, 39, 39, 39, 39], repeatRows=1)
+        t_esc = Table(esc_data, colWidths=[25, 215, 40, 39, 39, 39, 39, 39], repeatRows=1)
         t_esc.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1C3A5F')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
