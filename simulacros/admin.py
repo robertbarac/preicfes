@@ -38,7 +38,24 @@ class SimulacroAdmin(admin.ModelAdmin):
 
 @admin.register(ResultadoSimulacro)
 class ResultadoSimulacroAdmin(admin.ModelAdmin):
-    list_display = ('alumno', 'simulacro', 'puntaje_global', 'fecha_realizacion', 'registrador', 'estado')
-    list_filter = ('simulacro', 'fecha_realizacion', 'registrador')
+    list_display = ('alumno', 'get_grupo', 'get_sede', 'get_municipio', 'simulacro', 'puntaje_global', 'fecha_realizacion', 'estado')
+    list_filter = (
+        'simulacro',
+        'fecha_realizacion',
+        'alumno__grupo_actual',
+        'alumno__grupo_actual__salon__sede',
+        'alumno__municipio',
+    )
     search_fields = ('alumno__primer_apellido', 'alumno__nombres', 'simulacro__nombre')
 
+    @admin.display(description='Grupo', ordering='alumno__grupo_actual__codigo')
+    def get_grupo(self, obj):
+        return obj.alumno.grupo_actual
+
+    @admin.display(description='Sede', ordering='alumno__grupo_actual__salon__sede__nombre')
+    def get_sede(self, obj):
+        return obj.alumno.grupo_actual.salon.sede.nombre
+
+    @admin.display(description='Municipio', ordering='alumno__municipio__nombre')
+    def get_municipio(self, obj):
+        return obj.alumno.municipio.nombre

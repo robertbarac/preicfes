@@ -83,58 +83,68 @@ def calcular_puntaje_icfes(puntajes_componentes):
 
 def modificar_puntajes(puntajes_reales, umbral):
     """
-    Si el puntaje global real está por debajo del umbral,
-    se ajustan los puntajes dinámica y proporcionalmente para que el global quede
-    al menos en el umbral, y los componentes se ajusten en consecuencia.
+    Ajusta los puntajes según reglas fijas pero introduce variabilidad aleatoria:
+    - ≤140 → objetivo base 245
+    - 141‑240 → objetivo base 280
+    - >240 → objetivo base 310
+    A cada objetivo se le suma un *boost* aleatorio (6‑12) y cada componente recibe
+    un *jitter* aleatorio de -2 a +2 para evitar patrones visibles.
+    Los componentes se escalan proporcionalmente al objetivo con boost y se mantiene
+    un máximo de 100.
     """
     pg_real = puntajes_reales.get('global', 0)
-    
-    if pg_real >= umbral:
+
+    # Definir objetivo base según rangos
+    if pg_real <= 140:
+        objetivo_base = 245
+    elif pg_real <= 240:
+        objetivo_base = 280
+    else:
+        objetivo_base = 310
+
+    # Si ya supera el objetivo base, no ajustamos
+    if pg_real >= objetivo_base:
         return puntajes_reales.copy()
-        
-    import random
-    
-    # Diferencia que falta para llegar al umbral
-    diff = umbral - pg_real
-    
-    # Le sumamos un "boost" que lo pone en el umbral + un número aleatorio pequeño para variar
-    boost = diff + random.randint(0, 15)
-    
-    factor = (pg_real + boost) / pg_real if pg_real > 0 else 0
-    
+
+    # Caso especial pg_real == 0 para evitar división por cero
     if pg_real == 0:
-        nuevo_global = umbral + random.randint(0, 15)
-        # Componentes base proporcionales
-        base_comp = round(nuevo_global / 5)
+        base_comp = min(100, round(objetivo_base / 5))
         return {
-            'global': nuevo_global,
-            'matematicas': min(100, base_comp),
-            'lectura': min(100, base_comp),
-            'sociales': min(100, base_comp),
-            'naturales': min(100, base_comp),
-            'ingles': min(100, base_comp),
+            'global': objetivo_base,
+            'matematicas': base_comp,
+            'lectura': base_comp,
+            'sociales': base_comp,
+            'naturales': base_comp,
+            'ingles': base_comp,
         }
-        
+
+    import random
+    # Boost aleatorio moderado para que el ajuste no sea uniforme
+    boost = random.randint(6, 12)
+    objetivo = objetivo_base + boost
+
+    # Factor proporcional usando el objetivo con boost
+    factor = objetivo / pg_real
+
+    # Escalar componentes manteniendo límite 100 y añadiendo jitter
     modificados = {}
-    suma_ponderada = 0
     pesos = {'naturales': 3, 'sociales': 3, 'lectura': 3, 'matematicas': 3, 'ingles': 1}
     total_pesos = sum(pesos.values())
-
+    suma_ponderada = 0
     for comp, valor in puntajes_reales.items():
         if comp == 'global':
             continue
         nuevo_valor = min(100, round(valor * factor))
+        # Jitter aleatorio pequeño
+        nuevo_valor = max(0, min(100, nuevo_valor + random.randint(-2, 2)))
         modificados[comp] = nuevo_valor
-        
         peso = pesos.get(comp, 1)
         suma_ponderada += nuevo_valor * peso
-        
+
+    # Recalcular global a partir de los componentes modificados
     nuevo_global = round((suma_ponderada / total_pesos) * 5)
-    
-    # Asegurarnos de que el global recalculado sí pasa el umbral
-    if nuevo_global < umbral:
-        nuevo_global = umbral + random.randint(0, 5)
-        
+    # Garantizar que el global no quede por debajo del objetivo base
+    if nuevo_global < objetivo_base:
+        nuevo_global = objetivo_base
     modificados['global'] = min(500, nuevo_global)
     return modificados
-
