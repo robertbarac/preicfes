@@ -194,35 +194,111 @@ def _fallback_deskew(img):
 
 def hacer_tiras(img, modo):
     """
-    Divide la imagen en tiras que contienen SOLO los círculos de respuesta.
-    Usamos coordenadas absolutas específicas para cada columna.
+    Detecta los 4 grandes rectángulos que envuelven a cada columna de opciones.
+    Devuelve la imagen recortada (con perspectiva corregida y sin el borde negro)
+    de cada uno y su cantidad de opciones asociadas.
     """
-    H, W = img.shape[:2]
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Threshold adaptativo para resaltar trazos negros (como los rectángulos) sobre fondo blanco
+    imgThresh = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV, 51, 10
+    )
+    
+    # Encontrar contornos, RETR_LIST para no perder rectángulos que puedan estar anidados por ruido
+    contours, _ = cv2.findContours(imgThresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    
+    candidatos = []
+    
+    for c in contours:
+        area = cv2.contourArea(c)
+        # Filtro de área: los rectángulos de columna ocupan una porción significativa
+        if 10000 < area < 1500000:
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.015 * peri, True)
+            if len(approx) == 4:
+                x, y, w, h = cv2.boundingRect(approx)
+                ar = h / float(w)
+                if 0.4 < ar < 30:  # Relajamos el aspect ratio, algunos bloques (como S2_C2b) pueden ser casi cuadrados o más anchos que altos
+                    cx, cy = x + w // 2, y + h // 2
+                    es_nuevo = True
+                    for cand in candidatos:
+                        # Si están muy cerca (ej. contorno interno y externo del grosor de la línea)
+                        dist = ((cand['cx'] - cx)**2 + (cand['cy'] - cy)**2)**0.5
+                        if dist < 40:
+                            es_nuevo = False
+                            # Preferir el de mayor área para asegurar que agarramos todo el marco
+                            if area > cand['area']:
+                                cand['c'] = approx
+                                cand['area'] = area
+                                cand['x'], cand['y'], cand['w'], cand['h'] = x, y, w, h
+                            break
+                    if es_nuevo:
+                        candidatos.append({
+                            'c': approx, 'area': area,
+                            'x': x, 'y': y, 'w': w, 'h': h,
+                            'cx': cx, 'cy': cy
+                        })
+
+    # Si por alguna razón hay más de 4 candidatos (ruido, cuadros de texto), nos quedamos con los 4 de mayor área
+    if len(candidatos) > 4:
+        candidatos = sorted(candidatos, key=lambda r: r['area'], reverse=True)[:4]
+
+    # Ordenarlos de izquierda a derecha. Si están en la misma columna vertical (<100px dif en X), de arriba a abajo.
+    import functools
+    def cmp_rects(r1, r2):
+        if abs(r1['x'] - r2['x']) > 100:
+            return r1['x'] - r2['x']
+        return r1['y'] - r2['y']
+    candidatos.sort(key=functools.cmp_to_key(cmp_rects))
+
+    tiras_out = []
+    for rect in candidatos:
+        esquinas = _ordenar_esquinas(rect['c'])
+        w, h = rect['w'], rect['h']
+        
+        # 2. En lugar de recortar hacia adentro y arriesgarnos a mochar círculos,
+        # agregamos un margen (padding) hacia afuera al hacer el warp.
+        pad = 12
+        w_int, h_int = int(w), int(h)
+        dst = np.array([
+            [pad, pad],
+            [w_int + pad, pad],
+            [w_int + pad, h_int + pad],
+            [pad, h_int + pad]
+        ], dtype=np.float32)
+        
+        # 1. Transformación de perspectiva "expandida" para enderezar el rectángulo
+        M = cv2.getPerspectiveTransform(esquinas, dst)
+        # El lienzo será más grande y los bordes sobrantes se rellenan de blanco (255,255,255)
+        tira_warp = cv2.warpPerspective(img, M, (w_int + 2*pad, h_int + 2*pad), 
+                                        flags=cv2.INTER_CUBIC, 
+                                        borderMode=cv2.BORDER_CONSTANT, 
+                                        borderValue=(255, 255, 255))
+            
+        tiras_out.append(tira_warp)
+
+    # Validamos que se encontraron los 4, si no se rellenan para que no truene el unpacking
+    if len(tiras_out) < 4:
+        print(f"⚠️ ADVERTENCIA: Solo se encontraron {len(tiras_out)} rectángulos de opciones en {modo}.")
+        while len(tiras_out) < 4:
+            tiras_out.append(np.zeros((100, 100, 3), dtype=np.uint8))
 
     if modo == 'S1':
-        conf = S1_CONF
-
-        def recortar_s1(x_ini, x_fin, y_ini, y_fin):
-            return img[y_ini:y_fin, x_ini:x_fin]
-
         return [
-            (recortar_s1(conf['c1_x_ini'], conf['c1_x_fin'], conf['c1_y_ini'], conf['c1_y_fin']),  4, 'S1_C1_P1-30'),
-            (recortar_s1(conf['c2_x_ini'], conf['c2_x_fin'], conf['c2_y_ini'], conf['c2_y_fin']),  4, 'S1_C2_P31-60'),
-            (recortar_s1(conf['c3_x_ini'], conf['c3_x_fin'], conf['c3_y_ini'], conf['c3_y_fin']),  4, 'S1_C3_P61-90'),
-            (recortar_s1(conf['c4_x_ini'], conf['c4_x_fin'], conf['c4_y_ini'], conf['c4_y_fin']),  4, 'S1_C4_P91-120'),
+            (tiras_out[0], 4, 'S1_C1_P1-30'),
+            (tiras_out[1], 4, 'S1_C2_P31-60'),
+            (tiras_out[2], 4, 'S1_C3_P61-90'),
+            (tiras_out[3], 4, 'S1_C4_P91-120'),
         ]
-
     elif modo == 'S2':
-        conf = S2_CONF
-        
-        def recortar_s2(x_ini, x_fin, y_ini, y_fin):
-            return img[y_ini:y_fin, x_ini:x_fin]
-
+        # Asumiendo el orden ordenado: Izquierda, Centro-Arriba, Centro-Abajo, Derecha
         return [
-            (recortar_s2(conf['c1_x_ini'], conf['c1_x_fin'], conf['c1_y_ini'], conf['c1_y_fin']),       4, 'S2_C1_P1-48'),
-            (recortar_s2(conf['c2a_x_ini'], conf['c2a_x_fin'], conf['c2a_y_ini'], conf['c2a_y_fin']),   4, 'S2_C2a_P49-79'),
-            (recortar_s2(conf['c2b_x_ini'], conf['c2b_x_fin'], conf['c2b_y_ini'], conf['c2b_y_fin']),   8, 'S2_C2b_P80-96'),
-            (recortar_s2(conf['c3_x_ini'], conf['c3_x_fin'], conf['c3_y_ini'], conf['c3_y_fin']),       8, 'S2_C3_P97-134'),
+            (tiras_out[0], 4, 'S2_C1_P1-48'),
+            (tiras_out[1], 4, 'S2_C2a_P49-79'),
+            (tiras_out[2], 8, 'S2_C2b_P80-96'),
+            (tiras_out[3], 8, 'S2_C3_P97-134'),
         ]
 
     raise ValueError(f"Modo desconocido: '{modo}'. Usa 'S1' o 'S2'.")
@@ -238,7 +314,8 @@ def encontrar_circulos_en_tira(tira, n_opciones=4):
         gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV, 51, 10
     )
-    contours, _ = cv2.findContours(imgThresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Usamos RETR_LIST para que el marco exterior del rectángulo no oculte los círculos
+    contours, _ = cv2.findContours(imgThresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
     # Para círculos, el aspect ratio debe estar cerca de 1.0
     ar_min = 0.75
@@ -253,7 +330,21 @@ def encontrar_circulos_en_tira(tira, n_opciones=4):
         area = w * h
         # Filtramos por proporciones de círculo y un área razonable
         if ar_min < ar < ar_max and 40 < area < 4500:
-            candidatos.append({'c': c, 'w': w, 'h': h, 'x': x, 'y': y})
+            cx, cy = x + w//2, y + h//2
+            es_duplicado = False
+            for cand in candidatos:
+                if abs(cand['cx'] - cx) < 8 and abs(cand['cy'] - cy) < 8:
+                    es_duplicado = True
+                    # Al usar RETR_LIST, el mismo círculo se detecta por dentro y por fuera de su línea.
+                    # Nos quedamos con el contorno de mayor área (el borde exterior).
+                    if area > cand['area']:
+                        cand['c'] = c
+                        cand['w'], cand['h'] = w, h
+                        cand['x'], cand['y'] = x, y
+                        cand['area'] = area
+                    break
+            if not es_duplicado:
+                candidatos.append({'c': c, 'w': w, 'h': h, 'x': x, 'y': y, 'cx': cx, 'cy': cy, 'area': area})
 
     img_debug = tira.copy()
     if not candidatos:
