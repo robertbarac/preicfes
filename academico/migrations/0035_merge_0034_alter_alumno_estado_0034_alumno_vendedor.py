@@ -2,7 +2,6 @@
 
 from django.db import migrations
 
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,4 +9,5 @@ class Migration(migrations.Migration):
         ("academico", "0034_alumno_vendedor"),
     ]
 
-    operations = []
+    operations = [
+    ]

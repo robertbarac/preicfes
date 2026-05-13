@@ -70,10 +70,13 @@
         </div>
     </div>
 
-    <!-- Botón para regresar a la lista de grupos -->
-    <div class="mt-6">
-        <a href="{% url 'grupo_list' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg inline-block">
+    <!-- Botones de acciones -->
+    <div class="mt-6 flex space-x-4">
+        <a href="{% url 'grupo_list' %}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-block transition">
             Volver a la lista de grupos
+        </a>
+        <a href="{% url 'simulacros:grupo_calificar_simulacro' grupo.id %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg inline-block shadow-md transition font-semibold">
+            Calificar Simulacro OMR
         </a>
     </div>
 </div>

@@ -176,3 +176,13 @@ cython_debug/
 
 # Carpeta de documentos del proyecto
 documentos/
+contexto.txt
+
+# Prototipos y tests de OpenCV
+cv_prototypes/
+simulacros/cv_prototypes/
+simulacros/imagenes_muestra/
+simulacros/recortes/
+simulacros/respuesta_sesion1.py
+respuesta_sesion1.py
+imagenes_muestra/
