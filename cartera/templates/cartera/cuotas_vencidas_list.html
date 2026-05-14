@@ -97,6 +97,10 @@
         </div>
     </div>
 
+    <div class="mb-2 text-sm text-gray-500 flex items-center justify-end hidden md:flex">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+        <span>Desliza horizontalmente para ver más columnas</span>
+    </div>
     <div class="bg-white shadow rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full">
@@ -105,7 +109,13 @@
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alumno</th>
                         {% comment %} <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identificación</th> {% endcomment %}
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tel. Padre</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Padre</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tel. Madre</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Madre</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Días de Atraso</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Deuda</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo Pendiente</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Cuota</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Fin Curso</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Vencimiento</th>
@@ -123,8 +133,26 @@
                         </td>
                         {% comment %} <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.identificacion }}</td> {% endcomment %}
                         <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.celular }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.celular_padre }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {% if cuota.deuda.alumno.nombres_padre != 'SIN DATOS' %}
+                                {{ cuota.deuda.alumno.nombres_padre }} {{ cuota.deuda.alumno.primer_apellido_padre }} {% if cuota.deuda.alumno.segundo_apellido_padre != 'SIN DATOS' %}{{ cuota.deuda.alumno.segundo_apellido_padre }}{% endif %}
+                            {% else %}
+                                SIN DATOS
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.celular_madre }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {% if cuota.deuda.alumno.nombres_madre != 'SIN DATOS' %}
+                                {{ cuota.deuda.alumno.nombres_madre }} {{ cuota.deuda.alumno.primer_apellido_madre }} {% if cuota.deuda.alumno.segundo_apellido_madre != 'SIN DATOS' %}{{ cuota.deuda.alumno.segundo_apellido_madre }}{% endif %}
+                            {% else %}
+                                SIN DATOS
+                            {% endif %}
+                        </td>
                         <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.dias_atraso }}</td>
-                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.monto }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">${{ cuota.deuda.valor_total }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">${{ cuota.deuda.saldo_pendiente }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">${{ cuota.monto }}</td>
                         <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.deuda.alumno.fecha_culminacion }}</td>
                         <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.fecha_vencimiento }}</td>
                         <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ cuota.get_estado_display }}</td>
@@ -167,7 +195,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
+                        <td colspan="15" class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                             No hay cuotas vencidas que coincidan con los criterios de búsqueda.
                         </td>
                     </tr>
