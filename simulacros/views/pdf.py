@@ -21,7 +21,7 @@ from ..procesar_simulacro import procesar_imagen
 from ..calculos import calificar, calcular_puntaje_icfes
 
 # ReportLab imports
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4, landscape, LETTER
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image as RLImage, KeepTogether
 from reportlab.platypus.flowables import Flowable
@@ -128,7 +128,7 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
 
         # ── Documento A4 Landscape ─────────────────────────────────────────
         doc = SimpleDocTemplate(
-            response, pagesize=landscape(A4),
+            response, pagesize=landscape(LETTER),
             rightMargin=20, leftMargin=20, topMargin=18, bottomMargin=18
         )
 
@@ -575,7 +575,7 @@ class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMix
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="Informe_Directivo_{simulacro.nombre}.pdf"'
         
-        doc = SimpleDocTemplate(response, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=35, bottomMargin=35)
+        doc = SimpleDocTemplate(response, pagesize=LETTER, rightMargin=40, leftMargin=40, topMargin=35, bottomMargin=35)
         elements = []
         styles = getSampleStyleSheet()
         
