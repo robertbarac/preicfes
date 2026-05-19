@@ -28,7 +28,8 @@ class Alumno(models.Model):
         ('preicfes_kids', 'PreICFES Kids'),
         ('preicfes_virtual', 'PreICFES Virtual'),
         ('preicfes_vacacional', 'PreICFES Vacacional'),
-        ('bachillerato_por_ciclos', 'Bachillerato por ciclos')
+        ('bachillerato_por_ciclos', 'Bachillerato por ciclos'),
+        ('curso_ingles', 'Curso de Inglés')
     ]
 
     # Campos obligatorios
