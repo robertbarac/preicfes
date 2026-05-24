@@ -247,6 +247,51 @@
                   </div>
                 </div>
                 {% endif %}
+
+                <!-- Sección Ventas / Preventas -->
+                <div class="relative dropdown" x-data="{ open: false }">
+                  <button
+                    @click="open = !open"
+                    class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                  >
+                    Ventas
+                    <svg
+                      class="inline-block w-4 h-4 ml-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      :class="{'transform rotate-180': open}"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div
+                    x-show="open"
+                    @click.away="open = false"
+                    class="absolute bg-gray-800 rounded-md shadow-lg py-2 mt-2 min-w-[200px] z-10"
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
+                  >
+                    <a
+                      href="{% url 'ventas:preventa_list' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Bitácora de Preventas
+                    </a>
+                    <a
+                      href="{% url 'ventas:preventa_agregar' %}"
+                      class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Registrar Preventa
+                    </a>
+                  </div>
+                </div>
                 
                 {% if request.user.is_staff %}
                 <a
@@ -365,6 +410,13 @@
                 {% endif %}
               </div>
             {% endif %}
+
+            <!-- Sección Ventas / Preventas -->
+            <div class="py-2 border-b border-gray-700">
+              <div class="text-white font-medium mb-2">Ventas</div>
+              <a href="{% url 'ventas:preventa_list' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Bitácora de Preventas</a>
+              <a href="{% url 'ventas:preventa_agregar' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md">Registrar Preventa</a>
+            </div>
 
             {% if request.user.is_staff %}
               <a href="{% url 'admin:index' %}" class="block py-2 px-4 text-gray-300 hover:bg-gray-700 rounded-md mt-2">Admin</a>
