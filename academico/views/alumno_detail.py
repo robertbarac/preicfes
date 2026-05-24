@@ -33,7 +33,66 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
 
         # Obtener estadísticas de asistencia
         asistencias = Asistencia.objects.filter(alumno=alumno)
-        asistencias_vistas = asistencias.order_by('-clase__fecha')
+        
+        # Obtener diccionario de inasistencias para mapear/justificar
+        inasistencias_justificadas = {
+            inasistencia.clase.id: inasistencia
+            for inasistencia in Inasistencia.objects.filter(alumno=alumno)
+        }
+        
+        # Convertir a lista optimizada y precalcular enlaces de WhatsApp
+        asistencias_vistas = list(asistencias.order_by('-clase__fecha').select_related('clase', 'clase__materia'))
+        for asistencia in asistencias_vistas:
+            if not asistencia.asistio:
+                # Se considera justificada si el registro de inasistencia existe y está marcado como justificada=True
+                inasistencia_obj = inasistencias_justificadas.get(asistencia.clase.id)
+                asistencia.tiene_justificacion = inasistencia_obj is not None and inasistencia_obj.justificada
+                
+                if not asistencia.tiene_justificacion:
+                    # Validar números de teléfono de padres
+                    celular_padre = alumno.celular_padre.strip() if alumno.celular_padre else ''
+                    celular_madre = alumno.celular_madre.strip() if alumno.celular_madre else ''
+                    
+                    asistencia.celular_padre = celular_padre if (celular_padre and celular_padre != 'SIN DATOS') else None
+                    asistencia.celular_madre = celular_madre if (celular_madre and celular_madre != 'SIN DATOS') else None
+                    
+                    if asistencia.celular_padre or asistencia.celular_madre:
+                        estudiante_nombre = f"{alumno.nombres} {alumno.primer_apellido}"
+                        if alumno.segundo_apellido:
+                            estudiante_nombre += f" {alumno.segundo_apellido}"
+                        
+                        clase_fecha = asistencia.clase.fecha.strftime('%d/%m/%Y') if hasattr(asistencia.clase.fecha, 'strftime') else str(asistencia.clase.fecha)
+                        
+                        base_context = {
+                            'estudiante_nombre': estudiante_nombre,
+                            'materia': asistencia.clase.materia.nombre,
+                            'fecha': clase_fecha,
+                            'horario': asistencia.clase.get_horario_display(),
+                        }
+                        
+                        if asistencia.celular_padre:
+                            padre_nombre = f"{alumno.nombres_padre} {alumno.primer_apellido_padre}".strip()
+                            if not padre_nombre or 'SIN DATOS' in padre_nombre:
+                                padre_nombre = "Padre de familia"
+                            
+                            ctx = base_context.copy()
+                            ctx['nombre_acudiente'] = padre_nombre
+                            asistencia.whatsapp_padre_message = render_to_string(
+                                'academico/inasistencia_whatsapp_template.txt',
+                                ctx
+                            ).replace('\n', '%0A').replace(' ', '%20')
+                            
+                        if asistencia.celular_madre:
+                            madre_nombre = f"{alumno.nombres_madre} {alumno.primer_apellido_madre}".strip()
+                            if not madre_nombre or 'SIN DATOS' in madre_nombre:
+                                madre_nombre = "Madre de familia"
+                            
+                            ctx = base_context.copy()
+                            ctx['nombre_acudiente'] = madre_nombre
+                            asistencia.whatsapp_madre_message = render_to_string(
+                                'academico/inasistencia_whatsapp_template.txt',
+                                ctx
+                            ).replace('\n', '%0A').replace(' ', '%20')
         
         # Obtener cuotas
         try:
@@ -123,9 +182,9 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
             'estado_deuda': deuda.estado if deuda else 'Sin deuda',
             'cuotas': cuotas,
             'asistencias': asistencias_vistas,
-            'total_asistencias': asistencias_vistas.count(),
-            'asistencias_presente': asistencias_vistas.filter(asistio=True).count(),
-            'asistencias_faltas': asistencias_vistas.filter(asistio=False).count(),
+            'total_asistencias': len(asistencias_vistas),
+            'asistencias_presente': sum(1 for a in asistencias_vistas if a.asistio),
+            'asistencias_faltas': sum(1 for a in asistencias_vistas if not a.asistio),
             
             # Obtener notas y promedios por materia
             'notas': Nota.objects.filter(alumno=alumno, clase__estado='vista'),
@@ -137,10 +196,7 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
             ).order_by('clase__materia__nombre'),
 
             # Crear un diccionario para mapear inasistencias a clases
-            'inasistencias_justificadas': {
-                inasistencia.clase.id: inasistencia
-                for inasistencia in Inasistencia.objects.filter(alumno=alumno)
-            },
+            'inasistencias_justificadas': inasistencias_justificadas,
             
             # Resultados de Simulacros
             'resultados_simulacros': alumno.resultados_simulacros.select_related('simulacro', 'registrador').order_by('-fecha_realizacion'),

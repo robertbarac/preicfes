@@ -346,13 +346,32 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     {% if not asistencia.asistio %}
-                                        <a href="{% url 'registrar_inasistencia' alumno_pk=asistencia.alumno.pk clase_pk=asistencia.clase.pk %}" class="text-indigo-600 hover:text-indigo-900">Justificar / Ver Motivo</a>
+                                        <a href="{% url 'registrar_inasistencia' alumno_pk=asistencia.alumno.pk clase_pk=asistencia.clase.pk %}" class="text-indigo-600 hover:text-indigo-900 block mb-1">Justificar / Ver Motivo</a>
+                                        
+                                        {% if not asistencia.tiene_justificacion %}
+                                            {% if not request.user.is_observador %}
+                                                <div class="mt-2 flex flex-col sm:flex-row gap-2">
+                                                    {% if asistencia.celular_padre %}
+                                                    <a href="whatsapp://send?phone={{ asistencia.celular_padre|slice:':13' }}&text={{ asistencia.whatsapp_padre_message }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500 w-max">
+                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                                        <span>WhatsApp Papá</span>
+                                                    </a>
+                                                    {% endif %}
+                                                    {% if asistencia.celular_madre %}
+                                                    <a href="whatsapp://send?phone={{ asistencia.celular_madre|slice:':13' }}&text={{ asistencia.whatsapp_madre_message }}" target="_blank" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-purple-500 w-max">
+                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                                        <span>WhatsApp Mamá</span>
+                                                    </a>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                     No hay registros de asistencia.
                                 </td>
                             </tr>
