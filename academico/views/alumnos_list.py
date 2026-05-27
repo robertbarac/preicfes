@@ -146,6 +146,16 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         if vendedor_id:
             queryset = queryset.filter(vendedor_id=vendedor_id)
 
+        # Filtrar por mes de culminación
+        mes_culminacion = self.request.GET.get('mes_culminacion')
+        if mes_culminacion:
+            queryset = queryset.filter(fecha_culminacion__month=mes_culminacion)
+            
+        # Filtrar por año de culminación
+        ano_culminacion = self.request.GET.get('ano_culminacion')
+        if ano_culminacion:
+            queryset = queryset.filter(fecha_culminacion__year=ano_culminacion)
+
         return queryset.order_by('primer_apellido')
 
     def get_context_data(self, **kwargs):
@@ -192,6 +202,34 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
         context['tipo_programa_seleccionado'] = self.request.GET.get('tipo_programa', '')
         context['departamento_seleccionado'] = self.request.GET.get('departamento', '')
+        
+        # Agregar meses y años de culminación
+        context['meses_anio'] = [
+            ('1', 'Enero'),
+            ('2', 'Febrero'),
+            ('3', 'Marzo'),
+            ('4', 'Abril'),
+            ('5', 'Mayo'),
+            ('6', 'Junio'),
+            ('7', 'Julio'),
+            ('8', 'Agosto'),
+            ('9', 'Septiembre'),
+            ('10', 'Octubre'),
+            ('11', 'Noviembre'),
+            ('12', 'Diciembre'),
+        ]
+        
+        import datetime
+        current_year = datetime.date.today().year
+        # Obtener los años presentes en la base de datos para fecha_culminacion
+        years = Alumno.objects.exclude(fecha_culminacion__isnull=True).dates('fecha_culminacion', 'year')
+        years_list = sorted(list(set(y.year for y in years)))
+        if not years_list:
+            years_list = [current_year - 1, current_year, current_year + 1]
+            
+        context['years_culminacion'] = [str(y) for y in years_list]
+        context['mes_culminacion_seleccionado'] = self.request.GET.get('mes_culminacion', '')
+        context['ano_culminacion_seleccionado'] = self.request.GET.get('ano_culminacion', '')
         
         # Determinar si el usuario es coordinador o auxiliar
         is_coordinador_or_auxiliar = self.request.user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists()
@@ -283,6 +321,13 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         elif self.request.GET.get('tiene_cuotas') == 'no':
             filtros_activos.append("Tiene Cuotas: No")
             
+        if self.request.GET.get('mes_culminacion'):
+            meses_dict = dict(context['meses_anio'])
+            mes_nombre = meses_dict.get(self.request.GET.get('mes_culminacion'))
+            filtros_activos.append(f"Mes Culminación: {mes_nombre}")
+        if self.request.GET.get('ano_culminacion'):
+            filtros_activos.append(f"Año Culminación: {self.request.GET.get('ano_culminacion')}")
+
         if self.request.GET.get('vendedor'):
             try:
                 vend = Vendedor.objects.get(id=self.request.GET.get('vendedor'))

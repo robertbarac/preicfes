@@ -107,6 +107,26 @@
                 </select>
             </div>
 
+            <div>
+                <label for="mes_culminacion" class="block text-sm font-medium text-gray-700">Mes Culminación</label>
+                <select name="mes_culminacion" id="mes_culminacion" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    {% for val, name in meses_anio %}
+                    <option value="{{ val }}" {% if mes_culminacion_seleccionado == val %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="ano_culminacion" class="block text-sm font-medium text-gray-700">Año Culminación</label>
+                <select name="ano_culminacion" id="ano_culminacion" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="">Todos</option>
+                    {% for y in years_culminacion %}
+                    <option value="{{ y }}" {% if ano_culminacion_seleccionado == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             {% if not request.user.is_observador %}
             <div>
                 <label for="vendedor" class="block text-sm font-medium text-gray-700">Vendedor</label>
@@ -119,7 +139,7 @@
             </div>
             {% endif %}
 
-            <div class="flex items-end space-x-2 lg:col-start-4">
+            <div class="flex items-end space-x-2 sm:col-span-2 lg:col-span-1">
                 <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Filtrar</button>
                 <a href="{% url 'alumnos_list' %}" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Limpiar</a>
             </div>
