@@ -84,6 +84,18 @@
                             <option value="asc" {% if orden == 'asc' %}selected{% endif %}>Menor atraso</option>
                         </select>
                     </div>
+
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Deuda Pendiente (Saldo)</label>
+                        <select name="deuda_pendiente" class="block w-full rounded-lg border-slate-300 bg-slate-50 text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm transition duration-150 ease-in-out">
+                            <option value="" {% if not deuda_pendiente %}selected{% endif %}>Todos</option>
+                            <option value="0-100k" {% if deuda_pendiente == '0-100k' %}selected{% endif %}>Menor o igual a $100.000</option>
+                            <option value="101k-200k" {% if deuda_pendiente == '101k-200k' %}selected{% endif %}>Entre $101.000 y $200.000</option>
+                            <option value="201k-300k" {% if deuda_pendiente == '201k-300k' %}selected{% endif %}>Entre $201.000 y $300.000</option>
+                            <option value="301k-500k" {% if deuda_pendiente == '301k-500k' %}selected{% endif %}>Entre $301.000 y $500.000</option>
+                            <option value="500k+" {% if deuda_pendiente == '500k+' %}selected{% endif %}>Mayor a $500.000</option>
+                        </select>
+                    </div>
                     
                     <!-- Botón de Filtrar -->
                     <div class="col-span-1 md:col-span-2 lg:col-span-4 flex justify-end mt-2">
@@ -210,11 +222,11 @@
     <div class="mt-4">
         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
             {% if page_obj.has_previous %}
-            <a href="?page=1{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page=1{% if query_string %}&{{ query_string }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Primero
             </a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Anterior
             </a>
@@ -226,7 +238,7 @@
                 {{ num }}
             </span>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-            <a href="?page={{ num }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 {{ num }}
             </a>
@@ -234,11 +246,11 @@
             {% endfor %}
 
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Siguiente
             </a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if dias_filtro %}&dias_filtro={{ dias_filtro }}{% endif %}{% if identificacion %}&identificacion={{ identificacion }}{% endif %}{% if buscador %}&buscador={{ buscador }}{% endif %}{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}{% if municipio_seleccionado %}&municipio={{ municipio_seleccionado }}{% endif %}{% if sede_seleccionada %}&sede={{ sede_seleccionada }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" 
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}" 
                class="relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Último
             </a>

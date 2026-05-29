@@ -111,6 +111,20 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         if identificacion:
             queryset = queryset.filter(deuda__alumno__identificacion__icontains=identificacion)
 
+        # Filtrar por deuda pendiente
+        deuda_pendiente = self.request.GET.get('deuda_pendiente', '')
+        if deuda_pendiente:
+            if deuda_pendiente == '0-100k':
+                queryset = queryset.filter(deuda__saldo_pendiente__lte=100000)
+            elif deuda_pendiente == '101k-200k':
+                queryset = queryset.filter(deuda__saldo_pendiente__gt=100000, deuda__saldo_pendiente__lte=200000)
+            elif deuda_pendiente == '201k-300k':
+                queryset = queryset.filter(deuda__saldo_pendiente__gt=200000, deuda__saldo_pendiente__lte=300000)
+            elif deuda_pendiente == '301k-500k':
+                queryset = queryset.filter(deuda__saldo_pendiente__gt=300000, deuda__saldo_pendiente__lte=500000)
+            elif deuda_pendiente == '500k+':
+                queryset = queryset.filter(deuda__saldo_pendiente__gt=500000)
+
         if buscador:
             # Separamos las palabras para simular la búsqueda del admin de Django
             for term in buscador.split():
@@ -164,11 +178,18 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             ).replace('\n', '%0A').replace(' ', '%20')
         
         # Agregar filtros al contexto
+        # Obtener parámetros GET actuales para query_string
+        get_params = self.request.GET.copy()
+        if 'page' in get_params:
+            del get_params['page']
+
         context.update({
             'dias_filtro': self.request.GET.get('dias_filtro', 'todos'),
             'identificacion': self.request.GET.get('identificacion', ''),
             'buscador': self.request.GET.get('buscador', ''),
-            'orden': self.request.GET.get('orden', 'desc')
+            'orden': self.request.GET.get('orden', 'desc'),
+            'deuda_pendiente': self.request.GET.get('deuda_pendiente', ''),
+            'query_string': get_params.urlencode()
         })
         
         from ubicaciones.models import Municipio, Departamento, Sede
