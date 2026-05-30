@@ -1,6 +1,6 @@
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import F, ExpressionWrapper, fields, Q
+from django.db.models import F, ExpressionWrapper, fields, Q, Count, Sum
 from django.utils import timezone
 from datetime import timedelta
 from django.template.loader import render_to_string
@@ -154,10 +154,35 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
+        today = timezone.localtime(timezone.now()).date()
+        
+        # Obtener estadísticas de cuotas vencidas agrupadas por alumno
+        overdue_stats = Cuota.objects.filter(
+            estado__in=['emitida', 'vencida'],
+            fecha_vencimiento__lt=today,
+            deuda__alumno__estado='activo'
+        ).values('deuda__alumno_id').annotate(
+            total_vencidas_count=Count('id'),
+            total_vencidas_monto=Sum('monto')
+        )
+        
+        stats_dict = {
+            item['deuda__alumno_id']: {
+                'count': item['total_vencidas_count'],
+                'monto': item['total_vencidas_monto']
+            }
+            for item in overdue_stats
+        }
+        
         # Agregar el mensaje preformateado y días de atraso a cada cuota
         for cuota in context['cuotas']:
             alumno = cuota.deuda.alumno
             cuota.dias_atraso = (timezone.localtime(timezone.now()).date() - cuota.fecha_vencimiento).days
+            
+            # Obtener estadísticas del alumno
+            stats = stats_dict.get(alumno.id, {'count': 0, 'monto': 0})
+            cuota.total_vencidas_count = stats['count']
+            cuota.total_vencidas_monto = stats['monto']
 
             # Renderizar el mensaje con los datos actuales
             message_context = {
