@@ -77,6 +77,14 @@ class Cuota(models.Model):
                 self.fecha_pago = timezone.localtime(now()).date()
             self.actualizar_estado()
 
+        # Validación estricta para evitar guardar pagos con fechas futuras en la base de datos
+        if self.fecha_pago:
+            today = timezone.localtime(timezone.now()).date()
+            if self.fecha_pago > today:
+                raise ValidationError({
+                    'fecha_pago': 'La fecha de pago no puede ser una fecha futura.'
+                })
+
         super().save(*args, **kwargs)
 
         if run_logic:

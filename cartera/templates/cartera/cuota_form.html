@@ -45,4 +45,14 @@
         </button>
     </form>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var today = new Date().toLocaleDateString('sv-SE'); // Formato YYYY-MM-DD
+    var fechaPagoInput = document.getElementById('fecha_pago');
+    if (fechaPagoInput) {
+        fechaPagoInput.setAttribute('max', today);
+    }
+});
+</script>
 {% endblock %}

@@ -10,6 +10,22 @@ class DeudaForm(forms.ModelForm):
         fields = ['alumno', 'valor_total', 'saldo_pendiente', 'estado']  # Actualizando los campos
 
 class CuotaForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from django.utils import timezone
+        today = timezone.localtime(timezone.now()).date().isoformat()
+        if 'fecha_pago' in self.fields:
+            self.fields['fecha_pago'].widget.attrs['max'] = today
+
+    def clean_fecha_pago(self):
+        fecha_pago = self.cleaned_data.get('fecha_pago')
+        if fecha_pago:
+            from django.utils import timezone
+            today = timezone.localtime(timezone.now()).date()
+            if fecha_pago > today:
+                raise forms.ValidationError("La fecha de pago no puede ser una fecha futura.")
+        return fecha_pago
+
     class Meta:
         model = Cuota
         fields = ['deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'fecha_pago', 'estado', 'metodo_pago']  # Incluir fecha_pago
@@ -19,6 +35,21 @@ class CuotaUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields['monto'].disabled = True
+        
+        # Restringir fecha_pago a la fecha actual como máximo
+        from django.utils import timezone
+        today = timezone.localtime(timezone.now()).date().isoformat()
+        if 'fecha_pago' in self.fields:
+            self.fields['fecha_pago'].widget.attrs['max'] = today
+
+    def clean_fecha_pago(self):
+        fecha_pago = self.cleaned_data.get('fecha_pago')
+        if fecha_pago:
+            from django.utils import timezone
+            today = timezone.localtime(timezone.now()).date()
+            if fecha_pago > today:
+                raise forms.ValidationError("La fecha de pago no puede ser una fecha futura.")
+        return fecha_pago
 
     class Meta:
         model = Cuota
@@ -77,6 +108,22 @@ class GenerarCuotasForm(forms.Form):
         label="Método de Pago de la Cuota Inicial",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from django.utils import timezone
+        today = timezone.localtime(timezone.now()).date().isoformat()
+        if 'fecha_pago_inicial' in self.fields:
+            self.fields['fecha_pago_inicial'].widget.attrs['max'] = today
+
+    def clean_fecha_pago_inicial(self):
+        fecha_pago_inicial = self.cleaned_data.get('fecha_pago_inicial')
+        if fecha_pago_inicial:
+            from django.utils import timezone
+            today = timezone.localtime(timezone.now()).date()
+            if fecha_pago_inicial > today:
+                raise forms.ValidationError("La fecha de pago de la cuota inicial no puede ser una fecha futura.")
+        return fecha_pago_inicial
 
 class AcuerdoPagoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
