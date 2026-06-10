@@ -243,7 +243,7 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         # Total cobrado hasta la fecha seleccionada
         context['cobrado'] = todas_cuotas_qs.filter(
-            deuda__alumno__estado='activo',
+            # deuda__alumno__estado='activo',
             fecha_pago__lte=fecha_seleccionada
         ).aggregate(Sum('monto_abonado'))['monto_abonado__sum'] or 0
         
