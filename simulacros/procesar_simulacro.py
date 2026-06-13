@@ -220,7 +220,7 @@ def hacer_tiras(img, modo):
         if 50000 < area < 500000:
             x, y, w, h = cv2.boundingRect(c)
             ar = w / float(h)
-            if 0.05 < ar < 0.4:
+            if 0.05 < ar < 1.5:  # Ampliado a 1.5 porque la caja 2b (8 opciones) es casi cuadrada
                 # Extent asegura que la figura sea rectangular (llena el 80% de su bounding box)
                 extent = area / float(w * h)
                 if extent > 0.80:
@@ -236,12 +236,90 @@ def hacer_tiras(img, modo):
                     if not duplicado:
                         candidatos.append({
                             'x': x, 'y': y, 'w': w, 'h': h,
-                            'cx': cx, 'cy': cy
+                            'cx': cx, 'cy': cy, 'area': area
                         })
 
-    # Si por alguna razón hay más de 4 candidatos, nos quedamos con los 4 de mayor área
-    if len(candidatos) > 4:
-        candidatos = sorted(candidatos, key=lambda r: r['area'], reverse=True)[:4]
+    # Ordenar candidatos de izquierda a derecha, y de arriba a abajo si están apilados (ej. 2a y 2b)
+    import functools
+    def cmp_rects(r1, r2):
+        if abs(r1['x'] - r2['x']) > 100:
+            return r1['x'] - r2['x']
+        return r1['y'] - r2['y']
+    candidatos = sorted(candidatos, key=functools.cmp_to_key(cmp_rects))
+
+    # Eliminar duplicados superpuestos (IoU > 0.5) conservando el de mayor área
+    def iou(a, b):
+        """Intersection over Union entre dos bounding boxes."""
+        x1 = max(a['x'], b['x'])
+        y1 = max(a['y'], b['y'])
+        x2 = min(a['x'] + a['w'], b['x'] + b['w'])
+        y2 = min(a['y'] + a['h'], b['y'] + b['h'])
+        inter = max(0, x2 - x1) * max(0, y2 - y1)
+        if inter == 0:
+            return 0.0
+        area_a = a['w'] * a['h']
+        area_b = b['w'] * b['h']
+        return inter / float(area_a + area_b - inter)
+
+    filtrados = []
+    for cand in candidatos:
+        es_duplicado = False
+        for i, f in enumerate(filtrados):
+            if iou(cand, f) > 0.5:
+                # Si se superponen mucho, quedarse con el de mayor área
+                if cand['area'] > f['area']:
+                    filtrados[i] = cand
+                es_duplicado = True
+                break
+        if not es_duplicado:
+            filtrados.append(cand)
+    candidatos = filtrados
+
+    # ======== REFINAR BORDES: usar la imagen original (sin MORPH_CLOSE) ========
+    # MORPH_CLOSE infla los contornos. Ahora buscamos las líneas reales del rectángulo
+    # impreso en imgThresh (sin inflar) para ajustar los bordes con precisión.
+    for cand in candidatos:
+        x, y, w, h = cand['x'], cand['y'], cand['w'], cand['h']
+        # Recortar la región de la imagen original (sin MORPH_CLOSE)
+        region = imgThresh[y:y+h, x:x+w]
+        
+        # --- Refinar bordes verticales (TOP y BOTTOM) ---
+        # Proyección horizontal: suma de píxeles blancos por fila
+        # Una línea horizontal del borde cruza casi todo el ancho → fill alto
+        h_proj = np.sum(region, axis=1) / 255.0
+        fill_h = h_proj / region.shape[1]
+        # El borde impreso llena >50% del ancho (las burbujas solo ~30%)
+        border_rows = np.where(fill_h > 0.50)[0]
+        if len(border_rows) >= 2:
+            new_top = border_rows[0]
+            new_bottom = border_rows[-1]
+            if new_bottom - new_top > h * 0.7:  # Sanity check
+                cand['y'] = y + new_top
+                cand['h'] = new_bottom - new_top
+        
+        # --- Refinar bordes horizontales (LEFT y RIGHT) ---
+        # Proyección vertical: suma de píxeles blancos por columna
+        # Una línea vertical del borde cruza casi toda la altura → fill alto
+        v_proj = np.sum(region, axis=0) / 255.0
+        fill_v = v_proj / region.shape[0]
+        border_cols = np.where(fill_v > 0.50)[0]
+        if len(border_cols) >= 2:
+            new_left = border_cols[0]
+            new_right = border_cols[-1]
+            if new_right - new_left > w * 0.7:
+                cand['x'] = x + new_left
+                cand['w'] = new_right - new_left
+        
+        # Recalcular centro
+        cand['cx'] = cand['x'] + cand['w'] // 2
+        cand['cy'] = cand['y'] + cand['h'] // 2
+
+    # Re-ordenar después de refinar
+    candidatos = sorted(candidatos, key=functools.cmp_to_key(cmp_rects))
+
+    print(f"  📐 Rectángulos detectados: {len(candidatos)} (esperados: 4)")
+    for i, r in enumerate(candidatos):
+        print(f"     #{i+1}: x={r['x']}, y={r['y']}, w={r['w']}, h={r['h']}, area={r['area']}")
 
     tiras_out = []
 
@@ -260,22 +338,17 @@ def hacer_tiras(img, modo):
         for k in keys:
             y_ini, y_fin = conf[f'{k}_y_ini'], conf[f'{k}_y_fin']
             x_ini, x_fin = conf[f'{k}_x_ini'], conf[f'{k}_x_fin']
-            # Recortar directo usando numpy slicing
             tira = img[y_ini:y_fin, x_ini:x_fin]
             tiras_out.append(tira)
     else:
-        # ORDENAR DINÁMICAMENTE
-        import functools
-        def cmp_rects(r1, r2):
-            if abs(r1['x'] - r2['x']) > 100:
-                return r1['x'] - r2['x']
-            return r1['y'] - r2['y']
-        candidatos.sort(key=functools.cmp_rects if hasattr(functools, 'cmp_rects') else functools.cmp_to_key(cmp_rects))
+        # Si hay más de 4 (raro después del filtro IoU), quedarse con los 4 primeros
+        if len(candidatos) > 4:
+            candidatos = candidatos[:4]
 
         for rect in candidatos:
             x, y, w, h = rect['x'], rect['y'], rect['w'], rect['h']
             
-            # Recorte directo 2D (sin deformar con warpPerspective, pues la hoja ya está recta)
+            # Recorte directo 2D (sin deformar, la hoja ya está recta)
             pad = 12
             y1 = max(0, y - pad)
             y2 = min(img.shape[0], y + h + pad)
