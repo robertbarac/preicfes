@@ -88,6 +88,337 @@ class BarraDesempeno(Flowable):
 
 
 
+# ── Función utilitaria: genera los elements de ReportLab para UN resultado ────
+def _generar_elements_resultado(res, sim_nombre, use_real_scores=False):
+    """
+    Genera una lista de Flowables (elements) de ReportLab para un solo
+    ResultadoSimulacro. Se usa tanto desde la vista masiva como desde la
+    vista individual para respetar el principio DRY.
+    """
+    # ── Paleta ────────────────────────────────────────────────────────
+    C_AZUL      = colors.HexColor('#1C3A5F')
+    C_AZUL2     = colors.HexColor('#2E6DA4')
+    C_DORADO    = colors.HexColor('#F5A623')
+    C_DORADO_BG = colors.HexColor('#FFF8E1')
+    C_VERDE     = colors.HexColor('#27AE60')
+    C_VERDE_BG  = colors.HexColor('#D5F5E3')
+    C_AMBAR     = colors.HexColor('#F39C12')
+    C_NARANJA   = colors.HexColor('#E67E22')
+    C_ROJO      = colors.HexColor('#C0392B')
+    C_GRIS_CLR  = colors.HexColor('#F4F6F8')
+    C_GRIS_MED  = colors.HexColor('#BDC3C7')
+    C_GRIS_OSC  = colors.HexColor('#7F8C8D')
+    C_BLANCO    = colors.white
+    C_NEGRO     = colors.black
+
+    styles = getSampleStyleSheet()
+
+    def ps(name, **kw):
+        return ParagraphStyle(name=name, parent=styles['Normal'], **kw)
+
+    sT  = ps('sT',  fontSize=13, fontName='Helvetica-Bold', textColor=C_AZUL,  alignment=1, leading=16)
+    sS  = ps('sS',  fontSize=10, fontName='Helvetica-Bold', textColor=C_AZUL,  alignment=1, leading=13)
+    sIL = ps('sIL', fontSize=8,  fontName='Helvetica-Bold', textColor=C_AZUL)
+    sIV = ps('sIV', fontSize=8,  textColor=C_NEGRO, leading=10)
+    sAN = ps('sAN', fontSize=8,  fontName='Helvetica-Bold', textColor=C_AZUL)
+    sSC = ps('sSC', fontSize=9,  fontName='Helvetica-Bold', textColor=C_AZUL,  alignment=1)
+    sNV = ps('sNV', fontSize=8,  fontName='Helvetica-Bold', alignment=1)
+    sSH = ps('sSH', fontSize=8,  fontName='Helvetica-Bold', textColor=C_BLANCO, alignment=1)
+    sBd = ps('sBd', fontSize=8,  leading=11)
+    sBB = ps('sBB', fontSize=8,  fontName='Helvetica-Bold', leading=11)
+    sBu = ps('sBu', fontSize=7.5,leftIndent=6, leading=10)
+    sFt = ps('sFt', fontSize=9,  fontName='Helvetica-Bold', textColor=C_AZUL,  alignment=1)
+    sND = ps('sND', fontSize=7.5,leading=10, textColor=C_NEGRO)
+    sNH = ps('sNH', fontSize=8,  fontName='Helvetica-Bold', textColor=C_AZUL,  leading=11)
+
+    if use_real_scores:
+        AREA_CFG = [
+            ('matematicas',  'puntaje_matematicas', 'MATEMATICAS'),
+            ('lectura',      'puntaje_lectura',     'LECTURA CRITICA'),
+            ('sociales',     'puntaje_sociales',    'CIENCIAS SOCIALES'),
+            ('naturales',    'puntaje_naturales',   'CIENCIAS NATURALES'),
+            ('ingles',       'puntaje_ingles',      'INGLES'),
+        ]
+        global_attr = 'puntaje_global'
+    else:
+        AREA_CFG = [
+            ('matematicas',  'puntaje_matematicas_modificado', 'MATEMATICAS'),
+            ('lectura',      'puntaje_lectura_modificado',     'LECTURA CRITICA'),
+            ('sociales',     'puntaje_sociales_modificado',    'CIENCIAS SOCIALES'),
+            ('naturales',    'puntaje_naturales_modificado',   'CIENCIAS NATURALES'),
+            ('ingles',       'puntaje_ingles_modificado',      'INGLES'),
+        ]
+        global_attr = 'puntaje_global_modificado'
+
+    def nivel_color(p):
+        if p >= 70:   return C_VERDE, 'ALTO'
+        elif p >= 55: return C_AMBAR, 'MEDIO'
+        elif p >= 40: return C_NARANJA, 'BÁSICO'
+        else:         return C_ROJO, 'BAJO'
+
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo.png')
+    elements = []
+
+    nombre = f"{res.alumno.primer_apellido} {res.alumno.segundo_apellido} {res.alumno.nombres}".strip()
+    fecha_str = res.fecha_realizacion.strftime('%d de %B de %Y') if res.fecha_realizacion else 'N/A'
+    grupo_str = res.alumno.grupo_actual.codigo if res.alumno.grupo_actual else 'N/A'
+    pg = int(getattr(res, global_attr))
+
+    puntajes_res = {
+        'matematicas': getattr(res, AREA_CFG[0][1]),
+        'lectura':     getattr(res, AREA_CFG[1][1]),
+        'sociales':    getattr(res, AREA_CFG[2][1]),
+        'naturales':   getattr(res, AREA_CFG[3][1]),
+        'ingles':      getattr(res, AREA_CFG[4][1]),
+        'global':      getattr(res, global_attr),
+    }
+    reporte = generar_reporte_completo(puntajes_res)
+
+    # ── 1. CABECERA ───────────────────────────────────────────────
+    if os.path.exists(logo_path):
+        tw = 120
+        th = tw * (377.0 / 661.0)
+        logo_cell = RLImage(logo_path, width=tw, height=th, kind='proportional')
+    else:
+        logo_cell = Paragraph('', styles['Normal'])
+
+    title_cell = [
+        Paragraph('REPORTE POR AREA Y RECOMENDACIONES', sT),
+        Paragraph(f'SIMULACRO SABER 11&deg; &ndash; {sim_nombre}', sS),
+    ]
+
+    info_data = [
+        [Paragraph('<b>Fecha:</b>', sIL),      Paragraph(fecha_str, sIV)],
+        [Paragraph('<b>Estudiante:</b>', sIL), Paragraph(nombre, sIV)],
+        [Paragraph('<b>Grupo:</b>', sIL),      Paragraph(grupo_str, sIV)],
+    ]
+    info_t = Table(info_data, colWidths=[65, 125])
+    info_t.setStyle(TableStyle([
+        ('FONTSIZE',      (0,0), (-1,-1), 8),
+        ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING',   (0,0), (-1,-1), 3),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 3),
+        ('TOPPADDING',    (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+    ]))
+
+    score_data = [
+        [Paragraph('PUNTAJE GLOBAL', ps('sgl', fontSize=8, fontName='Helvetica-Bold', textColor=C_GRIS_OSC, alignment=1))],
+        [Paragraph(f'{pg}', ps('sgv', fontSize=36, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1, leading=40))],
+        [Paragraph('de 500', ps('sgd', fontSize=8, textColor=C_GRIS_OSC, alignment=1))]
+    ]
+    score_t = Table(score_data, colWidths=[110])
+    score_t.setStyle(TableStyle([
+        ('ALIGN',         (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND',    (0,0), (-1,-1), C_BLANCO),
+        ('BOX',           (0,0), (-1,-1), 1.5, C_DORADO),
+        ('TOPPADDING',    (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+    ]))
+
+    header_t = Table([[logo_cell, title_cell, info_t, score_t]], colWidths=[120, 320, 190, 132])
+    header_t.setStyle(TableStyle([
+        ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
+        ('ALIGN',         (1,0), (1,0),   'CENTER'),
+        ('LEFTPADDING',   (0,0), (-1,-1), 5),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 5),
+        ('TOPPADDING',    (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('BOX',           (0,0), (-1,-1), 1.2, C_AZUL),
+        ('BACKGROUND',    (0,0), (-1,-1), C_GRIS_CLR),
+    ]))
+    elements.append(header_t)
+    elements.append(Spacer(1, 5))
+
+    # ── 2. TABLA DE RESULTADOS + QUE SIGNIFICAN LOS NIVELES ───────
+    res_header = [
+        Paragraph('<b>AREA</b>',              sSH),
+        Paragraph('<b>PUNTAJE</b>',           sSH),
+        Paragraph('<b>NIVEL DE DESEMPENO</b>',sSH),
+        Paragraph('<b>DESEMPENO RELATIVO</b>',sSH),
+    ]
+    res_rows = [res_header]
+
+    for area_key, attr, label in AREA_CFG:
+        p_val = float(getattr(res, attr))
+        col_niv, niv_label = nivel_color(p_val)
+        hex_niv = col_niv.hexval()
+        niv_p = Paragraph(
+            f'<font color="{hex_niv}"><b>&#9679; {niv_label}</b></font>',
+            ps(f'nv_{area_key}', fontSize=8, alignment=1)
+        )
+        barra = BarraDesempeno(p_val, width=175, height=11)
+        res_rows.append([
+            Paragraph(f'<b>{label}</b>', sAN),
+            Paragraph(f'<b>{int(p_val)} / 100</b>', sSC),
+            niv_p,
+            barra,
+        ])
+
+    res_t = Table(res_rows, colWidths=[148, 62, 100, 215])
+    row_bgs = []
+    for r in range(1, len(res_rows)):
+        bg = C_GRIS_CLR if r % 2 == 0 else C_BLANCO
+        row_bgs.append(('BACKGROUND', (0, r), (-1, r), bg))
+
+    res_t.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0),  (-1,0),  C_AZUL),
+        ('TEXTCOLOR',     (0,0),  (-1,0),  C_BLANCO),
+        ('FONTNAME',      (0,0),  (-1,0),  'Helvetica-Bold'),
+        ('FONTSIZE',      (0,0),  (-1,-1), 8),
+        ('ALIGN',         (0,0),  (-1,-1), 'CENTER'),
+        ('ALIGN',         (0,1),  (0,-1),  'LEFT'),
+        ('VALIGN',        (0,0),  (-1,-1), 'MIDDLE'),
+        ('TOPPADDING',    (0,0),  (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0),  (-1,-1), 4),
+        ('LEFTPADDING',   (0,0),  (-1,-1), 5),
+        ('RIGHTPADDING',  (0,0),  (-1,-1), 4),
+        ('GRID',          (0,0),  (-1,-1), 0.4, C_GRIS_MED),
+        ('BOX',           (0,0),  (-1,-1), 0.8, C_AZUL),
+    ] + row_bgs))
+
+    # Panel "Que significan los niveles"
+    niveles_content = [
+        Paragraph('<b>¿QUE SIGNIFICAN LOS NIVELES?</b>',
+                  ps('nqt', fontSize=9, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1)),
+        Spacer(1, 6),
+        Paragraph('<font color="#27AE60"><b>&#9679; ALTO:</b></font>',    sNH),
+        Paragraph('Desempeño superior. Tienes buen dominio de los contenidos evaluados.', sND),
+        Spacer(1, 4),
+        Paragraph('<font color="#F1C40F"><b>&#9679; MEDIO:</b></font>',   sNH),
+        Paragraph('Desempeño satisfactorio. Tienes conocimientos, pero aún puedes mejorar.', sND),
+        Spacer(1, 4),
+        Paragraph('<font color="#E67E22"><b>&#9679; BÁSICO:</b></font>',  sNH),
+        Paragraph('Desempeño básico. Debes repasar algunos conceptos fundamentales.', sND),
+        Spacer(1, 4),
+        Paragraph('<font color="#C0392B"><b>&#9679; BAJO:</b></font>',    sNH),
+        Paragraph('Desempeño insuficiente. Necesitas fortalecer tus conocimientos en esta área.', sND),
+    ]
+    niveles_t = Table([[niveles_content]], colWidths=[222])
+    niveles_t.setStyle(TableStyle([
+        ('BOX',           (0,0), (-1,-1), 0.8, C_AZUL2),
+        ('BACKGROUND',    (0,0), (-1,-1), colors.HexColor('#EBF5FB')),
+        ('TOPPADDING',    (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('LEFTPADDING',   (0,0), (-1,-1), 8),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 8),
+        ('VALIGN',        (0,0), (-1,-1), 'TOP'),
+    ]))
+
+    mid_t = Table([[res_t, niveles_t]], colWidths=[529, 233])
+    mid_t.setStyle(TableStyle([
+        ('VALIGN',        (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING',   (0,0), (-1,-1), 0),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 0),
+        ('TOPPADDING',    (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('INNERGRID',     (0,0), (-1,-1), 0, C_BLANCO),
+        ('ALIGN',         (1,0), (1,0),   'RIGHT'),
+    ]))
+    elements.append(mid_t)
+    elements.append(Spacer(1, 5))
+
+    # ── 3. FORTALEZAS + REC. GENERALES | REC. POR AREA ───────────
+    fortalezas_areas = [a for a in reporte['areas'] if a['es_fortaleza']]
+    debiles_areas    = [a for a in reporte['areas'] if a['es_critica']]
+
+    fort_items = []
+    fort_items.append(Paragraph(
+        '<b>FORTALEZAS</b>',
+        ps('fh', fontSize=9, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1)
+    ))
+    fort_items.append(Spacer(1, 4))
+    if fortalezas_areas:
+        for fa in fortalezas_areas:
+            fort_items.append(Paragraph(
+                f'<font color="#27AE60"><b>&#10003; {fa["nombre"].upper()}</b></font>', sBB
+            ))
+            if fa['fortalezas']:
+                fort_items.append(Paragraph(fa['fortalezas'][0], sBu))
+    else:
+        fort_items.append(Paragraph('Sigue practicando para consolidar tus fortalezas.', sBd))
+
+    fort_items.append(Spacer(1, 6))
+    fort_items.append(Paragraph(
+        '<b>RECOMENDACIONES GENERALES</b>',
+        ps('rgh', fontSize=9, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1)
+    ))
+    fort_items.append(Spacer(1, 3))
+    for rec in reporte['recomendaciones_generales']:
+        fort_items.append(Paragraph(f'&#8226; {rec}', sBu))
+    if reporte['plan_tiempo']:
+        fort_items.append(Spacer(1, 3))
+        fort_items.append(Paragraph('<b>Plan de estudio sugerido:</b>', sBB))
+        for pt in reporte['plan_tiempo']:
+            fort_items.append(Paragraph(f'  &#8594; {pt}', sBu))
+
+    fort_t = Table([[fort_items]], colWidths=[320])
+    fort_t.setStyle(TableStyle([
+        ('BOX',           (0,0), (-1,-1), 0.8, C_VERDE),
+        ('BACKGROUND',    (0,0), (-1,-1), C_VERDE_BG),
+        ('TOPPADDING',    (0,0), (-1,-1), 7),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 7),
+        ('LEFTPADDING',   (0,0), (-1,-1), 8),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 8),
+        ('VALIGN',        (0,0), (-1,-1), 'TOP'),
+    ]))
+
+    # Recomendaciones por area
+    rec_items = []
+    rec_items.append(Paragraph(
+        '<b>RECOMENDACIONES POR AREA</b>',
+        ps('rah', fontSize=9, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1)
+    ))
+    rec_items.append(Spacer(1, 4))
+    for area_data in reporte['areas']:
+        col_h, _ = nivel_color(area_data['puntaje'])
+        hex_h = col_h.hexval()
+        rec_items.append(Paragraph(
+            f'<font color="{hex_h}"><b>{area_data["nombre"].upper()}</b></font>', sBB
+        ))
+        for r in area_data['recomendaciones'][:2]:
+            rec_items.append(Paragraph(f'&#8226; {r}', sBu))
+
+    rec_t = Table([[rec_items]], colWidths=[435])
+    rec_t.setStyle(TableStyle([
+        ('BOX',           (0,0), (-1,-1), 0.8, C_DORADO),
+        ('BACKGROUND',    (0,0), (-1,-1), C_DORADO_BG),
+        ('TOPPADDING',    (0,0), (-1,-1), 7),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 7),
+        ('LEFTPADDING',   (0,0), (-1,-1), 8),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 8),
+        ('VALIGN',        (0,0), (-1,-1), 'TOP'),
+    ]))
+
+    bot_t = Table([[fort_t, rec_t]], colWidths=[325, 437])
+    bot_t.setStyle(TableStyle([
+        ('VALIGN',        (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING',   (0,0), (-1,-1), 0),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 0),
+        ('TOPPADDING',    (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('ALIGN',         (1,0), (1,0),   'RIGHT'),
+    ]))
+    elements.append(bot_t)
+    elements.append(Spacer(1, 5))
+
+    # ── 4. PIE MOTIVACIONAL ──────────────────────────────────────
+    footer_t = Table(
+        [[Paragraph('&#9733; &#161;Sigue as&#237;! Con disciplina y constancia alcanzar&#225;s tus metas. &#9733;', sFt)]],
+        colWidths=[762]
+    )
+    footer_t.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0), (-1,-1), C_DORADO),
+        ('TOPPADDING',    (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('BOX',           (0,0), (-1,-1), 0.8, C_AZUL),
+    ]))
+    elements.append(footer_t)
+
+    return elements
+
+
 class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, View):
     use_real_scores = False
     
@@ -115,7 +446,6 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
             messages.warning(request, "No hay resultados para exportar.")
             return redirect('simulacros:resultados_simulacros')
 
-        # Determinar nombre
         grupo_obj = qs.first().alumno.grupo_actual
         grupo_nombre = grupo_obj.codigo if grupo_obj else "Varios"
         sim_nombre = qs.first().simulacro.nombre
@@ -126,339 +456,16 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="{filename}"'
 
-        # ── Documento A4 Landscape ─────────────────────────────────────────
         doc = SimpleDocTemplate(
             response, pagesize=landscape(LETTER),
             rightMargin=20, leftMargin=20, topMargin=18, bottomMargin=18
         )
 
-        # ── Paleta ────────────────────────────────────────────────────────
-        C_AZUL      = colors.HexColor('#1C3A5F')
-        C_AZUL2     = colors.HexColor('#2E6DA4')
-        C_DORADO    = colors.HexColor('#F5A623')
-        C_DORADO_BG = colors.HexColor('#FFF8E1')
-        C_VERDE     = colors.HexColor('#27AE60')
-        C_VERDE_BG  = colors.HexColor('#D5F5E3')
-        C_AMBAR     = colors.HexColor('#F39C12')
-        C_NARANJA   = colors.HexColor('#E67E22')
-        C_ROJO      = colors.HexColor('#C0392B')
-        C_GRIS_CLR  = colors.HexColor('#F4F6F8')
-        C_GRIS_MED  = colors.HexColor('#BDC3C7')
-        C_GRIS_OSC  = colors.HexColor('#7F8C8D')
-        C_BLANCO    = colors.white
-        C_NEGRO     = colors.black
-
-        styles = getSampleStyleSheet()
-
-        def ps(name, **kw):
-            return ParagraphStyle(name=name, parent=styles['Normal'], **kw)
-
-        sT  = ps('sT',  fontSize=13, fontName='Helvetica-Bold', textColor=C_AZUL,  alignment=1, leading=16)
-        sS  = ps('sS',  fontSize=10, fontName='Helvetica-Bold', textColor=C_AZUL,  alignment=1, leading=13)
-        sIL = ps('sIL', fontSize=8,  fontName='Helvetica-Bold', textColor=C_AZUL)
-        sIV = ps('sIV', fontSize=8,  textColor=C_NEGRO, leading=10)
-        sAN = ps('sAN', fontSize=8,  fontName='Helvetica-Bold', textColor=C_AZUL)
-        sSC = ps('sSC', fontSize=9,  fontName='Helvetica-Bold', textColor=C_AZUL,  alignment=1)
-        sNV = ps('sNV', fontSize=8,  fontName='Helvetica-Bold', alignment=1)
-        sSH = ps('sSH', fontSize=8,  fontName='Helvetica-Bold', textColor=C_BLANCO, alignment=1)
-        sBd = ps('sBd', fontSize=8,  leading=11)
-        sBB = ps('sBB', fontSize=8,  fontName='Helvetica-Bold', leading=11)
-        sBu = ps('sBu', fontSize=7.5,leftIndent=6, leading=10)
-        sFt = ps('sFt', fontSize=9,  fontName='Helvetica-Bold', textColor=C_AZUL,  alignment=1)
-        sND = ps('sND', fontSize=7.5,leading=10, textColor=C_NEGRO)
-        sNH = ps('sNH', fontSize=8,  fontName='Helvetica-Bold', textColor=C_AZUL,  leading=11)
-
-        if self.use_real_scores:
-            AREA_CFG = [
-                ('matematicas',  'puntaje_matematicas', 'MATEMATICAS'),
-                ('lectura',      'puntaje_lectura',     'LECTURA CRITICA'),
-                ('sociales',     'puntaje_sociales',    'CIENCIAS SOCIALES'),
-                ('naturales',    'puntaje_naturales',   'CIENCIAS NATURALES'),
-                ('ingles',       'puntaje_ingles',      'INGLES'),
-            ]
-            global_attr = 'puntaje_global'
-            tipo_reporte = 'Real'
-        else:
-            AREA_CFG = [
-                ('matematicas',  'puntaje_matematicas_modificado', 'MATEMATICAS'),
-                ('lectura',      'puntaje_lectura_modificado',     'LECTURA CRITICA'),
-                ('sociales',     'puntaje_sociales_modificado',    'CIENCIAS SOCIALES'),
-                ('naturales',    'puntaje_naturales_modificado',   'CIENCIAS NATURALES'),
-                ('ingles',       'puntaje_ingles_modificado',      'INGLES'),
-            ]
-            global_attr = 'puntaje_global_modificado'
-            tipo_reporte = 'Modificado'
-
-        def nivel_color(p):
-            if p >= 70:   return C_VERDE, 'ALTO'
-            elif p >= 55: return C_AMBAR, 'MEDIO'
-            elif p >= 40: return C_NARANJA, 'BÁSICO'
-            else:         return C_ROJO, 'BAJO'
-
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo.png')
         elements = []
 
         for i, res in enumerate(qs):
-            nombre = f"{res.alumno.primer_apellido} {res.alumno.segundo_apellido} {res.alumno.nombres}".strip()
-            fecha_str = res.fecha_realizacion.strftime('%d de %B de %Y') if res.fecha_realizacion else 'N/A'
-            grupo_str = res.alumno.grupo_actual.codigo if res.alumno.grupo_actual else 'N/A'
-            pg = int(getattr(res, global_attr))
-
-            puntajes_res = {
-                'matematicas': getattr(res, AREA_CFG[0][1]),
-                'lectura':     getattr(res, AREA_CFG[1][1]),
-                'sociales':    getattr(res, AREA_CFG[2][1]),
-                'naturales':   getattr(res, AREA_CFG[3][1]),
-                'ingles':      getattr(res, AREA_CFG[4][1]),
-                'global':      getattr(res, global_attr),
-            }
-            reporte = generar_reporte_completo(puntajes_res)
-
-            # ── 1. CABECERA ───────────────────────────────────────────────
-            if os.path.exists(logo_path):
-                # La imagen es de 661x377. Ancho = 120px, alto proporcional.
-                tw = 120
-                th = tw * (377.0 / 661.0)
-                logo_cell = RLImage(logo_path, width=tw, height=th, kind='proportional')
-            else:
-                logo_cell = Paragraph('', styles['Normal'])
-
-            title_cell = [
-                Paragraph('REPORTE POR AREA Y RECOMENDACIONES', sT),
-                Paragraph(f'SIMULACRO SABER 11&deg; &ndash; {sim_nombre}', sS),
-            ]
-
-            info_data = [
-                [Paragraph('<b>Fecha:</b>', sIL),      Paragraph(fecha_str, sIV)],
-                [Paragraph('<b>Estudiante:</b>', sIL), Paragraph(nombre, sIV)],
-                [Paragraph('<b>Grupo:</b>', sIL),      Paragraph(grupo_str, sIV)],
-            ]
-            info_t = Table(info_data, colWidths=[65, 125])
-            info_t.setStyle(TableStyle([
-                ('FONTSIZE',      (0,0), (-1,-1), 8),
-                ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
-                ('LEFTPADDING',   (0,0), (-1,-1), 3),
-                ('RIGHTPADDING',  (0,0), (-1,-1), 3),
-                ('TOPPADDING',    (0,0), (-1,-1), 4),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ]))
-
-            score_data = [
-                [Paragraph('PUNTAJE GLOBAL', ps('sgl', fontSize=8, fontName='Helvetica-Bold', textColor=C_GRIS_OSC, alignment=1))],
-                [Paragraph(f'{pg}', ps('sgv', fontSize=36, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1, leading=40))],
-                [Paragraph('de 500', ps('sgd', fontSize=8, textColor=C_GRIS_OSC, alignment=1))]
-            ]
-            score_t = Table(score_data, colWidths=[110])
-            score_t.setStyle(TableStyle([
-                ('ALIGN',         (0,0), (-1,-1), 'CENTER'),
-                ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
-                ('BACKGROUND',    (0,0), (-1,-1), C_BLANCO),
-                ('BOX',           (0,0), (-1,-1), 1.5, C_DORADO),
-                ('TOPPADDING',    (0,0), (-1,-1), 3),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 3),
-            ]))
-
-            header_t = Table([[logo_cell, title_cell, info_t, score_t]], colWidths=[120, 320, 190, 132])
-            header_t.setStyle(TableStyle([
-                ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
-                ('ALIGN',         (1,0), (1,0),   'CENTER'),
-                ('LEFTPADDING',   (0,0), (-1,-1), 5),
-                ('RIGHTPADDING',  (0,0), (-1,-1), 5),
-                ('TOPPADDING',    (0,0), (-1,-1), 6),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-                ('BOX',           (0,0), (-1,-1), 1.2, C_AZUL),
-                ('BACKGROUND',    (0,0), (-1,-1), C_GRIS_CLR),
-            ]))
-            elements.append(header_t)
-            elements.append(Spacer(1, 5))
-
-            # ── 2. TABLA DE RESULTADOS + QUE SIGNIFICAN LOS NIVELES ───────
-            # Encabezado tabla resultados
-            res_header = [
-                Paragraph('<b>AREA</b>',              sSH),
-                Paragraph('<b>PUNTAJE</b>',           sSH),
-                Paragraph('<b>NIVEL DE DESEMPENO</b>',sSH),
-                Paragraph('<b>DESEMPENO RELATIVO</b>',sSH),
-            ]
-            res_rows = [res_header]
-
-            for area_key, attr, label in AREA_CFG:
-                p_val = float(getattr(res, attr))
-                col_niv, niv_label = nivel_color(p_val)
-                hex_niv = col_niv.hexval()
-                niv_p = Paragraph(
-                    f'<font color="{hex_niv}"><b>&#9679; {niv_label}</b></font>',
-                    ps(f'nv_{area_key}', fontSize=8, alignment=1)
-                )
-                barra = BarraDesempeno(p_val, width=175, height=11)
-                res_rows.append([
-                    Paragraph(f'<b>{label}</b>', sAN),
-                    Paragraph(f'<b>{int(p_val)} / 100</b>', sSC),
-                    niv_p,
-                    barra,
-                ])
-
-            res_t = Table(res_rows, colWidths=[148, 62, 100, 215])
-            row_bgs = []
-            for r in range(1, len(res_rows)):
-                bg = C_GRIS_CLR if r % 2 == 0 else C_BLANCO
-                row_bgs.append(('BACKGROUND', (0, r), (-1, r), bg))
-
-            res_t.setStyle(TableStyle([
-                ('BACKGROUND',    (0,0),  (-1,0),  C_AZUL),
-                ('TEXTCOLOR',     (0,0),  (-1,0),  C_BLANCO),
-                ('FONTNAME',      (0,0),  (-1,0),  'Helvetica-Bold'),
-                ('FONTSIZE',      (0,0),  (-1,-1), 8),
-                ('ALIGN',         (0,0),  (-1,-1), 'CENTER'),
-                ('ALIGN',         (0,1),  (0,-1),  'LEFT'),
-                ('VALIGN',        (0,0),  (-1,-1), 'MIDDLE'),
-                ('TOPPADDING',    (0,0),  (-1,-1), 4),
-                ('BOTTOMPADDING', (0,0),  (-1,-1), 4),
-                ('LEFTPADDING',   (0,0),  (-1,-1), 5),
-                ('RIGHTPADDING',  (0,0),  (-1,-1), 4),
-                ('GRID',          (0,0),  (-1,-1), 0.4, C_GRIS_MED),
-                ('BOX',           (0,0),  (-1,-1), 0.8, C_AZUL),
-            ] + row_bgs))
-
-            # Panel "Que significan los niveles"
-            niveles_content = [
-                Paragraph('<b>¿QUE SIGNIFICAN LOS NIVELES?</b>',
-                          ps('nqt', fontSize=9, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1)),
-                Spacer(1, 6),
-                Paragraph('<font color="#27AE60"><b>&#9679; ALTO:</b></font>',    sNH),
-                Paragraph('Desempeño superior. Tienes buen dominio de los contenidos evaluados.', sND),
-                Spacer(1, 4),
-                Paragraph('<font color="#F1C40F"><b>&#9679; MEDIO:</b></font>',   sNH),
-                Paragraph('Desempeño satisfactorio. Tienes conocimientos, pero aún puedes mejorar.', sND),
-                Spacer(1, 4),
-                Paragraph('<font color="#E67E22"><b>&#9679; BÁSICO:</b></font>',  sNH),
-                Paragraph('Desempeño básico. Debes repasar algunos conceptos fundamentales.', sND),
-                Spacer(1, 4),
-                Paragraph('<font color="#C0392B"><b>&#9679; BAJO:</b></font>',    sNH),
-                Paragraph('Desempeño insuficiente. Necesitas fortalecer tus conocimientos en esta área.', sND),
-            ]
-            niveles_t = Table([[niveles_content]], colWidths=[222])
-            niveles_t.setStyle(TableStyle([
-                ('BOX',           (0,0), (-1,-1), 0.8, C_AZUL2),
-                ('BACKGROUND',    (0,0), (-1,-1), colors.HexColor('#EBF5FB')),
-                ('TOPPADDING',    (0,0), (-1,-1), 8),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-                ('LEFTPADDING',   (0,0), (-1,-1), 8),
-                ('RIGHTPADDING',  (0,0), (-1,-1), 8),
-                ('VALIGN',        (0,0), (-1,-1), 'TOP'),
-            ]))
-
-            mid_t = Table([[res_t, niveles_t]], colWidths=[529, 233])
-            mid_t.setStyle(TableStyle([
-                ('VALIGN',        (0,0), (-1,-1), 'TOP'),
-                ('LEFTPADDING',   (0,0), (-1,-1), 0),
-                ('RIGHTPADDING',  (0,0), (-1,-1), 0),
-                ('TOPPADDING',    (0,0), (-1,-1), 0),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-                ('INNERGRID',     (0,0), (-1,-1), 0, C_BLANCO),
-                ('ALIGN',         (1,0), (1,0),   'RIGHT'),
-            ]))
-            elements.append(mid_t)
-            elements.append(Spacer(1, 5))
-
-            # ── 3. FORTALEZAS + REC. GENERALES | REC. POR AREA ───────────
-            # Fortalezas
-            fortalezas_areas = [a for a in reporte['areas'] if a['es_fortaleza']]
-            debiles_areas    = [a for a in reporte['areas'] if a['es_critica']]
-
-            fort_items = []
-            fort_items.append(Paragraph(
-                '<b>FORTALEZAS</b>',
-                ps('fh', fontSize=9, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1)
-            ))
-            fort_items.append(Spacer(1, 4))
-            if fortalezas_areas:
-                for fa in fortalezas_areas:
-                    fort_items.append(Paragraph(
-                        f'<font color="#27AE60"><b>&#10003; {fa["nombre"].upper()}</b></font>', sBB
-                    ))
-                    if fa['fortalezas']:
-                        fort_items.append(Paragraph(fa['fortalezas'][0], sBu))
-            else:
-                fort_items.append(Paragraph('Sigue practicando para consolidar tus fortalezas.', sBd))
-
-            fort_items.append(Spacer(1, 6))
-            fort_items.append(Paragraph(
-                '<b>RECOMENDACIONES GENERALES</b>',
-                ps('rgh', fontSize=9, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1)
-            ))
-            fort_items.append(Spacer(1, 3))
-            for rec in reporte['recomendaciones_generales']:
-                fort_items.append(Paragraph(f'&#8226; {rec}', sBu))
-            if reporte['plan_tiempo']:
-                fort_items.append(Spacer(1, 3))
-                fort_items.append(Paragraph('<b>Plan de estudio sugerido:</b>', sBB))
-                for pt in reporte['plan_tiempo']:
-                    fort_items.append(Paragraph(f'  &#8594; {pt}', sBu))
-
-            fort_t = Table([[fort_items]], colWidths=[320])
-            fort_t.setStyle(TableStyle([
-                ('BOX',           (0,0), (-1,-1), 0.8, C_VERDE),
-                ('BACKGROUND',    (0,0), (-1,-1), C_VERDE_BG),
-                ('TOPPADDING',    (0,0), (-1,-1), 7),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 7),
-                ('LEFTPADDING',   (0,0), (-1,-1), 8),
-                ('RIGHTPADDING',  (0,0), (-1,-1), 8),
-                ('VALIGN',        (0,0), (-1,-1), 'TOP'),
-            ]))
-
-            # Recomendaciones por area
-            rec_items = []
-            rec_items.append(Paragraph(
-                '<b>RECOMENDACIONES POR AREA</b>',
-                ps('rah', fontSize=9, fontName='Helvetica-Bold', textColor=C_AZUL, alignment=1)
-            ))
-            rec_items.append(Spacer(1, 4))
-            for area_data in reporte['areas']:
-                col_h, _ = nivel_color(area_data['puntaje'])
-                hex_h = col_h.hexval()
-                rec_items.append(Paragraph(
-                    f'<font color="{hex_h}"><b>{area_data["nombre"].upper()}</b></font>', sBB
-                ))
-                for r in area_data['recomendaciones'][:2]:
-                    rec_items.append(Paragraph(f'&#8226; {r}', sBu))
-
-            rec_t = Table([[rec_items]], colWidths=[435])
-            rec_t.setStyle(TableStyle([
-                ('BOX',           (0,0), (-1,-1), 0.8, C_DORADO),
-                ('BACKGROUND',    (0,0), (-1,-1), C_DORADO_BG),
-                ('TOPPADDING',    (0,0), (-1,-1), 7),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 7),
-                ('LEFTPADDING',   (0,0), (-1,-1), 8),
-                ('RIGHTPADDING',  (0,0), (-1,-1), 8),
-                ('VALIGN',        (0,0), (-1,-1), 'TOP'),
-            ]))
-
-            bot_t = Table([[fort_t, rec_t]], colWidths=[325, 437])
-            bot_t.setStyle(TableStyle([
-                ('VALIGN',        (0,0), (-1,-1), 'TOP'),
-                ('LEFTPADDING',   (0,0), (-1,-1), 0),
-                ('RIGHTPADDING',  (0,0), (-1,-1), 0),
-                ('TOPPADDING',    (0,0), (-1,-1), 0),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-                ('ALIGN',         (1,0), (1,0),   'RIGHT'),
-            ]))
-            elements.append(bot_t)
-            elements.append(Spacer(1, 5))
-
-            # ── 4. PIE MOTIVACIONAL ──────────────────────────────────────
-            footer_t = Table(
-                [[Paragraph('&#9733; &#161;Sigue as&#237;! Con disciplina y constancia alcanzar&#225;s tus metas. &#9733;', sFt)]],
-                colWidths=[762]
-            )
-            footer_t.setStyle(TableStyle([
-                ('BACKGROUND',    (0,0), (-1,-1), C_DORADO),
-                ('TOPPADDING',    (0,0), (-1,-1), 6),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-                ('BOX',           (0,0), (-1,-1), 0.8, C_AZUL),
-            ]))
-            elements.append(footer_t)
-
+            sim_nombre_res = res.simulacro.nombre
+            elements.extend(_generar_elements_resultado(res, sim_nombre_res, use_real_scores=self.use_real_scores))
             if i < len(qs) - 1:
                 elements.append(PageBreak())
 
@@ -467,6 +474,32 @@ class DescargarResultadosPDFView(LoginRequiredMixin, PermisosResultadosMixin, Vi
 
 class DescargarResultadosRealesPDFView(DescargarResultadosPDFView):
     use_real_scores = True
+
+
+class DescargarResultadoIndividualPDFView(LoginRequiredMixin, View):
+    """Genera el PDF de resultado individual de un ResultadoSimulacro por su PK."""
+    
+    def get(self, request, resultado_pk):
+        res = get_object_or_404(
+            ResultadoSimulacro.objects.select_related('alumno', 'simulacro', 'alumno__grupo_actual'),
+            pk=resultado_pk
+        )
+        
+        sim_nombre = res.simulacro.nombre
+        nombre_alumno = f"{res.alumno.primer_apellido} {res.alumno.segundo_apellido} {res.alumno.nombres}".strip()
+        filename = f"Resultado_{nombre_alumno}_{sim_nombre}.pdf"
+        
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        
+        doc = SimpleDocTemplate(
+            response, pagesize=landscape(LETTER),
+            rightMargin=20, leftMargin=20, topMargin=18, bottomMargin=18
+        )
+        
+        elements = _generar_elements_resultado(res, sim_nombre, use_real_scores=False)
+        doc.build(elements)
+        return response
 
 class DescargarInformeDirectivoPDFView(LoginRequiredMixin, PermisosResultadosMixin, View):
     def get(self, request):
