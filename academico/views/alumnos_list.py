@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
 from urllib.parse import urlencode
-from ..models import Alumno
+from ..models import Alumno, Grupo
 from ubicaciones.models import Municipio, Departamento, Sede
 
 def make_accent_insensitive_regex(term):
@@ -77,6 +77,7 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         estado_alumno = self.request.GET.get('estado_alumno')  # Filtro de estado
         tiene_cuotas = self.request.GET.get('tiene_cuotas')    # Filtro de cuotas
         vendedor_id = self.request.GET.get('vendedor')
+        grupo_id = self.request.GET.get('grupo')
 
         if buscador:
             from django.db.models import Q
@@ -146,6 +147,10 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         if vendedor_id:
             queryset = queryset.filter(vendedor_id=vendedor_id)
 
+        # Filtrar por grupo
+        if grupo_id:
+            queryset = queryset.filter(grupo_actual_id=grupo_id)
+
         # Filtrar por mes de culminación
         mes_culminacion = self.request.GET.get('mes_culminacion')
         if mes_culminacion:
@@ -182,6 +187,31 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
         # Añadir lista de sedes para los filtros
         context['sedes'] = Sede.objects.all()
         context['vendedores'] = Vendedor.objects.all()
+        
+        # Grupos disponibles según el rol del usuario y filtros activos
+        grupos_qs = Grupo.objects.select_related('salon__sede__municipio__departamento').all()
+        if not self.request.user.is_superuser:
+            if self.request.user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
+                if hasattr(self.request.user, 'departamento') and self.request.user.departamento:
+                    grupos_qs = grupos_qs.filter(salon__sede__municipio__departamento=self.request.user.departamento)
+            elif getattr(self.request.user, 'is_observador', False):
+                if hasattr(self.request.user, 'sede') and self.request.user.sede:
+                    grupos_qs = grupos_qs.filter(salon__sede=self.request.user.sede)
+            else:
+                if hasattr(self.request.user, 'municipio') and self.request.user.municipio:
+                    grupos_qs = grupos_qs.filter(salon__sede__municipio=self.request.user.municipio)
+        # Filtrar grupos según los filtros de ubicación seleccionados
+        filtro_depto = self.request.GET.get('departamento')
+        filtro_ciudad = self.request.GET.get('ciudad')
+        filtro_sede = self.request.GET.get('sede')
+        if filtro_sede:
+            grupos_qs = grupos_qs.filter(salon__sede__nombre__icontains=filtro_sede)
+        if filtro_depto:
+            grupos_qs = grupos_qs.filter(salon__sede__municipio__departamento_id=filtro_depto)
+        if filtro_ciudad:
+            grupos_qs = grupos_qs.filter(salon__sede__municipio__nombre__icontains=filtro_ciudad)
+        context['grupos'] = grupos_qs.order_by('codigo')
+        context['grupo_seleccionado'] = self.request.GET.get('grupo', '')
         
         # Solo superusuarios tienen acceso a todos los departamentos
         if self.request.user.is_superuser:
@@ -332,6 +362,12 @@ class AlumnosListView(UserPassesTestMixin, LoginRequiredMixin, ListView):
             try:
                 vend = Vendedor.objects.get(id=self.request.GET.get('vendedor'))
                 filtros_activos.append(f"Vendedor: {vend.nombres} {vend.apellidos}")
+            except Exception:
+                pass
+        if self.request.GET.get('grupo'):
+            try:
+                grp = Grupo.objects.get(id=self.request.GET.get('grupo'))
+                filtros_activos.append(f"Grupo: {grp.codigo}")
             except Exception:
                 pass
             

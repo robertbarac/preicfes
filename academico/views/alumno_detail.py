@@ -13,6 +13,27 @@ class AlumnoDetailView(LoginRequiredMixin, DetailView):
     template_name = 'academico/alumno_detail.html'
     context_object_name = 'alumno'
 
+    def get_queryset(self):
+        """Filtra el queryset según el rol del usuario (mismo criterio que AlumnosListView)."""
+        qs = super().get_queryset().select_related('grupo_actual__salon__sede')
+        user = self.request.user
+
+        if user.is_superuser:
+            return qs
+        elif user.groups.filter(name__in=['CoordinadorDepartamental', 'Auxiliar']).exists():
+            if hasattr(user, 'departamento') and user.departamento:
+                return qs.filter(municipio__departamento=user.departamento)
+        elif getattr(user, 'is_observador', False):
+            if hasattr(user, 'sede') and user.sede:
+                return qs.filter(grupo_actual__salon__sede=user.sede)
+            return qs.none()
+        else:
+            # Staff general: filtrar por municipio
+            if hasattr(user, 'municipio') and user.municipio:
+                return qs.filter(municipio=user.municipio)
+            return qs.none()
+        return qs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         alumno = self.get_object()
