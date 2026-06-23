@@ -568,6 +568,87 @@ def procesar_imagen(image_path, modo, debug=False):
     return secuencia
 
 
+# Longitudes exactas esperadas por tira
+LONGITUDES_ESPERADAS = {
+    'S1': {'C1': 30, 'C2': 30, 'C3': 30, 'C4': 30},
+    'S2': {'C1': 45, 'C2a': 34, 'C2b': 10, 'C3': 45},
+}
+
+ETIQUETAS_S1 = ['C1', 'C2', 'C3', 'C4']
+ETIQUETAS_S2 = ['C1', 'C2a', 'C2b', 'C3']
+
+
+def extraer_tiras_individuales(path_s1, path_s2):
+    """
+    Procesa las dos imágenes de un alumno y devuelve las secuencias
+    desglosadas por tira (sin concatenar), junto con el estado de cada una.
+
+    Retorna:
+        dict con estructura:
+        {
+            's1': [
+                {'etiqueta': 'C1', 'secuencia': 'ABCD...', 'esperado': 30, 'ok': True},
+                ...
+            ],
+            's2': [
+                {'etiqueta': 'C1', 'secuencia': 'ABCD...', 'esperado': 48, 'ok': True},
+                ...
+            ],
+            'error': None  # o string con descripción del error si falló el OMR
+        }
+    """
+    resultado = {'s1': [], 's2': [], 'error': None}
+
+    try:
+        img_s1 = cv2.imread(path_s1)
+        if img_s1 is None:
+            raise ValueError(f"No se pudo cargar: {path_s1}")
+        img_s1 = normalizar_hoja(img_s1)
+        tiras_s1 = hacer_tiras(img_s1, 'S1')
+
+        for i, (tira_img, n_opciones, _etq) in enumerate(tiras_s1):
+            imgThresh, circulos, _ = encontrar_circulos_en_tira(tira_img, n_opciones)
+            respuestas = evaluar_tira(circulos, imgThresh, n_opciones)
+            etiqueta = ETIQUETAS_S1[i]
+            esperado = LONGITUDES_ESPERADAS['S1'][etiqueta]
+            seq = ''.join(respuestas)
+            resultado['s1'].append({
+                'etiqueta': etiqueta,
+                'secuencia': seq,
+                'esperado': esperado,
+                'ok': len(seq) == esperado,
+            })
+    except Exception as e:
+        resultado['error'] = f"S1: {e}"
+
+    try:
+        img_s2 = cv2.imread(path_s2)
+        if img_s2 is None:
+            raise ValueError(f"No se pudo cargar: {path_s2}")
+        img_s2 = normalizar_hoja(img_s2)
+        tiras_s2 = hacer_tiras(img_s2, 'S2')
+
+        for i, (tira_img, n_opciones, _etq) in enumerate(tiras_s2):
+            imgThresh, circulos, _ = encontrar_circulos_en_tira(tira_img, n_opciones)
+            respuestas = evaluar_tira(circulos, imgThresh, n_opciones)
+            etiqueta = ETIQUETAS_S2[i]
+            esperado = LONGITUDES_ESPERADAS['S2'][etiqueta]
+            seq = ''.join(respuestas)
+            resultado['s2'].append({
+                'etiqueta': etiqueta,
+                'secuencia': seq,
+                'esperado': esperado,
+                'ok': len(seq) == esperado,
+            })
+    except Exception as e:
+        err_prev = resultado.get('error') or ''
+        resultado['error'] = (err_prev + ' | ' if err_prev else '') + f"S2: {e}"
+
+    return resultado
+
+
+
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

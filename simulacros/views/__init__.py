@@ -1,3 +1,3 @@
-from .calificar import GrupoCalificarSimulacroView
+from .calificar import GrupoCalificarSimulacroView, RevisarSimulacroView
 from .resultados import ResultadosSimulacroListView
 from .pdf import DescargarResultadosPDFView, DescargarInformeDirectivoPDFView, DescargarResultadosRealesPDFView, DescargarResultadoIndividualPDFView

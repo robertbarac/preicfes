@@ -6,8 +6,8 @@
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-80 z-50 flex flex-col items-center justify-center rounded-lg">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-        <h2 class="text-xl font-bold text-gray-800">Procesando imágenes OMR...</h2>
-        <p class="text-gray-600">Esto puede tomar un tiempo. Por favor no cierres la ventana.</p>
+        <h2 class="text-xl font-bold text-gray-800">Extrayendo secuencias OMR...</h2>
+        <p class="text-gray-600">Esto puede tomar un momento. Por favor no cierres la ventana.</p>
     </div>
 
     <div class="flex justify-between items-center mb-6">
@@ -114,7 +114,7 @@
             <button type="submit" id="btnSubmit"
                     class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg opacity-50 cursor-not-allowed transition"
                     disabled>
-                Procesar y Calificar
+                Extraer Secuencias
             </button>
         </div>
     </form>
@@ -257,7 +257,7 @@
 
         document.getElementById('loadingOverlay').classList.remove('hidden');
         document.getElementById('btnSubmit').disabled = true;
-        document.getElementById('btnSubmit').innerText = 'Procesando...';
+        document.getElementById('btnSubmit').innerText = 'Extrayendo...';
     });
 </script>
 {% endblock %}
