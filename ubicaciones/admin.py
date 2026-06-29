@@ -1,6 +1,6 @@
 # ubicaciones/admin.py
 from django.contrib import admin
-from .models import Departamento, Municipio, Sede, Salon
+from .models import Departamento, Municipio, Sede, Salon, Colegio
 
 @admin.register(Departamento)
 class DepartamentoAdmin(admin.ModelAdmin):
@@ -63,4 +63,38 @@ class SalonAdmin(admin.ModelAdmin):
                         kwargs["queryset"] = Sede.objects.filter(municipio__departamento=user.departamento)
                 else:
                     kwargs["queryset"] = Sede.objects.filter(municipio=user.municipio)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(Colegio)
+class ColegioAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'municipio', 'departamento')
+    search_fields = ('nombre', 'municipio__nombre', 'municipio__departamento__nombre')
+    list_filter = ('municipio__departamento', 'municipio')
+
+    def departamento(self, obj):
+        return obj.municipio.departamento
+    departamento.admin_order_field = 'municipio__departamento'
+    departamento.short_description = 'Departamento'
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        user = request.user
+        if user.is_superuser:
+            return queryset
+        elif user.groups.filter(name='CoordinadorDepartamental').exists():
+            if user.departamento:
+                return queryset.filter(municipio__departamento=user.departamento)
+            return queryset.none()
+        return queryset.filter(municipio=user.municipio)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'municipio':
+            user = request.user
+            if not user.is_superuser:
+                if user.groups.filter(name='CoordinadorDepartamental').exists():
+                    if user.departamento:
+                        kwargs['queryset'] = Municipio.objects.filter(departamento=user.departamento)
+                else:
+                    kwargs['queryset'] = Municipio.objects.filter(id=user.municipio_id)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
