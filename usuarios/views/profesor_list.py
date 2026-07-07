@@ -1,6 +1,7 @@
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group
+from django.db.models import Q
 
 from usuarios.models import Usuario
 from ubicaciones.models import Municipio
@@ -35,6 +36,22 @@ class ProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         if municipio_id:
             queryset = queryset.filter(municipio_id=municipio_id)
             
+        # Aplicar filtro de búsqueda de texto
+        q = self.request.GET.get('q', '').strip()
+        if q:
+            words = q.split()
+            search_query = Q()
+            for word in words:
+                search_query &= (
+                    Q(first_name__icontains=word) |
+                    Q(last_name__icontains=word) |
+                    Q(username__icontains=word) |
+                    Q(cedula__icontains=word) |
+                    Q(telefono__icontains=word) |
+                    Q(email__icontains=word)
+                )
+            queryset = queryset.filter(search_query)
+            
         return queryset.order_by('first_name', 'last_name')
 
     def get_context_data(self, **kwargs):
@@ -53,6 +70,7 @@ class ProfesorListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         
         context['municipio_seleccionado'] = self.request.GET.get('municipio', '')
         context['is_coordinador'] = user.groups.filter(name='CoordinadorDepartamental').exists()
+        context['q'] = self.request.GET.get('q', '')
 
         # Añadir información de paginación al contexto
         paginator = context['paginator']
