@@ -11,6 +11,10 @@ class SimulacroAdmin(admin.ModelAdmin):
         ('Información general', {
             'fields': ('nombre',),
         }),
+        ('Configuración de Ajuste de Puntajes', {
+            'fields': ('umbral', 'umbral_1', 'objetivo_1', 'umbral_2', 'objetivo_2', 'objetivo_3', 'boost_min', 'boost_max'),
+            'description': 'Configura los umbrales de puntaje real, los objetivos bases y el rango de boost (incremento aleatorio) para ajustes de puntajes.'
+        }),
         ('Sesión 1', {
             'fields': ('soluciones_s1', 'puntos_corte_s1', 'componentes_s1'),
             'description': (

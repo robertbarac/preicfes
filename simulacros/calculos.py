@@ -81,26 +81,40 @@ def calcular_puntaje_icfes(puntajes_componentes):
     
     return resultados
 
-def modificar_puntajes(puntajes_reales, umbral):
+def modificar_puntajes(puntajes_reales, simulacro=None):
     """
-    Ajusta los puntajes según reglas fijas pero introduce variabilidad aleatoria:
-    - ≤140 → objetivo base 245
-    - 141‑240 → objetivo base 280
-    - >240 → objetivo base 310
-    A cada objetivo se le suma un *boost* aleatorio (6‑12) y cada componente recibe
+    Ajusta los puntajes según los rangos y objetivos del Simulacro, con variabilidad aleatoria:
+    A cada objetivo se le suma un *boost* aleatorio y cada componente recibe
     un *jitter* aleatorio de -2 a +2 para evitar patrones visibles.
     Los componentes se escalan proporcionalmente al objetivo con boost y se mantiene
     un máximo de 100.
     """
+    if simulacro is not None and not isinstance(simulacro, (int, float)):
+        umbral_1 = getattr(simulacro, 'umbral_1', 140)
+        objetivo_1 = getattr(simulacro, 'objetivo_1', 245)
+        umbral_2 = getattr(simulacro, 'umbral_2', 240)
+        objetivo_2 = getattr(simulacro, 'objetivo_2', 280)
+        objetivo_3 = getattr(simulacro, 'objetivo_3', 310)
+        boost_min = getattr(simulacro, 'boost_min', 6)
+        boost_max = getattr(simulacro, 'boost_max', 12)
+    else:
+        umbral_1 = 140
+        objetivo_1 = 245
+        umbral_2 = 240
+        objetivo_2 = 280
+        objetivo_3 = 310
+        boost_min = 6
+        boost_max = 12
+
     pg_real = puntajes_reales.get('global', 0)
 
     # Definir objetivo base según rangos
-    if pg_real <= 140:
-        objetivo_base = 245
-    elif pg_real <= 240:
-        objetivo_base = 280
+    if pg_real <= umbral_1:
+        objetivo_base = objetivo_1
+    elif pg_real <= umbral_2:
+        objetivo_base = objetivo_2
     else:
-        objetivo_base = 310
+        objetivo_base = objetivo_3
 
     # Si ya supera el objetivo base, no ajustamos
     if pg_real >= objetivo_base:
@@ -120,7 +134,7 @@ def modificar_puntajes(puntajes_reales, umbral):
 
     import random
     # Boost aleatorio moderado para que el ajuste no sea uniforme
-    boost = random.randint(6, 12)
+    boost = random.randint(boost_min, boost_max)
     objetivo = objetivo_base + boost
 
     # Factor proporcional usando el objetivo con boost
