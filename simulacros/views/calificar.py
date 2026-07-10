@@ -106,7 +106,7 @@ class GrupoCalificarSimulacroView(LoginRequiredMixin, View):
                     puntajes = calcular_puntaje_icfes(consolidados)
                     
                     # Calcular puntajes modificados
-                    puntajes_modificados = modificar_puntajes(puntajes, simulacro.umbral)
+                    puntajes_modificados = modificar_puntajes(puntajes, simulacro)
                     
                     # Guardar en BD
                     ResultadoSimulacro.objects.update_or_create(

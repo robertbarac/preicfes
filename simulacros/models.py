@@ -20,6 +20,41 @@ class Simulacro(models.Model):
         verbose_name="Umbral de Puntaje Mínimo", 
         help_text="Puntaje global mínimo aceptable. Los puntajes menores se ajustarán dinámicamente."
     )
+    umbral_1 = models.IntegerField(
+        default=140,
+        verbose_name="Umbral 1",
+        help_text="Puntaje global real para el primer rango (inclusive)."
+    )
+    objetivo_1 = models.IntegerField(
+        default=245,
+        verbose_name="Objetivo Base 1",
+        help_text="Objetivo base asignado si el puntaje global es menor o igual a Umbral 1."
+    )
+    umbral_2 = models.IntegerField(
+        default=240,
+        verbose_name="Umbral 2",
+        help_text="Puntaje global real para el segundo rango (inclusive)."
+    )
+    objetivo_2 = models.IntegerField(
+        default=280,
+        verbose_name="Objetivo Base 2",
+        help_text="Objetivo base asignado si el puntaje global está entre Umbral 1 + 1 y Umbral 2."
+    )
+    objetivo_3 = models.IntegerField(
+        default=310,
+        verbose_name="Objetivo Base 3",
+        help_text="Objetivo base asignado si el puntaje global es mayor que Umbral 2."
+    )
+    boost_min = models.IntegerField(
+        default=6,
+        verbose_name="Boost Mínimo",
+        help_text="Incremento aleatorio mínimo para sumar al objetivo base."
+    )
+    boost_max = models.IntegerField(
+        default=12,
+        verbose_name="Boost Máximo",
+        help_text="Incremento aleatorio máximo para sumar al objetivo base."
+    )
 
     componentes_s1 = models.JSONField(
         verbose_name="Orden de componentes Sesión 1",
