@@ -76,6 +76,26 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Obtener tipo de programa seleccionado
         tipo_programa = self.request.GET.get('tipo_programa')
         
+        # Obtener filtros de culminación (rango)
+        mes_ini = self.request.GET.get('mes_culminacion_inicio')
+        ano_ini = self.request.GET.get('ano_culminacion_inicio')
+        mes_fin = self.request.GET.get('mes_culminacion_fin')
+        ano_fin = self.request.GET.get('ano_culminacion_fin')
+        
+        import datetime
+        import calendar
+        
+        fecha_limite_inicio = None
+        if ano_ini:
+            m_i = int(mes_ini) if mes_ini else 1
+            fecha_limite_inicio = datetime.date(int(ano_ini), m_i, 1)
+            
+        fecha_limite_fin = None
+        if ano_fin:
+            m_f = int(mes_fin) if mes_fin else 12
+            last_day = calendar.monthrange(int(ano_fin), m_f)[1]
+            fecha_limite_fin = datetime.date(int(ano_fin), m_f, last_day)
+        
         # Obtener listas para filtros según permisos
         context['is_coordinador_or_auxiliar'] = is_coordinador_or_auxiliar
         
@@ -106,6 +126,36 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Obtener lista de tipos de programa para el filtro
         context['tipos_programa'] = dict(Alumno.TIPO_PROGRAMA)
         context['tipo_programa_seleccionado'] = tipo_programa
+        
+        # Agregar meses y años de culminación para los filtros
+        context['meses_anio'] = [
+            ('1', 'Enero'),
+            ('2', 'Febrero'),
+            ('3', 'Marzo'),
+            ('4', 'Abril'),
+            ('5', 'Mayo'),
+            ('6', 'Junio'),
+            ('7', 'Julio'),
+            ('8', 'Agosto'),
+            ('9', 'Septiembre'),
+            ('10', 'Octubre'),
+            ('11', 'Noviembre'),
+            ('12', 'Diciembre'),
+        ]
+        
+        import datetime
+        current_year = datetime.date.today().year
+        # Obtener los años presentes en la base de datos para fecha_culminacion
+        years = Alumno.objects.exclude(fecha_culminacion__isnull=True).dates('fecha_culminacion', 'year')
+        years_list = sorted(list(set(y.year for y in years)))
+        if not years_list:
+            years_list = [current_year - 1, current_year, current_year + 1]
+            
+        context['years_culminacion'] = [str(y) for y in years_list]
+        context['mes_culminacion_inicio_seleccionado'] = mes_ini or ''
+        context['ano_culminacion_inicio_seleccionado'] = ano_ini or ''
+        context['mes_culminacion_fin_seleccionado'] = mes_fin or ''
+        context['ano_culminacion_fin_seleccionado'] = ano_fin or ''
             
         # Base queryset para cuotas
         cuotas_qs = Cuota.objects.all()
@@ -132,6 +182,16 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         if tipo_programa:
             cuotas_qs = cuotas_qs.filter(
                 deuda__alumno__tipo_programa=tipo_programa
+            )
+            
+        # Filtrar por rango de fecha de culminación
+        if fecha_limite_inicio:
+            cuotas_qs = cuotas_qs.filter(
+                deuda__alumno__fecha_culminacion__gte=fecha_limite_inicio
+            )
+        if fecha_limite_fin:
+            cuotas_qs = cuotas_qs.filter(
+                deuda__alumno__fecha_culminacion__lte=fecha_limite_fin
             )
         
         # Datos de recaudación del día (basado en la fecha de pago seleccionada)
@@ -219,6 +279,16 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             todas_cuotas_qs = todas_cuotas_qs.filter(
                 deuda__alumno__tipo_programa=tipo_programa
             )
+            
+        # Filtrar por rango de fecha de culminación
+        if fecha_limite_inicio:
+            todas_cuotas_qs = todas_cuotas_qs.filter(
+                deuda__alumno__fecha_culminacion__gte=fecha_limite_inicio
+            )
+        if fecha_limite_fin:
+            todas_cuotas_qs = todas_cuotas_qs.filter(
+                deuda__alumno__fecha_culminacion__lte=fecha_limite_fin
+            )
         
         # Construir queryset de Deuda para aplicar filtros, considerando la fecha seleccionada
         deudas_qs = Deuda.objects.filter(
@@ -237,6 +307,12 @@ class InformeDiarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
         if tipo_programa:
             deudas_qs = deudas_qs.filter(alumno__tipo_programa=tipo_programa)
+            
+        if fecha_limite_inicio:
+            deudas_qs = deudas_qs.filter(alumno__fecha_culminacion__gte=fecha_limite_inicio)
+            
+        if fecha_limite_fin:
+            deudas_qs = deudas_qs.filter(alumno__fecha_culminacion__lte=fecha_limite_fin)
 
         # Valor total de cartera (suma de todos los montos de deudas filtradas)
         context['valor_cartera'] = deudas_qs.aggregate(Sum('valor_total'))['valor_total__sum'] or 0
