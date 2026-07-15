@@ -60,7 +60,7 @@
             <div>
                 <label for="mes_culminacion_inicio" class="block text-sm font-medium text-gray-700">Culminación desde (mes):</label>
                 <select name="mes_culminacion_inicio" id="mes_culminacion_inicio" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
-                    <option value="">Enero (defecto)</option>
+                    <option value="">Todos los meses</option>
                     {% for valor, nombre in meses_anio %}
                         <option value="{{ valor }}" {% if valor == mes_culminacion_inicio_seleccionado %}selected{% endif %}>{{ nombre }}</option>
                     {% endfor %}
@@ -70,7 +70,7 @@
             <div>
                 <label for="ano_culminacion_inicio" class="block text-sm font-medium text-gray-700">Culminación desde (año):</label>
                 <select name="ano_culminacion_inicio" id="ano_culminacion_inicio" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
-                    <option value="">Cualquier año</option>
+                    <option value="">Todos los años</option>
                     {% for y in years_culminacion %}
                         <option value="{{ y }}" {% if y == ano_culminacion_inicio_seleccionado %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
@@ -80,7 +80,7 @@
             <div>
                 <label for="mes_culminacion_fin" class="block text-sm font-medium text-gray-700">Culminación hasta (mes):</label>
                 <select name="mes_culminacion_fin" id="mes_culminacion_fin" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
-                    <option value="">Diciembre (defecto)</option>
+                    <option value="">Todos los meses</option>
                     {% for valor, nombre in meses_anio %}
                         <option value="{{ valor }}" {% if valor == mes_culminacion_fin_seleccionado %}selected{% endif %}>{{ nombre }}</option>
                     {% endfor %}
@@ -90,7 +90,7 @@
             <div>
                 <label for="ano_culminacion_fin" class="block text-sm font-medium text-gray-700">Culminación hasta (año):</label>
                 <select name="ano_culminacion_fin" id="ano_culminacion_fin" class="mt-1 block w-full sm:w-48 rounded-md border-gray-300 shadow-sm">
-                    <option value="">Cualquier año</option>
+                    <option value="">Todos los años</option>
                     {% for y in years_culminacion %}
                         <option value="{{ y }}" {% if y == ano_culminacion_fin_seleccionado %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
