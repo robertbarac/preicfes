@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 import environ
+from django.db.backends.postgresql.base import DatabaseWrapper
+
+# Permitir PostgreSQL 12.x en PythonAnywhere desactivando el chequeo estricto de versión de Django 5.1
+DatabaseWrapper.check_database_version_supported = lambda self: None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
