@@ -183,6 +183,9 @@ cv_prototypes/
 simulacros/cv_prototypes/
 simulacros/imagenes_muestra/
 simulacros/recortes/
-simulacros/respuesta_sesion1.py
 respuesta_sesion1.py
 imagenes_muestra/
+
+# Volcados de datos
+datadump.json
+*.json
