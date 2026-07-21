@@ -1,6 +1,6 @@
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import F, ExpressionWrapper, fields, Q, Count, Sum
+from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from datetime import timedelta
 from django.template.loader import render_to_string
@@ -135,19 +135,14 @@ class CuotasVencidasListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                     Q(deuda__alumno__segundo_apellido__iregex=regex_term)
                 )
 
-        queryset = queryset.annotate(
-            dias_atraso=ExpressionWrapper(
-                timezone.localtime(timezone.now()).date() - F('fecha_vencimiento'),
-                output_field=fields.IntegerField()
-            )
-        )
-        
-        # Aplicar ordenamiento por días de atraso
+        # Aplicar ordenamiento por días de atraso (días de atraso = hoy - fecha_vencimiento)
+        # orden 'asc' => menos días de atraso => fecha_vencimiento más reciente (desc)
+        # orden 'desc' => más días de atraso => fecha_vencimiento más antigua (asc)
         orden = self.request.GET.get('orden', 'desc')  # Por defecto descendente
         if orden == 'asc':
-            queryset = queryset.order_by('dias_atraso')
+            queryset = queryset.order_by('-fecha_vencimiento')
         else:
-            queryset = queryset.order_by('-dias_atraso')
+            queryset = queryset.order_by('fecha_vencimiento')
 
         return queryset
 

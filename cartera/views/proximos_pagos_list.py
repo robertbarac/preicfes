@@ -1,6 +1,6 @@
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import F, ExpressionWrapper, fields, Q
+from django.db.models import Q
 from django.template.loader import render_to_string
 from datetime import timedelta
 from django.utils import timezone
@@ -87,12 +87,8 @@ class ProximosPagosListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 Q(deuda__alumno__segundo_apellido__icontains=apellido)
             )
 
-        queryset = queryset.annotate(
-            dias_restantes=ExpressionWrapper(
-                F('fecha_vencimiento') - timezone.localtime(timezone.now()).date(),
-                output_field=fields.IntegerField()
-            )
-        ).order_by('dias_restantes')
+        # Ordenar por fecha de vencimiento (equivalente a días restantes ascendente)
+        queryset = queryset.order_by('fecha_vencimiento')
 
         return queryset
 
