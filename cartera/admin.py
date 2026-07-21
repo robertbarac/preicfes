@@ -5,7 +5,89 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db.models import Sum
 
+from datetime import datetime
+
 Usuario = get_user_model()  # Obtener dinámicamente el modelo de usuario
+
+
+class FechaCulminacionRangeFilter(admin.SimpleListFilter):
+    title = 'Fecha Culminación Alumno'
+    parameter_name = 'culminacion_desde'
+    parameter_name_desde = 'culminacion_desde'
+    parameter_name_hasta = 'culminacion_hasta'
+    template = 'admin/date_range_filter.html'
+
+    def __init__(self, request, params, model, model_admin):
+        self.request_get = request.GET
+        if self.parameter_name_desde in params:
+            self.value_desde = params.pop(self.parameter_name_desde)[-1]
+        else:
+            self.value_desde = None
+
+        if self.parameter_name_hasta in params:
+            self.value_hasta = params.pop(self.parameter_name_hasta)[-1]
+        else:
+            self.value_hasta = None
+
+        super().__init__(request, params, model, model_admin)
+
+    def expected_parameters(self):
+        return [self.parameter_name_desde, self.parameter_name_hasta]
+
+    def lookups(self, request, model_admin):
+        return (('custom', 'Personalizado'),)
+
+    def queryset(self, request, queryset):
+        desde = self.value_desde or request.GET.get(self.parameter_name_desde)
+        hasta = self.value_hasta or request.GET.get(self.parameter_name_hasta)
+
+        if desde:
+            try:
+                fecha_desde = datetime.strptime(desde, '%Y-%m-%d').date()
+                queryset = queryset.filter(deuda__alumno__fecha_culminacion__gte=fecha_desde)
+            except ValueError:
+                pass
+
+        if hasta:
+            try:
+                fecha_hasta = datetime.strptime(hasta, '%Y-%m-%d').date()
+                queryset = queryset.filter(deuda__alumno__fecha_culminacion__lte=fecha_hasta)
+            except ValueError:
+                pass
+
+        return queryset
+
+    def choices(self, changelist):
+        return []
+
+    def get_preserved_params(self):
+        params = []
+        for key, value_list in self.request_get.lists():
+            if key not in (self.parameter_name_desde, self.parameter_name_hasta, 'page', 'p'):
+                for val in value_list:
+                    params.append((key, val))
+        return params
+
+    @property
+    def current_value_desde(self):
+        return self.value_desde or self.request_get.get(self.parameter_name_desde, '')
+
+    @property
+    def current_value_hasta(self):
+        return self.value_hasta or self.request_get.get(self.parameter_name_hasta, '')
+
+    @property
+    def reset_url(self):
+        cleaned_get = self.request_get.copy()
+        if self.parameter_name_desde in cleaned_get:
+            del cleaned_get[self.parameter_name_desde]
+        if self.parameter_name_hasta in cleaned_get:
+            del cleaned_get[self.parameter_name_hasta]
+        if 'p' in cleaned_get:
+            del cleaned_get['p']
+        encoded = cleaned_get.urlencode()
+        return f'?{encoded}' if encoded else '?'
+
 
 @admin.register(AcuerdoPago)
 class AcuerdoPagoAdmin(admin.ModelAdmin):
@@ -18,7 +100,7 @@ class AcuerdoPagoAdmin(admin.ModelAdmin):
 @admin.register(Cuota)
 class CuotaAdmin(admin.ModelAdmin):
     list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago', 'editado_por', 'fecha_edicion', 'get_tipo_programa', 'get_departamento')
-    list_filter = ('estado', 'editado_por', 'deuda__alumno__tipo_programa', 'deuda__alumno__municipio__departamento', 'deuda__alumno__municipio', 'deuda__alumno__grupo_actual__salon__sede', 'fecha_vencimiento', 'fecha_pago')
+    list_filter = ('estado', FechaCulminacionRangeFilter, 'editado_por', 'deuda__alumno__tipo_programa', 'deuda__alumno__municipio__departamento', 'deuda__alumno__municipio', 'deuda__alumno__grupo_actual__salon__sede', 'fecha_vencimiento', 'fecha_pago')
     search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido', 'deuda__alumno__municipio__nombre', 'editado_por')
     date_hierarchy = 'fecha_vencimiento'
     list_editable = ('monto_abonado', 'estado', 'metodo_pago')

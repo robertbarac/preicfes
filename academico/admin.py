@@ -43,11 +43,32 @@ class AlumnoAdminForm(forms.ModelForm):
         return cleaned_data
 
 
+class EstadoDeudaFilter(admin.SimpleListFilter):
+    title = 'Estado de Deuda'
+    parameter_name = 'estado_deuda'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('emitida', 'Emitida (Pendiente)'),
+            ('pagada', 'Pagada'),
+            ('sin_deuda', 'Sin Deuda'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'emitida':
+            return queryset.filter(deuda__estado='emitida')
+        elif self.value() == 'pagada':
+            return queryset.filter(deuda__estado='pagada')
+        elif self.value() == 'sin_deuda':
+            return queryset.filter(deuda__isnull=True)
+        return queryset
+
+
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
     form = AlumnoAdminForm
     list_display = ('nombres', 'primer_apellido', 'estado', 'fecha_ingreso', 'fecha_culminacion', 'tipo_programa', 'municipio', 'get_departamento', 'grupo_actual', 'nombres_padre', 'celular_padre', 'nombres_madre', 'celular_madre')
-    list_filter = ('estado', 'tipo_programa', 'es_becado', 'municipio', 'municipio__departamento', 'fecha_ingreso', 'fecha_culminacion', 'grupo_actual')
+    list_filter = ('estado', EstadoDeudaFilter, 'tipo_programa', 'es_becado', 'municipio', 'municipio__departamento', 'fecha_ingreso', 'fecha_culminacion', 'grupo_actual')
     search_fields = ('nombres', 'primer_apellido', 'segundo_apellido', 'identificacion', 'nombres_padre', 'celular_padre', 'nombres_madre', 'celular_madre')
 
     def get_estado(self, obj):
