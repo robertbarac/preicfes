@@ -99,7 +99,7 @@ class AcuerdoPagoAdmin(admin.ModelAdmin):
 
 @admin.register(Cuota)
 class CuotaAdmin(admin.ModelAdmin):
-    list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'estado', 'metodo_pago', 'editado_por', 'fecha_edicion', 'get_tipo_programa', 'get_departamento')
+    list_display = ('deuda', 'monto', 'monto_abonado', 'fecha_vencimiento', 'fecha_pago', 'estado', 'metodo_pago', 'editado_por', 'fecha_edicion', 'get_tipo_programa', 'get_departamento')
     list_filter = ('estado', FechaCulminacionRangeFilter, 'editado_por', 'deuda__alumno__tipo_programa', 'deuda__alumno__municipio__departamento', 'deuda__alumno__municipio', 'deuda__alumno__grupo_actual__salon__sede', 'fecha_vencimiento', 'fecha_pago')
     search_fields = ('deuda__alumno__nombres', 'deuda__alumno__primer_apellido', 'deuda__alumno__municipio__nombre', 'editado_por')
     date_hierarchy = 'fecha_vencimiento'
