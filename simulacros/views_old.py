@@ -133,8 +133,8 @@ class GrupoCalificarSimulacroView(LoginRequiredMixin, View):
                         dest.write(chunk)
                 
                 try:
-                    sec_s1 = procesar_imagen(path_s1, 'S1', debug=False)
-                    sec_s2 = procesar_imagen(path_s2, 'S2', debug=False)
+                    sec_s1 = procesar_imagen(path_s1, 'S1', debug=False, user=request.user)
+                    sec_s2 = procesar_imagen(path_s2, 'S2', debug=False, user=request.user)
                     
                     resp_s1 = ''.join(sec_s1)
                     resp_s2 = ''.join(sec_s2)

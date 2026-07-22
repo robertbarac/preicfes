@@ -192,7 +192,7 @@ def _fallback_deskew(img):
     return cv2.resize(img, (NORM_W, NORM_H), interpolation=cv2.INTER_AREA)
 
 
-def hacer_tiras(img, modo):
+def hacer_tiras(img, modo, user=None):
     """
     Detecta los 4 grandes rectángulos que envuelven a cada columna de opciones.
     Devuelve la imagen recortada. Si la detección dinámica falla, utiliza las
@@ -317,7 +317,8 @@ def hacer_tiras(img, modo):
     # Re-ordenar después de refinar
     candidatos = sorted(candidatos, key=functools.cmp_to_key(cmp_rects))
 
-    print(f"  📐 Rectángulos detectados: {len(candidatos)} (esperados: 4)")
+    username_str = getattr(user, 'username', None) or (str(user) if user and str(user) else 'Nadie')
+    print(f"  📐 Rectángulos detectados por usuario [{username_str}]: {len(candidatos)} (esperados: 4)")
     for i, r in enumerate(candidatos):
         print(f"     #{i+1}: x={r['x']}, y={r['y']}, w={r['w']}, h={r['h']}, area={r['area']}")
 
@@ -525,7 +526,7 @@ def evaluar_tira(contours, imgThresh, n_opciones):
     return respuestas
 
 
-def procesar_imagen(image_path, modo, debug=False):
+def procesar_imagen(image_path, modo, debug=False, user=None):
     img = cv2.imread(image_path)
     if img is None:
         raise ValueError(f"No se pudo cargar la imagen: {image_path}")
@@ -545,7 +546,7 @@ def procesar_imagen(image_path, modo, debug=False):
     if debug:
         print(f"  Hoja normalizada a {img.shape[1]}x{img.shape[0]}px")
 
-    tiras = hacer_tiras(img, modo)
+    tiras = hacer_tiras(img, modo, user=user)
 
     secuencia = []
     for num, (tira_img, n_opciones, etiqueta) in enumerate(tiras, start=1):
@@ -578,7 +579,7 @@ ETIQUETAS_S1 = ['C1', 'C2', 'C3', 'C4']
 ETIQUETAS_S2 = ['C1', 'C2a', 'C2b', 'C3']
 
 
-def extraer_tiras_individuales(path_s1, path_s2):
+def extraer_tiras_individuales(path_s1, path_s2, user=None):
     """
     Procesa las dos imágenes de un alumno y devuelve las secuencias
     desglosadas por tira (sin concatenar), junto con el estado de cada una.
@@ -604,7 +605,7 @@ def extraer_tiras_individuales(path_s1, path_s2):
         if img_s1 is None:
             raise ValueError(f"No se pudo cargar: {path_s1}")
         img_s1 = normalizar_hoja(img_s1)
-        tiras_s1 = hacer_tiras(img_s1, 'S1')
+        tiras_s1 = hacer_tiras(img_s1, 'S1', user=user)
 
         for i, (tira_img, n_opciones, _etq) in enumerate(tiras_s1):
             imgThresh, circulos, _ = encontrar_circulos_en_tira(tira_img, n_opciones)
@@ -626,7 +627,7 @@ def extraer_tiras_individuales(path_s1, path_s2):
         if img_s2 is None:
             raise ValueError(f"No se pudo cargar: {path_s2}")
         img_s2 = normalizar_hoja(img_s2)
-        tiras_s2 = hacer_tiras(img_s2, 'S2')
+        tiras_s2 = hacer_tiras(img_s2, 'S2', user=user)
 
         for i, (tira_img, n_opciones, _etq) in enumerate(tiras_s2):
             imgThresh, circulos, _ = encontrar_circulos_en_tira(tira_img, n_opciones)

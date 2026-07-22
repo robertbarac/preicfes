@@ -72,7 +72,7 @@ class GrupoCalificarSimulacroView(LoginRequiredMixin, View):
                     for chunk in file_s2.chunks():
                         dest.write(chunk)
 
-                resultado = extraer_tiras_individuales(path_s1, path_s2)
+                resultado = extraer_tiras_individuales(path_s1, path_s2, user=request.user)
 
                 batch['alumnos'].append({
                     'id':     alumno.id,
