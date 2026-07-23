@@ -22,9 +22,7 @@ class Alumno(models.Model):
     TIPO_PROGRAMA = [
         ('pre_privado', 'PreICFES Privado'),
         ('pre_publico', 'PreICFES Público'),
-        ('premedico', 'PreMédico'),
         ('formacion_laboral', 'Formación Laboral'),
-        ('semillero', 'Semillero de Investigación'),
         ('preicfes_kids', 'PreICFES Kids'),
         ('preicfes_virtual', 'PreICFES Virtual'),
         ('preicfes_vacacional', 'PreICFES Vacacional'),
